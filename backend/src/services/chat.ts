@@ -216,7 +216,8 @@ ${detailedFood}
 - Keep responses concise for mobile — 2-4 short paragraphs unless they ask for detailed breakdowns.
 - You can respond in Hebrew or English based on the language the user writes in.
 - SAVE DIRECTLY: When the user asks you to log, save, push, add, or create any workout, food, sleep, weight, water, or goal — call the appropriate write tool (add_workout, add_food, log_sleep, log_weight, add_water, log_cycle, add_goal) IMMEDIATELY. No confirmation cards, no "would you like me to save?" — just save it. For multi-day plans, call add_workout once per day (use today's date for day 1 and increment).
-- SAVE/CONFIRM FOLLOW-UPS: If the user says "save it", "push it", "add it", "do it", "go ahead", "yes" referring to something you described — call the write tools NOW for every item you described. Never describe an action without also calling the tool in the same turn.
+- DELETE/EDIT DIRECTLY: When the user asks you to delete, remove, edit, change, or move a workout, food, goal, or other item — call the matching tool (delete_workout, edit_workout, delete_food, edit_food, edit_goal, etc.) IMMEDIATELY. Identify the target with workoutTitle/foodName (plus date if the user gave one). Never just say "I removed it" without calling the tool.
+- SAVE/CONFIRM FOLLOW-UPS: If the user says "save it", "push it", "add it", "delete it", "remove it", "do it", "go ahead", "yes" referring to something you described — call the appropriate tools NOW for every item you described. Never describe an action without also calling the tool in the same turn.
 - Today's date: ${new Date().toISOString().slice(0, 10)}`;
 }
 
@@ -260,14 +261,15 @@ export interface AgentChatResponse {
 // (workout, food, weight, sleep, water, goal) without actually calling
 // the corresponding write tool. If detected with no successful write
 // in this turn, we force a tool call.
-const SINGLE_ACTION_CLAIM_PATTERN = /\b(i'?ve|i have|just|all)?\s*(logged|added|saved|recorded|tracked|noted|created|set|pushed)\s+(your|the|that|it|a|an|this|that)\b|\b(done|got it|all set)[!.]?\s*$/i;
+export const SINGLE_ACTION_CLAIM_PATTERN = /\b(i'?ve|i have|just|all)?\s*(logged|added|saved|recorded|tracked|noted|created|set|pushed|deleted|removed|updated|changed|edited|moved)\s+(your|the|that|it|a|an|this|that)\b|\b(done|got it|all set)[!.]?\s*$/i;
 
 const AGENT_SYSTEM_INIT = `You are an AI agent — not just a chatbot. CRITICAL RULES:
 1. When the user asks to log, save, push, add, or create anything (workout, food, sleep, weight, water, goal) — call the appropriate write tool IMMEDIATELY. No confirmation cards, no "would you like me to save?" prompts. Just save it.
-2. For multi-day workout plans, call add_workout once per day. Use today's date for day 1 and increment dates for each subsequent day.
-3. SAVE/CONFIRM follow-ups: If the user says "save it", "push it", "add it", "do it", "go ahead", "yes" referring to something you described — call the write tools NOW for every item you described.
-4. When the user asks about their data — look it up with the available read tools before answering.
-5. NEVER claim to have performed an action without actually calling the tool. "I've logged..." means you MUST have called the tool in this turn, not just described doing so.`;
+2. When the user asks to DELETE, REMOVE, EDIT, CHANGE, or MOVE something (e.g. "delete my workout", "remove today's Push Day", "change the squat weight") — call the matching tool IMMEDIATELY (delete_workout, edit_workout, delete_food, edit_food, edit_goal, etc.). Identify the target by workoutTitle/foodName (and date if given). Do NOT just say you did it.
+3. For multi-day workout plans, call add_workout once per day. Use today's date for day 1 and increment dates for each subsequent day.
+4. SAVE/CONFIRM follow-ups: If the user says "save it", "push it", "add it", "do it", "delete it", "remove it", "go ahead", "yes" referring to something you described — call the appropriate tools NOW for every item you described.
+5. When the user asks about their data — look it up with the available read tools before answering.
+6. NEVER claim to have performed an action without actually calling the tool. "I've logged...", "I've deleted...", "I've removed..." all mean you MUST have called the corresponding tool in this turn, not just described doing so.`;
 
 export async function sendMessageStream(
   userId: string,
@@ -414,7 +416,7 @@ export async function sendMessageStream(
     if (!hasSuccessfulWrite && claimedAction) {
       onThinking();
       const forceResult = await chat.sendMessage(
-        '[SYSTEM] You claimed to have logged/added/saved an item but did NOT actually call any tool, so nothing was saved. Call the appropriate write tool(s) NOW (add_workout, add_food, log_sleep, log_weight, add_water, log_cycle, add_goal, edit_*, delete_*) for EVERY item you described. For multi-day plans call add_workout once per day. Reply only with the tool call(s).',
+        '[SYSTEM] You claimed to have logged/added/saved/deleted/removed/edited an item but did NOT actually call any tool, so nothing changed. Call the appropriate tool(s) NOW (add_workout, add_food, log_sleep, log_weight, add_water, log_cycle, add_goal, edit_*, delete_*) for EVERY item you described. For deletions/edits, identify the target with workoutTitle/foodName (and date if given). For multi-day plans call add_workout once per day. Reply only with the tool call(s).',
       );
       const forceCalls = forceResult.response.functionCalls?.() ?? [];
       const writeCalls = forceCalls.filter(fc => !fc.name.startsWith('get_'));
@@ -566,7 +568,7 @@ export async function sendMessage(userId: string, userMessage: string): Promise<
     const claimedAction = SINGLE_ACTION_CLAIM_PATTERN.test(responseText);
     if (!hasSuccessfulWrite && claimedAction) {
       const forceResult = await chat.sendMessage(
-        '[SYSTEM] You claimed to have logged/added/saved an item but did NOT actually call any tool, so nothing was saved. Call the appropriate write tool(s) NOW for EVERY item you described. For multi-day plans call add_workout once per day. Reply only with the tool call(s).',
+        '[SYSTEM] You claimed to have logged/added/saved/deleted/removed/edited an item but did NOT actually call any tool, so nothing changed. Call the appropriate tool(s) NOW for EVERY item you described. For deletions/edits, identify the target with workoutTitle/foodName (and date if given). For multi-day plans call add_workout once per day. Reply only with the tool call(s).',
       );
       const forceCalls = forceResult.response.functionCalls?.() ?? [];
       const writeCalls = forceCalls.filter(fc => !fc.name.startsWith('get_'));
