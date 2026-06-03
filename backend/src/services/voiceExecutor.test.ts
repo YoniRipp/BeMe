@@ -40,6 +40,7 @@ import { executeActions } from './voiceExecutor.js';
 const mockWorkoutCreate = vi.fn();
 const mockWorkoutUpdate = vi.fn();
 const mockWorkoutRemove = vi.fn();
+const mockWorkoutRemoveAll = vi.fn();
 const mockWorkoutList = vi.fn();
 
 const mockFoodEntryCreate = vi.fn();
@@ -61,6 +62,7 @@ vi.mock('./workout.js', () => ({
   create: (...args: unknown[]) => mockWorkoutCreate(...args),
   update: (...args: unknown[]) => mockWorkoutUpdate(...args),
   remove: (...args: unknown[]) => mockWorkoutRemove(...args),
+  removeAll: (...args: unknown[]) => mockWorkoutRemoveAll(...args),
   list: (...args: unknown[]) => mockWorkoutList(...args),
 }));
 
@@ -169,6 +171,46 @@ describe('voiceExecutor', () => {
       );
 
       expect(results).toEqual([{ intent: 'edit_workout', success: false, message: 'Workout not found' }]);
+    });
+  });
+
+  describe('delete_workouts (bulk)', () => {
+    it('deletes all workouts and reports the real count', async () => {
+      mockWorkoutRemoveAll.mockResolvedValue(16);
+
+      const results = await executeActions([{ intent: 'delete_workouts' }], userId);
+
+      expect(mockWorkoutRemoveAll).toHaveBeenCalledWith(userId, {});
+      expect(results).toEqual([{ intent: 'delete_workouts', success: true, message: 'Deleted 16 workouts' }]);
+    });
+
+    it('passes an inclusive date range through to the service', async () => {
+      mockWorkoutRemoveAll.mockResolvedValue(4);
+
+      const results = await executeActions(
+        [{ intent: 'delete_workouts', from: '2026-05-01', to: '2026-05-31' }],
+        userId
+      );
+
+      expect(mockWorkoutRemoveAll).toHaveBeenCalledWith(userId, { from: '2026-05-01', to: '2026-05-31' });
+      expect(results[0]).toMatchObject({ intent: 'delete_workouts', success: true });
+      expect(results[0].message).toContain('Deleted 4 workouts');
+    });
+
+    it('treats a single date as that day only', async () => {
+      mockWorkoutRemoveAll.mockResolvedValue(1);
+
+      await executeActions([{ intent: 'delete_workouts', date: '2026-05-29' }], userId);
+
+      expect(mockWorkoutRemoveAll).toHaveBeenCalledWith(userId, { from: '2026-05-29', to: '2026-05-29' });
+    });
+
+    it('reports honestly when there is nothing to delete', async () => {
+      mockWorkoutRemoveAll.mockResolvedValue(0);
+
+      const results = await executeActions([{ intent: 'delete_workouts' }], userId);
+
+      expect(results).toEqual([{ intent: 'delete_workouts', success: true, message: 'No workouts found to delete' }]);
     });
   });
 

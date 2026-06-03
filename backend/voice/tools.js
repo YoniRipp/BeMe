@@ -65,13 +65,24 @@ export const VOICE_TOOLS = [
       },
       {
         name: 'delete_workout',
-        description: 'Remove a workout.',
+        description: 'Remove a SINGLE workout. To remove many or all workouts, use delete_workouts instead.',
         parameters: {
           type: 'object',
           properties: {
             workoutTitle: { type: 'string' },
             workoutId: { type: 'string' },
             date: { type: 'string', description: 'YYYY-MM-DD for disambiguation' },
+          },
+        },
+      },
+      {
+        name: 'delete_workouts',
+        description: 'Delete MANY workouts at once. Use this (NOT repeated delete_workout calls) when the user asks to remove ALL their workouts, clear/reset/wipe their workout log, start a "clean slate", or delete a whole block/range of workouts. With no dates it deletes ALL of the user\'s workouts (past and future). Optionally restrict to an inclusive date range with from/to (YYYY-MM-DD). The tool returns the exact number deleted — report that number truthfully and never claim workouts were removed without calling this tool. Only call when the user explicitly asks to remove multiple or all workouts.',
+        parameters: {
+          type: 'object',
+          properties: {
+            from: { type: 'string', description: 'Optional inclusive start date YYYY-MM-DD. Omit to delete from the beginning.' },
+            to: { type: 'string', description: 'Optional inclusive end date YYYY-MM-DD. Omit to delete through the end (including future workouts).' },
           },
         },
       },

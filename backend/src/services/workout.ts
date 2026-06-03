@@ -54,3 +54,20 @@ export async function remove(userId: string, id: string): Promise<void> {
   await publishEvent('body.WorkoutDeleted', { id }, userId);
   deleteEmbedding(id, 'workout');
 }
+
+/**
+ * Delete all of a user's workouts (optionally within an inclusive date range)
+ * in a single query. Emits a WorkoutDeleted event and clears the embedding for
+ * each removed workout, matching `remove`. Returns the number deleted.
+ */
+export async function removeAll(
+  userId: string,
+  range?: { from?: string; to?: string },
+): Promise<number> {
+  const ids = await workoutModel.deleteAllByUser(userId, range);
+  for (const id of ids) {
+    await publishEvent('body.WorkoutDeleted', { id }, userId);
+    deleteEmbedding(id, 'workout');
+  }
+  return ids.length;
+}

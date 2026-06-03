@@ -76,3 +76,31 @@ export async function deleteById(id: string, userId: string, client?: pg.Pool | 
   const result = await db.query('DELETE FROM workouts WHERE id = $1 AND user_id = $2 RETURNING id', [id, userId]);
   return (result.rowCount ?? 0) > 0;
 }
+
+/**
+ * Bulk-delete a user's workouts, optionally restricted to an inclusive date
+ * range. Returns the ids of every deleted row so the caller can emit events /
+ * clear embeddings per workout. With no range, deletes ALL of the user's workouts.
+ */
+export async function deleteAllByUser(
+  userId: string,
+  range?: { from?: string; to?: string },
+  client?: pg.Pool | pg.PoolClient,
+): Promise<string[]> {
+  const db = client ?? getPool('body');
+  const conditions = ['user_id = $1'];
+  const params: unknown[] = [userId];
+  if (range?.from) {
+    params.push(range.from);
+    conditions.push(`date >= $${params.length}::date`);
+  }
+  if (range?.to) {
+    params.push(range.to);
+    conditions.push(`date <= $${params.length}::date`);
+  }
+  const result = await db.query(
+    `DELETE FROM workouts WHERE ${conditions.join(' AND ')} RETURNING id`,
+    params,
+  );
+  return result.rows.map((r: { id: string }) => r.id);
+}
