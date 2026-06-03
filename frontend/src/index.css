@@ -223,6 +223,17 @@
   .tap-target { @apply active:scale-[0.98] transition-transform duration-150; }
   .press { @apply active:scale-[0.97] transition-transform duration-150; }
 
+  /* Row actions (e.g. delete) stay visible on touch devices, but fade in
+     on hover for precise pointers so desktop rows stay uncluttered.
+     Touch devices have no :hover, so the action must never be hover-gated. */
+  .reveal-on-hover { opacity: 1; }
+  @media (hover: hover) and (pointer: fine) {
+    .reveal-on-hover { opacity: 0; }
+    .group:hover .reveal-on-hover,
+    .reveal-on-hover:focus-visible,
+    .group:focus-within .reveal-on-hover { opacity: 1; }
+  }
+
   /* Glass */
   .glass {
     background-color: hsl(var(--paper) / 0.82);

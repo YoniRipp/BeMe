@@ -1,5 +1,5 @@
 import { useState, useCallback, useEffect, useRef } from 'react';
-import { Mic, MicOff, X, Loader2, Keyboard } from 'lucide-react';
+import { Mic, MicOff, X, Loader2, Keyboard, ChevronDown } from 'lucide-react';
 import { toast } from 'sonner';
 import {
   Sheet,
@@ -35,6 +35,8 @@ interface QuickVoiceEntryProps {
 
 type Phase = 'recording' | 'review';
 type Lang = 'en-US' | 'he-IL';
+
+const MEALS: MealType[] = ['Breakfast', 'Lunch', 'Dinner', 'Snack'];
 
 const LANG_STORAGE_KEY = 'quickVoiceEntry.lang';
 
@@ -174,6 +176,16 @@ export default function QuickVoiceEntry({
       }
       return next;
     });
+  }, []);
+
+  const handleChangeMeal = useCallback((index: number, meal: MealType) => {
+    setResolvedItems((prev) =>
+      prev.map((item, i) =>
+        i === index
+          ? { ...item, mealType: meal.toLowerCase(), startTime: getMealStartTime(meal) }
+          : item,
+      ),
+    );
   }, []);
 
   const handleSaveAll = useCallback(async () => {
@@ -355,9 +367,12 @@ export default function QuickVoiceEntry({
               </div>
             ) : (
               <>
-                <p className="text-sm text-muted-foreground">
-                  {resolvedItems.length} item{resolvedItems.length !== 1 ? 's' : ''} found
-                </p>
+                <div>
+                  <p className="text-sm text-muted-foreground">
+                    {resolvedItems.length} item{resolvedItems.length !== 1 ? 's' : ''} found
+                  </p>
+                  <p className="text-xs text-muted-foreground/70">Tap a meal label to move an item.</p>
+                </div>
 
                 <ul className="flex flex-col gap-2">
                   {resolvedItems.map((item, idx) => (
@@ -368,11 +383,22 @@ export default function QuickVoiceEntry({
                       <div className="flex-1 min-w-0 pr-3">
                         <div className="flex items-center gap-1.5">
                           <p className="text-sm font-semibold truncate">{item.name}</p>
-                          {item.mealType && (
-                            <span className="shrink-0 text-[10px] px-1.5 py-0.5 rounded-full bg-muted text-muted-foreground capitalize">
-                              {item.mealType}
-                            </span>
-                          )}
+                          <span className="relative shrink-0">
+                            <select
+                              value={MEALS.find((m) => m.toLowerCase() === item.mealType) ?? 'Snack'}
+                              onChange={(e) => handleChangeMeal(idx, e.target.value as MealType)}
+                              aria-label={`Meal for ${item.name}`}
+                              className="appearance-none rounded-full bg-muted py-0.5 pl-2 pr-5 text-[10px] font-semibold capitalize text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+                            >
+                              {MEALS.map((m) => (
+                                <option key={m} value={m}>{m}</option>
+                              ))}
+                            </select>
+                            <ChevronDown
+                              className="pointer-events-none absolute right-1.5 top-1/2 h-3 w-3 -translate-y-1/2 text-muted-foreground"
+                              aria-hidden="true"
+                            />
+                          </span>
                         </div>
                         <p className="text-xs text-muted-foreground">
                           P {item.protein}g &middot; C {item.carbs}g &middot; F {item.fats}g
@@ -385,7 +411,7 @@ export default function QuickVoiceEntry({
                         <button
                           type="button"
                           onClick={() => handleRemoveItem(idx)}
-                          className="flex h-7 w-7 items-center justify-center rounded-full text-muted-foreground hover:bg-muted transition-colors"
+                          className="flex h-9 w-9 items-center justify-center rounded-full text-muted-foreground hover:bg-muted transition-colors"
                           aria-label={`Remove ${item.name}`}
                         >
                           <X className="h-4 w-4" />
