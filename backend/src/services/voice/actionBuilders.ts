@@ -229,6 +229,7 @@ export const HANDLERS: Record<string, (args: Record<string, unknown>, ctx: Build
   add_workout: (args, ctx) => Promise.resolve({ merge: buildAddWorkout(args, ctx) }),
   edit_workout: (args) => Promise.resolve({ merge: buildEditWorkout(args) }),
   delete_workout: (args) => Promise.resolve({ merge: buildDeleteWorkout(args) }),
+  delete_workouts: (args) => Promise.resolve({ merge: mapArgs(args, { from: passThrough, to: passThrough }) }),
   add_food: (args, ctx) => buildAddFood(args, ctx).then((merge) => ({ merge })),
   edit_food_entry: (args) => Promise.resolve({ merge: buildEditFoodEntry(args) }),
   delete_food_entry: (args) => Promise.resolve({ merge: buildDeleteFoodEntry(args) }),

@@ -204,6 +204,7 @@ function formatActionResults(results: ExecuteResult[]): string {
         lines.push(`✏️ ${r.message || 'Updated'}`);
         break;
       case 'delete_workout':
+      case 'delete_workouts':
       case 'delete_food_entry':
       case 'delete_goal':
       case 'delete_check_in':

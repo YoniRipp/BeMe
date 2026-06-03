@@ -283,6 +283,30 @@ export async function executeActions(actions: VoiceAction[], userId: string): Pr
           break;
         }
 
+        case 'delete_workouts': {
+          const isDate = (v: unknown): v is string => typeof v === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(v);
+          const range: { from?: string; to?: string } = {};
+          if (isDate(action.from)) range.from = action.from;
+          if (isDate(action.to)) range.to = action.to;
+          // A single `date` means "just that day".
+          if (!range.from && !range.to && isDate(action.date)) {
+            range.from = action.date;
+            range.to = action.date;
+          }
+          const count = await workoutService.removeAll(userId, range);
+          const scope = range.from || range.to
+            ? ` (${range.from ?? 'start'} to ${range.to ?? 'end'})`
+            : '';
+          results.push({
+            intent: 'delete_workouts',
+            success: true,
+            message: count > 0
+              ? `Deleted ${count} workout${count === 1 ? '' : 's'}${scope}`
+              : `No workouts found to delete${scope}`,
+          });
+          break;
+        }
+
         case 'add_food':
           await foodEntryService.create(userId, {
             date: parseDate(action.date),
