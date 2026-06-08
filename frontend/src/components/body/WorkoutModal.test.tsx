@@ -1,8 +1,10 @@
-import { describe, it, expect, vi } from 'vitest';
+import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { WorkoutModal } from './WorkoutModal';
 import { Workout } from '@/types/workout';
+
+const { updateWorkoutMock } = vi.hoisted(() => ({ updateWorkoutMock: vi.fn() }));
 
 vi.mock('@/lib/storage', () => ({
   storage: { get: vi.fn(() => []), set: vi.fn(), remove: vi.fn(), clear: vi.fn() },
@@ -23,10 +25,15 @@ vi.mock('@/hooks/useExercises', () => ({
 }));
 
 vi.mock('@/hooks/useWorkouts', () => ({
-  useWorkouts: () => ({ workouts: [] }),
+  useWorkouts: () => ({ workouts: [], updateWorkout: updateWorkoutMock }),
 }));
 
 describe('WorkoutModal', () => {
+  beforeEach(() => {
+    updateWorkoutMock.mockReset();
+    updateWorkoutMock.mockResolvedValue(undefined);
+  });
+
   it('renders Add Workout form with N rep inputs when sets = N', () => {
     const onSave = vi.fn();
     render(
@@ -199,5 +206,59 @@ describe('WorkoutModal', () => {
     expect(saved.exercises[0].repsPerSet[0]).toBe(12);
     expect(saved.exercises[0].weightPerSet[0]).toBe(170);
     expect(saved.exercises[0].weight).toBe(170);
+  });
+
+  it('persists a ticked set (debounced) from the interactive logger view', async () => {
+    const user = userEvent.setup();
+    const workout: Workout = {
+      id: 'w1',
+      date: new Date(2025, 0, 17),
+      title: 'Lower Body',
+      type: 'strength',
+      durationMinutes: 60,
+      completed: false,
+      exercises: [
+        { name: 'Squat', sets: 2, reps: 8, repsPerSet: [8, 8], weightPerSet: [100, 100], weight: 100 },
+      ],
+    };
+
+    render(
+      <WorkoutModal open={true} onOpenChange={vi.fn()} onSave={vi.fn()} workout={workout} />
+    );
+
+    await user.click(screen.getByRole('button', { name: /mark set 1 done/i }));
+
+    await waitFor(() => expect(updateWorkoutMock).toHaveBeenCalled(), { timeout: 2000 });
+    const lastCall = updateWorkoutMock.mock.calls[updateWorkoutMock.mock.calls.length - 1];
+    expect(lastCall[0]).toBe('w1');
+    expect(lastCall[1].exercises[0].completedPerSet).toEqual([true, false]);
+    // Not every set is done yet, so the workout stays incomplete.
+    expect(lastCall[1].completed).toBe(false);
+  });
+
+  it('marks the whole workout completed once every set is ticked', async () => {
+    const user = userEvent.setup();
+    const workout: Workout = {
+      id: 'w2',
+      date: new Date(2025, 0, 18),
+      title: 'Single Set',
+      type: 'strength',
+      durationMinutes: 30,
+      completed: false,
+      exercises: [
+        { name: 'Deadlift', sets: 1, reps: 5, repsPerSet: [5], weightPerSet: [150], weight: 150 },
+      ],
+    };
+
+    render(
+      <WorkoutModal open={true} onOpenChange={vi.fn()} onSave={vi.fn()} workout={workout} />
+    );
+
+    await user.click(screen.getByRole('button', { name: /mark set 1 done/i }));
+
+    await waitFor(() => expect(updateWorkoutMock).toHaveBeenCalled(), { timeout: 2000 });
+    const lastCall = updateWorkoutMock.mock.calls[updateWorkoutMock.mock.calls.length - 1];
+    expect(lastCall[1].exercises[0].completedPerSet).toEqual([true]);
+    expect(lastCall[1].completed).toBe(true);
   });
 });

@@ -8,6 +8,8 @@ export interface Exercise {
   repsPerSet?: number[];
   /** When present, one weight value per set; length must equal sets. */
   weightPerSet?: Array<number | undefined>;
+  /** When present, one done/not-done flag per set; length must equal sets. */
+  completedPerSet?: boolean[];
   weight?: number;
   notes?: string;
 }

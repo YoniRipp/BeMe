@@ -7,6 +7,7 @@ type ApiExercise = {
   reps: number;
   repsPerSet?: number[];
   weightPerSet?: Array<number | null | undefined>;
+  completedPerSet?: boolean[];
   weight?: number;
   notes?: string;
 };
@@ -34,6 +35,9 @@ export function apiWorkoutToWorkout(a: {
       ...(e.repsPerSet && e.repsPerSet.length === e.sets ? { repsPerSet: e.repsPerSet } : undefined),
       ...(e.weightPerSet && e.weightPerSet.length === e.sets
         ? { weightPerSet: e.weightPerSet.map((value) => value ?? undefined) }
+        : undefined),
+      ...(e.completedPerSet && e.completedPerSet.length === e.sets
+        ? { completedPerSet: e.completedPerSet }
         : undefined),
       weight: e.weight,
       notes: e.notes,
