@@ -1,0 +1,591 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Workout Section — Design Concepts</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600;9..144,700&display=swap" rel="stylesheet" />
+<style>
+:root{
+  --paper:36 40% 97%; --paper-2:34 32% 94%;
+  --ink:30 14% 14%; --ink-2:28 10% 32%; --ink-3:24 8% 52%;
+  --hairline:32 14% 86%;
+  --card:0 0% 100%;
+  --primary:150 28% 30%; --sage:148 24% 42%; --sage-light:148 22% 68%;
+  --terracotta:14 58% 54%; --gold:38 70% 50%; --info:212 58% 48%; --success:150 45% 38%;
+  --muted:32 18% 93%; --muted-fg:24 8% 52%;
+  --radius:14px;
+  --shadow-sm:0 1px 2px 0 hsl(28 20% 20% / .04), 0 1px 3px 0 hsl(28 20% 20% / .06);
+  --shadow-md:0 2px 4px -1px hsl(28 20% 20% / .05), 0 4px 8px -2px hsl(28 20% 20% / .06);
+  --shadow-lg:0 6px 16px -4px hsl(28 20% 20% / .08), 0 12px 32px -8px hsl(28 20% 20% / .08);
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Inter',system-ui,sans-serif;background:#eae4d9;color:hsl(var(--ink));-webkit-font-smoothing:antialiased}
+.font-d{font-family:'Fraunces',Georgia,serif}
+.icon{width:1em;height:1em;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;fill:none;display:inline-block;vertical-align:-0.125em}
+.icon.fill{fill:currentColor;stroke:none}
+
+/* ---- type accent helpers ---- */
+.t-strength{--c:150 30% 30%;--cb:148 34% 92%;--cf:150 32% 27%;--g1:150 32% 33%;--g2:148 42% 49%}
+.t-cardio{--c:14 58% 50%;--cb:14 62% 93%;--cf:14 58% 44%;--g1:14 62% 50%;--g2:28 82% 57%}
+.t-flex{--c:212 58% 46%;--cb:208 56% 93%;--cf:212 58% 40%;--g1:212 56% 46%;--g2:198 62% 55%}
+.t-sports{--c:38 72% 44%;--cb:40 76% 91%;--cf:35 70% 36%;--g1:38 76% 49%;--g2:45 86% 56%}
+
+/* ================= STUDIO / SECTIONS ================= */
+.section{width:1740px;padding:46px 54px 56px;background:linear-gradient(180deg,#efe9df,#e6dfd2)}
+.cap{margin:0 0 30px 6px}
+.cap-row{display:flex;align-items:baseline;gap:14px}
+.cap-num{font-family:'Fraunces',serif;font-size:30px;font-weight:600;color:hsl(var(--primary))}
+.cap-title{font-family:'Fraunces',serif;font-size:34px;font-weight:600;letter-spacing:-.02em;color:hsl(var(--ink))}
+.cap-insp{font-size:13px;font-weight:700;text-transform:uppercase;letter-spacing:.12em;color:hsl(var(--terracotta));background:hsl(14 62% 93%);padding:5px 11px;border-radius:999px}
+.cap-desc{margin-top:9px;font-size:15.5px;line-height:1.55;color:hsl(var(--ink-2));max-width:1050px}
+.devrow{display:flex;gap:54px;align-items:flex-start}
+.devlabel{font-size:12px;font-weight:800;text-transform:uppercase;letter-spacing:.16em;color:hsl(var(--ink-3));margin:0 0 13px 4px;display:flex;align-items:center;gap:8px}
+.devlabel::before{content:"";width:7px;height:7px;border-radius:2px;background:hsl(var(--primary))}
+
+/* ================= PHONE FRAME ================= */
+.phone{width:404px;background:#0c0c0e;border-radius:54px;padding:13px;box-shadow:0 30px 60px -20px rgba(40,30,20,.45),0 8px 18px -6px rgba(40,30,20,.3)}
+.screen{position:relative;width:378px;height:818px;background:hsl(var(--paper));border-radius:42px;overflow:hidden;display:flex;flex-direction:column}
+.notch{position:absolute;top:10px;left:50%;transform:translateX(-50%);width:118px;height:30px;background:#0c0c0e;border-radius:18px;z-index:40}
+.statusbar{height:50px;flex:none;display:flex;justify-content:space-between;align-items:center;padding:0 30px 0 32px;font-size:15px;font-weight:700;color:hsl(var(--ink))}
+.sb-right{display:flex;align-items:center;gap:7px;font-size:13px}
+.sb-batt{width:24px;height:12px;border:1.6px solid hsl(var(--ink));border-radius:3px;position:relative;display:inline-block}
+.sb-batt::after{content:"";position:absolute;left:1.5px;top:1.5px;bottom:1.5px;width:14px;background:hsl(var(--ink));border-radius:1px}
+.sb-batt::before{content:"";position:absolute;right:-3px;top:3px;height:5px;width:2px;background:hsl(var(--ink));border-radius:0 1px 1px 0}
+.scroll{flex:1;overflow:hidden;padding:6px 18px 0;position:relative}
+.scroll::after{content:"";position:absolute;left:0;right:0;bottom:0;height:96px;background:linear-gradient(to top,hsl(var(--paper)),transparent);pointer-events:none}
+
+/* page header (shared) */
+.pg-kicker{font-size:11px;font-weight:800;text-transform:uppercase;letter-spacing:.18em;color:hsl(var(--ink-3))}
+.pg-title{font-size:29px;font-weight:800;letter-spacing:-.02em;line-height:1.05;margin-top:4px}
+.pg-sub{margin-top:6px;font-size:13.5px;color:hsl(var(--ink-3));line-height:1.4}
+.searchbar{margin-top:14px;height:42px;border-radius:14px;background:hsl(var(--card));border:1px solid hsl(var(--hairline));display:flex;align-items:center;gap:9px;padding:0 14px;color:hsl(var(--ink-3));font-size:14px}
+
+/* filter chips (shared) */
+.chips{display:flex;gap:8px;margin-top:16px;overflow:hidden}
+.chip{padding:8px 15px;border-radius:999px;font-size:12.5px;font-weight:700;white-space:nowrap;border:1px solid hsl(var(--hairline));background:hsl(var(--card));color:hsl(var(--ink-3))}
+.chip.on{background:hsl(var(--primary));color:#fff;border-color:hsl(var(--primary))}
+
+.sec-label{font-size:11px;font-weight:800;text-transform:uppercase;letter-spacing:.15em;color:hsl(var(--ink-3));margin:22px 0 11px}
+.day-label{font-size:12.5px;font-weight:700;color:hsl(var(--ink-2));margin:0 0 9px 2px}
+
+/* bottom nav (shared) */
+.bnav{position:absolute;left:14px;right:14px;bottom:14px;height:62px;border-radius:22px;background:hsl(var(--card)/.96);border:1px solid hsl(var(--hairline));box-shadow:var(--shadow-lg);display:flex;align-items:center;justify-content:space-around;z-index:30;backdrop-filter:blur(12px)}
+.bnav-i{display:flex;flex-direction:column;align-items:center;gap:4px;font-size:9.5px;font-weight:800;text-transform:uppercase;letter-spacing:.04em;color:hsl(var(--ink-3));flex:1}
+.bnav-i.on{color:hsl(var(--primary))}
+.bnav-i .icon{font-size:21px}
+.bnav-fab{position:absolute;top:-22px;left:50%;transform:translateX(-50%);width:58px;height:58px;border-radius:50%;background:hsl(var(--primary));color:#fff;display:flex;align-items:center;justify-content:center;box-shadow:0 8px 18px -4px hsl(var(--primary)/.6);border:3px solid hsl(var(--paper))}
+.bnav-fab .icon{font-size:25px}
+
+/* ================= DESKTOP FRAME ================= */
+.desktop{width:1180px;border-radius:16px;overflow:hidden;border:1px solid hsl(var(--hairline));box-shadow:0 30px 60px -24px rgba(40,30,20,.42),0 10px 22px -10px rgba(40,30,20,.28);background:hsl(var(--card))}
+.bbar{height:46px;background:hsl(var(--paper-2));border-bottom:1px solid hsl(var(--hairline));display:flex;align-items:center;padding:0 18px;gap:8px}
+.tl{width:12px;height:12px;border-radius:50%}
+.tl.r{background:#ec6a5e}.tl.y{background:#f4bf4f}.tl.g{background:#61c554}
+.urlbar{margin-left:18px;flex:1;max-width:520px;height:28px;border-radius:8px;background:hsl(var(--card));border:1px solid hsl(var(--hairline));display:flex;align-items:center;gap:8px;padding:0 12px;font-size:12.5px;color:hsl(var(--ink-3))}
+.dbody{display:flex;height:768px;background:hsl(var(--paper))}
+.sidebar{width:236px;flex:none;background:hsl(36 40% 98%);border-right:1px solid hsl(var(--hairline));padding:24px 16px;display:flex;flex-direction:column}
+.brand{display:flex;align-items:center;gap:10px;padding:0 8px 22px}
+.brand-mark{width:30px;height:30px;border-radius:9px;background:hsl(var(--primary));color:#fff;display:flex;align-items:center;justify-content:center;font-size:17px}
+.brand-name{font-family:'Fraunces',serif;font-size:23px;font-weight:600;letter-spacing:-.01em}
+.snav{display:flex;align-items:center;gap:12px;padding:11px 12px;border-radius:12px;font-size:14.5px;font-weight:600;color:hsl(var(--ink-2));margin-bottom:3px}
+.snav .icon{font-size:19px;color:hsl(var(--ink-3))}
+.snav.on{background:hsl(var(--primary)/.1);color:hsl(var(--primary))}
+.snav.on .icon{color:hsl(var(--primary))}
+.suser{margin-top:auto;display:flex;align-items:center;gap:10px;padding:10px 8px;border-top:1px solid hsl(var(--hairline))}
+.savatar{width:34px;height:34px;border-radius:50%;background:hsl(var(--sage)/.2);color:hsl(var(--primary));display:flex;align-items:center;justify-content:center;font-weight:800;font-size:14px}
+.dmain{flex:1;overflow:hidden;padding:30px 40px}
+.dmain-inner{max-width:1180px}
+.d-head{display:flex;justify-content:space-between;align-items:flex-start;gap:20px}
+.d-title{font-size:32px;font-weight:800;letter-spacing:-.02em;line-height:1.05}
+.d-searchbar{width:280px;height:42px;border-radius:14px;background:hsl(var(--card));border:1px solid hsl(var(--hairline));display:flex;align-items:center;gap:9px;padding:0 14px;color:hsl(var(--ink-3));font-size:14px}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+.grid3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:14px}
+
+/* generic small bits */
+.dot{width:3px;height:3px;border-radius:50%;background:hsl(var(--ink-3)/.5);display:inline-block}
+.muted{color:hsl(var(--ink-3))}
+
+/* ===================================================== */
+/* DESIGN 1 — SESSION LOG (Strong)                       */
+/* ===================================================== */
+.d1-card{position:relative;background:hsl(var(--card));border:1px solid hsl(var(--hairline));border-radius:18px;box-shadow:var(--shadow-sm);padding:15px 16px 15px 19px;overflow:hidden;margin-bottom:11px}
+.d1-card::before{content:"";position:absolute;left:0;top:0;bottom:0;width:5px;background:hsl(var(--c))}
+.d1-head{display:flex;justify-content:space-between;align-items:flex-start}
+.d1-type{font-size:10.5px;font-weight:800;text-transform:uppercase;letter-spacing:.12em;color:hsl(var(--cf))}
+.d1-title{font-size:18px;font-weight:800;letter-spacing:-.01em;margin-top:2px}
+.d1-title.done{text-decoration:line-through;color:hsl(var(--ink-3))}
+.d1-check{width:26px;height:26px;border-radius:50%;border:2px solid hsl(var(--hairline));display:flex;align-items:center;justify-content:center;color:hsl(var(--ink-3));flex:none}
+.d1-check.on{background:hsl(var(--success));border-color:hsl(var(--success));color:#fff}
+.d1-check .icon{font-size:15px}
+.d1-meta{display:flex;align-items:center;gap:9px;margin-top:9px;font-size:12px;font-weight:600;color:hsl(var(--ink-3))}
+.d1-meta .icon{font-size:13px;margin-right:3px;vertical-align:-.15em}
+.d1-meta b{color:hsl(var(--ink-2));font-weight:700}
+.d1-ex{margin-top:12px;border-top:1px solid hsl(var(--hairline));padding-top:4px}
+.d1-ex-row{display:flex;justify-content:space-between;align-items:center;padding:7px 0;font-size:13.5px;border-bottom:1px solid hsl(var(--hairline)/.6)}
+.d1-ex-row:last-child{border-bottom:0}
+.d1-ex-row .nm{font-weight:600;color:hsl(var(--ink))}
+.d1-ex-row .sr{font-weight:700;color:hsl(var(--ink-2));font-variant-numeric:tabular-nums}
+.d1-pr{display:inline-flex;align-items:center;gap:5px;margin-top:11px;font-size:11px;font-weight:800;color:hsl(var(--gold));background:hsl(38 70% 92%);padding:4px 9px;border-radius:999px}
+.d1-pr .icon{font-size:13px}
+.d1-week{background:hsl(var(--card));border:1px solid hsl(var(--hairline));border-radius:18px;box-shadow:var(--shadow-sm);padding:14px 16px;margin-top:16px}
+.d1-week-top{display:flex;justify-content:space-between;align-items:center;margin-bottom:12px}
+.d1-week-stat{font-size:13px;font-weight:700;color:hsl(var(--ink-2))}
+.d1-week-stat b{font-size:22px;color:hsl(var(--primary));font-weight:800}
+.d1-days{display:flex;gap:6px}
+.d1-day{flex:1;text-align:center}
+.d1-day span{font-size:9.5px;font-weight:800;color:hsl(var(--ink-3));display:block;margin-bottom:5px}
+.d1-day i{display:block;height:30px;border-radius:9px;background:hsl(var(--muted));display:flex;align-items:center;justify-content:center;color:hsl(var(--ink-3))}
+.d1-day.on i{background:hsl(var(--primary));color:#fff}
+
+/* ===================================================== */
+/* DESIGN 2 — ACTIVITY HERO (Apple Fitness)              */
+/* ===================================================== */
+.d2-hero{position:relative;background:linear-gradient(150deg,hsl(150 30% 22%),hsl(150 28% 30%));border-radius:24px;padding:20px 22px;color:#fff;overflow:hidden;box-shadow:var(--shadow-md)}
+.d2-hero-row{display:flex;justify-content:space-between;align-items:center}
+.d2-hero-k{font-size:11px;font-weight:800;text-transform:uppercase;letter-spacing:.16em;color:hsl(148 30% 80%)}
+.d2-hero-big{font-size:42px;font-weight:800;letter-spacing:-.03em;line-height:1;margin-top:6px}
+.d2-hero-big small{font-size:20px;font-weight:700;color:hsl(148 30% 80%)}
+.d2-hero-sub{font-size:13px;color:hsl(148 28% 82%);margin-top:8px;max-width:170px;line-height:1.4}
+.d2-ring{width:96px;height:96px;position:relative;flex:none}
+.d2-ring svg{transform:rotate(-90deg)}
+.d2-ring-label{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center}
+.d2-ring-label b{font-size:22px;font-weight:800;line-height:1}
+.d2-ring-label span{font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.1em;color:hsl(148 30% 80%);margin-top:2px}
+.d2-hdots{display:flex;gap:7px;margin-top:18px}
+.d2-hdots i{flex:1;height:6px;border-radius:999px;background:hsl(148 30% 50% / .4)}
+.d2-hdots i.on{background:hsl(83 60% 70%)}
+.d2-card{display:flex;align-items:center;gap:14px;background:hsl(var(--card));border:1px solid hsl(var(--hairline));border-radius:20px;box-shadow:var(--shadow-sm);padding:16px;margin-bottom:11px}
+.d2-disc{width:54px;height:54px;border-radius:17px;flex:none;display:flex;align-items:center;justify-content:center;background:hsl(var(--cb));color:hsl(var(--cf))}
+.d2-disc .icon{font-size:27px}
+.d2-main{flex:1;min-width:0}
+.d2-title{font-size:17.5px;font-weight:800;letter-spacing:-.01em}
+.d2-title.done{text-decoration:line-through;color:hsl(var(--ink-3))}
+.d2-sub{font-size:13px;color:hsl(var(--ink-3));margin-top:3px;font-weight:500}
+.d2-tail{flex:none;display:flex;flex-direction:column;align-items:flex-end;gap:7px}
+.d2-done{width:26px;height:26px;border-radius:50%;background:hsl(var(--success));color:#fff;display:flex;align-items:center;justify-content:center}
+.d2-done .icon{font-size:15px}
+.d2-chev{color:hsl(var(--ink-3));font-size:20px}
+
+/* ===================================================== */
+/* DESIGN 3 — COVER CARDS (Nike Training Club)           */
+/* ===================================================== */
+.d3-card{background:hsl(var(--card));border:1px solid hsl(var(--hairline));border-radius:22px;box-shadow:var(--shadow-md);overflow:hidden;margin-bottom:14px}
+.d3-cover{position:relative;height:118px;background:linear-gradient(135deg,hsl(var(--g1)),hsl(var(--g2)));padding:14px 16px;display:flex;flex-direction:column;justify-content:space-between;overflow:hidden}
+.d3-wm{position:absolute;right:-16px;bottom:-28px;font-size:140px;color:#fff;opacity:.16;line-height:0}
+.d3-cover-top{display:flex;justify-content:space-between;align-items:center;position:relative;z-index:2}
+.d3-type{font-size:10.5px;font-weight:800;text-transform:uppercase;letter-spacing:.14em;color:#fff;background:rgba(255,255,255,.22);padding:4px 10px;border-radius:999px;backdrop-filter:blur(4px)}
+.d3-dur{font-size:11.5px;font-weight:800;color:#fff;display:flex;align-items:center;gap:5px;background:rgba(0,0,0,.16);padding:4px 10px;border-radius:999px}
+.d3-dur .icon{font-size:13px}
+.d3-title{position:relative;z-index:2;font-size:23px;font-weight:800;color:#fff;letter-spacing:-.02em;text-shadow:0 1px 8px rgba(0,0,0,.18)}
+.d3-body{padding:13px 16px 15px}
+.d3-ex{display:flex;align-items:center;gap:11px;padding:7px 0;font-size:14px;border-bottom:1px solid hsl(var(--hairline)/.7)}
+.d3-ex:last-child{border-bottom:0}
+.d3-ex i{width:22px;height:22px;border-radius:7px;background:hsl(var(--cb));color:hsl(var(--cf));display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:800;font-style:normal;flex:none}
+.d3-ex .nm{flex:1;font-weight:600}
+.d3-ex b{font-weight:700;color:hsl(var(--ink-2));font-variant-numeric:tabular-nums}
+.d3-hero{position:relative;border-radius:22px;overflow:hidden;background:linear-gradient(135deg,hsl(14 60% 52%),hsl(28 82% 58%));padding:20px;color:#fff;box-shadow:var(--shadow-md)}
+.d3-hero .d3-wm{font-size:150px;opacity:.18}
+.d3-hero-k{font-size:11px;font-weight:800;text-transform:uppercase;letter-spacing:.15em;opacity:.85;position:relative;z-index:2}
+.d3-hero-t{font-size:26px;font-weight:800;letter-spacing:-.02em;margin-top:5px;position:relative;z-index:2}
+.d3-hero-s{font-size:13.5px;margin-top:7px;opacity:.92;position:relative;z-index:2}
+
+/* ===================================================== */
+/* DESIGN 4 — DIARY LIST (MyFitnessPal)                  */
+/* ===================================================== */
+.d4-card{background:hsl(var(--card));border:1px solid hsl(var(--hairline));border-radius:18px;box-shadow:var(--shadow-sm);overflow:hidden;margin-bottom:13px}
+.d4-dhead{display:flex;justify-content:space-between;align-items:baseline;padding:13px 16px 11px;border-bottom:1px solid hsl(var(--hairline))}
+.d4-dhead .dl{font-size:14px;font-weight:800;letter-spacing:-.01em}
+.d4-dhead .dm{font-size:11.5px;font-weight:600;color:hsl(var(--ink-3))}
+.d4-row{display:flex;align-items:center;gap:13px;padding:11px 16px;border-bottom:1px solid hsl(var(--hairline)/.7)}
+.d4-row:last-child{border-bottom:0}
+.d4-ic{width:40px;height:40px;border-radius:12px;flex:none;display:flex;align-items:center;justify-content:center;background:hsl(var(--cb));color:hsl(var(--cf))}
+.d4-ic .icon{font-size:21px}
+.d4-rmain{flex:1;min-width:0}
+.d4-rt{font-size:14.5px;font-weight:700;letter-spacing:-.01em}
+.d4-rt.done{text-decoration:line-through;color:hsl(var(--ink-3))}
+.d4-rs{font-size:12px;color:hsl(var(--ink-3));margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.d4-rmeta{display:flex;align-items:center;gap:8px;flex:none;font-size:12.5px;font-weight:700;color:hsl(var(--ink-2))}
+.d4-rmeta .chev{color:hsl(var(--ink-3)/.7);font-size:18px}
+.d4-rmeta .icon{font-size:18px}
+.d4-summary{display:flex;gap:10px;margin-top:2px}
+.d4-sumc{flex:1;background:hsl(var(--card));border:1px solid hsl(var(--hairline));border-radius:14px;padding:11px 13px;box-shadow:var(--shadow-sm)}
+.d4-sumc b{font-size:20px;font-weight:800;letter-spacing:-.02em}
+.d4-sumc span{display:block;font-size:10.5px;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:hsl(var(--ink-3));margin-top:2px}
+.d4-sumc .icon{font-size:15px;color:hsl(var(--primary))}
+
+/* ===================================================== */
+/* DESIGN 5 — STAT CARD (Hevy)                           */
+/* ===================================================== */
+.d5-card{background:hsl(var(--card));border:1px solid hsl(var(--hairline));border-radius:20px;box-shadow:var(--shadow-sm);padding:15px 16px;margin-bottom:12px}
+.d5-head{display:flex;align-items:center;gap:10px}
+.d5-chip{display:inline-flex;align-items:center;gap:6px;font-size:11px;font-weight:800;text-transform:uppercase;letter-spacing:.06em;color:hsl(var(--cf));background:hsl(var(--cb));padding:5px 10px;border-radius:999px;flex:none}
+.d5-chip .icon{font-size:14px}
+.d5-title{font-size:17px;font-weight:800;letter-spacing:-.01em;flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.d5-more{color:hsl(var(--ink-3));font-size:20px;flex:none}
+.d5-stats{display:grid;grid-template-columns:repeat(4,1fr);gap:1px;background:hsl(var(--hairline));border:1px solid hsl(var(--hairline));border-radius:13px;overflow:hidden;margin-top:13px}
+.d5-stat{background:hsl(var(--card));padding:10px 6px;text-align:center}
+.d5-stat b{font-size:17px;font-weight:800;letter-spacing:-.02em;display:block}
+.d5-stat span{font-size:9.5px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:hsl(var(--ink-3))}
+.d5-stat.hl b{color:hsl(var(--gold))}
+.d5-ex{margin-top:13px}
+.d5-ex-row{display:flex;align-items:center;gap:10px;padding:6px 0;font-size:13.5px}
+.d5-x{font-weight:800;color:hsl(var(--cf));font-variant-numeric:tabular-nums;min-width:26px}
+.d5-ex-row .nm{flex:1;font-weight:600}
+.d5-ex-row .bs{font-size:12px;font-weight:600;color:hsl(var(--ink-3));font-variant-numeric:tabular-nums}
+.d5-hero{display:grid;grid-template-columns:repeat(4,1fr);gap:10px}
+.d5-hcard{background:hsl(var(--card));border:1px solid hsl(var(--hairline));border-radius:16px;box-shadow:var(--shadow-sm);padding:13px}
+.d5-hcard .ic{width:32px;height:32px;border-radius:10px;background:hsl(var(--primary)/.1);color:hsl(var(--primary));display:flex;align-items:center;justify-content:center;font-size:17px;margin-bottom:9px}
+.d5-hcard .ic.gold{background:hsl(38 70% 92%);color:hsl(var(--gold))}
+.d5-hcard b{font-size:23px;font-weight:800;letter-spacing:-.02em;display:block}
+.d5-hcard span{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:hsl(var(--ink-3))}
+</style>
+</head>
+<body>
+
+<!-- icon sprite -->
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <symbol id="i-dumbbell" viewBox="0 0 24 24"><path d="M6.5 6.5 17.5 17.5"/><path d="M21 21l-1-1"/><path d="M3 3l1 1"/><path d="M18 22l4-4"/><path d="M2 6l4-4"/><path d="m5.5 5.5 3 3"/><path d="m15.5 15.5 3 3"/></symbol>
+  <symbol id="i-activity" viewBox="0 0 24 24"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></symbol>
+  <symbol id="i-figure" viewBox="0 0 24 24"><circle cx="12" cy="4.5" r="2"/><path d="M12 7v6"/><path d="m12 9-4 2.5"/><path d="m12 9 4 2.5"/><path d="m12 13-3 6"/><path d="m12 13 3 6"/></symbol>
+  <symbol id="i-ball" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 3a9 9 0 0 0 0 18"/><path d="M3.5 9c5 2.5 12 2.5 17 0"/><path d="M3.5 15c5-2.5 12-2.5 17 0"/></symbol>
+  <symbol id="i-clock" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3.5 2"/></symbol>
+  <symbol id="i-check" viewBox="0 0 24 24"><path d="M20 6 9 17l-5-5"/></symbol>
+  <symbol id="i-chev" viewBox="0 0 24 24"><path d="m9 6 6 6-6 6"/></symbol>
+  <symbol id="i-plus" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></symbol>
+  <symbol id="i-mic" viewBox="0 0 24 24"><rect x="9" y="2.5" width="6" height="11" rx="3"/><path d="M5.5 11a6.5 6.5 0 0 0 13 0"/><path d="M12 17.5V21"/></symbol>
+  <symbol id="i-search" viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></symbol>
+  <symbol id="i-more" viewBox="0 0 24 24"><circle cx="5" cy="12" r="1.4"/><circle cx="12" cy="12" r="1.4"/><circle cx="19" cy="12" r="1.4"/></symbol>
+  <symbol id="i-flame" viewBox="0 0 24 24"><path d="M12 3c1.5 3 4.5 4.5 4.5 8.5a4.5 4.5 0 0 1-9 0c0-1.2.4-2.2 1-3 .2 1.6 1.2 2 1.2 2 .6-2-1.2-5 1.3-7.5z"/></symbol>
+  <symbol id="i-trophy" viewBox="0 0 24 24"><path d="M7 4h10v5a5 5 0 0 1-10 0z"/><path d="M5 5H3v1.5A3 3 0 0 0 6 9.5"/><path d="M19 5h2v1.5a3 3 0 0 1-3 3"/><path d="M9.5 14.5h5"/><path d="M10 20h4"/><path d="M12 14v6"/></symbol>
+  <symbol id="i-home" viewBox="0 0 24 24"><path d="m3 10 9-7 9 7v9a2 2 0 0 1-2 2h-4v-6h-6v6H5a2 2 0 0 1-2-2z"/></symbol>
+  <symbol id="i-book" viewBox="0 0 24 24"><path d="M4 5a2 2 0 0 1 2-2h13v16H6a2 2 0 0 0-2 2z"/><path d="M4 19V5"/></symbol>
+  <symbol id="i-target" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="5"/><circle cx="12" cy="12" r="1.4"/></symbol>
+  <symbol id="i-trend" viewBox="0 0 24 24"><path d="M3 3v18h18"/><path d="m7 14 4-4 3 3 5-6"/></symbol>
+  <symbol id="i-settings" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19 12a7 7 0 0 0-.1-1.3l2-1.5-2-3.4-2.3 1a7 7 0 0 0-2.2-1.3L14 2h-4l-.4 2.5A7 7 0 0 0 7.4 5.8l-2.3-1-2 3.4 2 1.5A7 7 0 0 0 5 12c0 .4 0 .9.1 1.3l-2 1.5 2 3.4 2.3-1a7 7 0 0 0 2.2 1.3L10 22h4l.4-2.5a7 7 0 0 0 2.2-1.3l2.3 1 2-3.4-2-1.5c.1-.4.1-.9.1-1.3z"/></symbol>
+  <symbol id="i-weight" viewBox="0 0 24 24"><path d="M4 9v6M7.5 6.5v11M16.5 6.5v11M20 9v6M7.5 12h9"/></symbol>
+  <symbol id="i-layers" viewBox="0 0 24 24"><path d="m12 3 9 5-9 5-9-5z"/><path d="m3 13 9 5 9-5"/></symbol>
+</svg>
+
+<script>
+/* small helper: build a desktop sidebar */
+function sidebar(){return `
+  <div class="sidebar">
+    <div class="brand"><div class="brand-mark"><svg class="icon"><use href="#i-flame"/></svg></div><span class="brand-name">beme</span></div>
+    <div class="snav"><svg class="icon"><use href="#i-home"/></svg>Home</div>
+    <div class="snav on"><svg class="icon"><use href="#i-dumbbell"/></svg>Workouts</div>
+    <div class="snav"><svg class="icon"><use href="#i-book"/></svg>Journal</div>
+    <div class="snav"><svg class="icon"><use href="#i-target"/></svg>Goals</div>
+    <div class="snav"><svg class="icon"><use href="#i-trend"/></svg>Insights</div>
+    <div class="snav"><svg class="icon"><use href="#i-settings"/></svg>Settings</div>
+    <div class="suser"><div class="savatar">Y</div><div><div style="font-size:13px;font-weight:700">Yoni</div><div style="font-size:11px;color:hsl(var(--ink-3))">Free plan</div></div></div>
+  </div>`;}
+function statusbar(){return `
+  <div class="notch"></div>
+  <div class="statusbar"><span>9:41</span><span class="sb-right">5G<span class="sb-batt"></span></span></div>`;}
+function bnav(){return `
+  <div class="bnav">
+    <div class="bnav-i on"><svg class="icon"><use href="#i-dumbbell"/></svg>Body</div>
+    <div class="bnav-i"><svg class="icon"><use href="#i-home"/></svg>Home</div>
+    <div style="width:58px"></div>
+    <div class="bnav-i"><svg class="icon"><use href="#i-flame"/></svg>Energy</div>
+    <div class="bnav-i"><svg class="icon"><use href="#i-target"/></svg>Goals</div>
+    <div class="bnav-fab"><svg class="icon"><use href="#i-mic"/></svg></div>
+  </div>`;}
+function pageHead(){return `
+  <div class="pg-kicker">Body</div>
+  <div class="pg-title">Workouts</div>
+  <div class="pg-sub">Track strength, cardio, and weekly consistency.</div>
+  <div class="searchbar"><svg class="icon"><use href="#i-search"/></svg>Search workouts…</div>`;}
+function chips(){return `
+  <div class="chips"><span class="chip on">All</span><span class="chip">Strength</span><span class="chip">Cardio</span><span class="chip">Flexibility</span></div>`;}
+</script>
+
+<div id="gallery"></div>
+
+<script>
+const G = document.getElementById('gallery');
+
+/* ============ DESIGN 1 : SESSION LOG ============ */
+const d1_week = `
+  <div class="d1-week">
+    <div class="d1-week-top">
+      <div class="d1-week-stat">This week<br><b>3</b> / 4 workouts</div>
+      <div class="d1-week-stat" style="text-align:right">Volume<br><b>14.2k</b> kg</div>
+    </div>
+    <div class="d1-days">
+      ${['M','T','W','T','F','S','S'].map((d,i)=>`<div class="d1-day ${[0,2,4].includes(i)?'on':''}"><span>${d}</span><i>${[0,2,4].includes(i)?'<svg class=icon style="font-size:15px"><use href="#i-check"/></svg>':''}</i></div>`).join('')}
+    </div>
+  </div>`;
+function d1card(t,cls,title,type,dur,vol,ex,done,pr){return `
+  <div class="d1-card ${cls}">
+    <div class="d1-head"><div><div class="d1-type">${type}</div><div class="d1-title ${done?'done':''}">${title}</div></div>
+      <div class="d1-check ${done?'on':''}">${done?'<svg class=icon><use href="#i-check"/></svg>':''}</div></div>
+    <div class="d1-meta"><span><svg class=icon><use href="#i-clock"/></svg>${dur} min</span><span class="dot"></span><span><b>${ex.length}</b> exercises</span>${vol?`<span class="dot"></span><span><b>${vol}</b> kg</span>`:''}</div>
+    <div class="d1-ex">${ex.map(e=>`<div class="d1-ex-row"><span class="nm">${e[0]}</span><span class="sr">${e[1]}</span></div>`).join('')}</div>
+    ${pr?`<span class="d1-pr"><svg class=icon><use href="#i-trophy"/></svg>${pr}</span>`:''}
+  </div>`;}
+const push=['Push Day','t-strength','Strength',52,'4,250',[['Bench Press','4 × 8 · 80kg'],['Incline DB Press','3 × 10 · 28kg'],['Overhead Press','4 × 8 · 45kg']]];
+const leg=['Leg Day','t-strength','Strength',61,'7,100',[['Back Squat','5 × 5 · 100kg'],['Romanian Deadlift','4 × 8 · 70kg'],['Leg Press','3 × 12 · 160kg']]];
+const run=['5K Tempo Run','t-cardio','Cardio',28,'',[['Tempo Run','5.0 km · 5:36/km']]];
+const mob=['Mobility Flow','t-flex','Flexibility',20,'',[['Hip Opener','3 × 60s'],['Thoracic Rotation','2 × 12']]];
+
+G.insertAdjacentHTML('beforeend',`
+<div class="section" id="design-1">
+  <div class="cap"><div class="cap-row"><span class="cap-num">01</span><span class="cap-title">Session Log</span><span class="cap-insp">Inspired by · Strong</span></div>
+  <div class="cap-desc">A dense, gym-focused training log. Color-coded by workout type with a left accent bar, every card surfaces the numbers serious lifters care about — duration, total volume, and a clean set×rep×weight breakdown. Personal-record badges add motivation. Best if logging detail and progression matter most.</div></div>
+  <div class="devrow">
+    <div><div class="devlabel">Mobile</div>
+      <div class="phone"><div class="screen">${statusbar()}
+        <div class="scroll">${pageHead()}${d1_week}${chips()}
+          <div class="sec-label">Today</div>
+          ${d1card(0,'t-strength','Leg Day','Strength',61,'7,100',[['Back Squat','5 × 5 · 100kg'],['Romanian Deadlift','4 × 8 · 70kg'],['Leg Press','3 × 12 · 160kg']],false,'')}
+          <div class="sec-label">This week</div>
+          ${d1card(0,'t-strength','Push Day','Strength',52,'4,250',[['Bench Press','4 × 8 · 80kg'],['Incline DB Press','3 × 10 · 28kg'],['Overhead Press','4 × 8 · 45kg']],true,'New PR · Bench 80kg')}
+          ${d1card(0,'t-cardio','5K Tempo Run','Cardio',28,'',[['Tempo Run','5.0 km · 5:36/km']],true,'')}
+        </div>${bnav()}
+      </div></div>
+    </div>
+    <div style="flex:1"><div class="devlabel">Desktop</div>
+      <div class="desktop"><div class="bbar"><span class="tl r"></span><span class="tl y"></span><span class="tl g"></span><div class="urlbar"><svg class=icon style="font-size:13px"><use href="#i-search"/></svg>app.beme.fit/body</div></div>
+        <div class="dbody">${sidebar()}
+          <div class="dmain"><div class="dmain-inner">
+            <div class="d-head"><div><div class="pg-kicker">Body</div><div class="d-title">Workouts</div></div><div class="d-searchbar"><svg class=icon><use href="#i-search"/></svg>Search workouts…</div></div>
+            <div style="margin-top:18px">${d1_week.replace('d1-week','d1-week" style="margin-top:0')}</div>
+            ${chips()}
+            <div class="sec-label">This week</div>
+            <div class="grid2">
+              ${d1card(0,'t-strength','Leg Day','Strength',61,'7,100',[['Back Squat','5 × 5 · 100kg'],['Romanian Deadlift','4 × 8 · 70kg'],['Leg Press','3 × 12 · 160kg'],['Calf Raise','4 × 15 · 40kg']],false,'')}
+              ${d1card(0,'t-strength','Push Day','Strength',52,'4,250',[['Bench Press','4 × 8 · 80kg'],['Incline DB Press','3 × 10 · 28kg'],['Overhead Press','4 × 8 · 45kg']],true,'New PR · Bench 80kg')}
+              ${d1card(0,'t-cardio','5K Tempo Run','Cardio',28,'',[['Tempo Run','5.0 km · 5:36/km']],true,'')}
+              ${d1card(0,'t-flex','Mobility Flow','Flexibility',20,'',[['Hip Opener','3 × 60s'],['Thoracic Rotation','2 × 12']],true,'')}
+            </div>
+          </div></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>`);
+
+/* ============ DESIGN 2 : ACTIVITY HERO ============ */
+const d2hero=`
+  <div class="d2-hero">
+    <div class="d2-hero-row">
+      <div><div class="d2-hero-k">This week</div><div class="d2-hero-big">3<small> / 4</small></div><div class="d2-hero-sub">One more session to hit your weekly goal 💪</div></div>
+      <div class="d2-ring"><svg width="96" height="96" viewBox="0 0 100 100"><circle cx="50" cy="50" r="42" fill="none" stroke="hsl(150 30% 50% / .35)" stroke-width="9"/><circle cx="50" cy="50" r="42" fill="none" stroke="hsl(83 60% 70%)" stroke-width="9" stroke-linecap="round" stroke-dasharray="264" stroke-dashoffset="66"/></svg><div class="d2-ring-label"><b>75%</b><span>Goal</span></div></div>
+    </div>
+    <div class="d2-hdots">${[1,0,1,0,1,0,0].map(o=>`<i class="${o?'on':''}"></i>`).join('')}</div>
+  </div>`;
+function d2card(cls,icon,title,sub,done){return `
+  <div class="d2-card ${cls}">
+    <div class="d2-disc"><svg class=icon><use href="#i-${icon}"/></svg></div>
+    <div class="d2-main"><div class="d2-title ${done?'done':''}">${title}</div><div class="d2-sub">${sub}</div></div>
+    <div class="d2-tail">${done?'<div class="d2-done"><svg class=icon><use href="#i-check"/></svg></div>':'<svg class="d2-chev icon"><use href="#i-chev"/></svg>'}</div>
+  </div>`;}
+
+G.insertAdjacentHTML('beforeend',`
+<div class="section" id="design-2">
+  <div class="cap"><div class="cap-row"><span class="cap-num">02</span><span class="cap-title">Activity Hero</span><span class="cap-insp">Inspired by · Apple Fitness</span></div>
+  <div class="cap-desc">Calm, premium and spacious. A bold hero ring frames your weekly progress, and each workout collapses to a single clean line behind a soft tinted type-icon — large touch targets, generous whitespace, minimal numbers. Best for a polished consumer feel that prioritises glance-ability over detail.</div></div>
+  <div class="devrow">
+    <div><div class="devlabel">Mobile</div>
+      <div class="phone"><div class="screen">${statusbar()}
+        <div class="scroll">${pageHead()}<div style="margin-top:16px">${d2hero}</div>${chips()}
+          <div class="sec-label">Today</div>
+          ${d2card('t-strength','dumbbell','Leg Day','5 exercises • 61 min',false)}
+          <div class="sec-label">This week</div>
+          ${d2card('t-strength','dumbbell','Push Day','5 exercises • 52 min',true)}
+          ${d2card('t-cardio','activity','5K Tempo Run','5.0 km • 28 min',true)}
+        </div>${bnav()}
+      </div></div>
+    </div>
+    <div style="flex:1"><div class="devlabel">Desktop</div>
+      <div class="desktop"><div class="bbar"><span class="tl r"></span><span class="tl y"></span><span class="tl g"></span><div class="urlbar"><svg class=icon style="font-size:13px"><use href="#i-search"/></svg>app.beme.fit/body</div></div>
+        <div class="dbody">${sidebar()}
+          <div class="dmain"><div class="dmain-inner">
+            <div class="d-head"><div><div class="pg-kicker">Body</div><div class="d-title">Workouts</div></div><div class="d-searchbar"><svg class=icon><use href="#i-search"/></svg>Search workouts…</div></div>
+            <div style="margin-top:18px">${d2hero}</div>
+            ${chips()}
+            <div class="sec-label">This week</div>
+            <div class="grid2">
+              ${d2card('t-strength','dumbbell','Leg Day','5 exercises • 61 min',false)}
+              ${d2card('t-strength','dumbbell','Push Day','5 exercises • 52 min',true)}
+              ${d2card('t-cardio','activity','5K Tempo Run','5.0 km • 28 min',true)}
+              ${d2card('t-flex','figure','Mobility Flow','4 exercises • 20 min',true)}
+              ${d2card('t-strength','dumbbell','Pull Day','6 exercises • 48 min',true)}
+              ${d2card('t-sports','ball','5-a-side Football','Match • 60 min',true)}
+            </div>
+          </div></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>`);
+
+/* ============ DESIGN 3 : COVER CARDS ============ */
+function d3card(cls,icon,type,title,dur,ex){return `
+  <div class="d3-card ${cls}">
+    <div class="d3-cover"><svg class="d3-wm icon"><use href="#i-${icon}"/></svg>
+      <div class="d3-cover-top"><span class="d3-type">${type}</span><span class="d3-dur"><svg class=icon><use href="#i-clock"/></svg>${dur} min</span></div>
+      <div class="d3-title">${title}</div></div>
+    <div class="d3-body">${ex.map((e,i)=>`<div class="d3-ex"><i>${i+1}</i><span class="nm">${e[0]}</span><b>${e[1]}</b></div>`).join('')}</div>
+  </div>`;}
+
+G.insertAdjacentHTML('beforeend',`
+<div class="section" id="design-3">
+  <div class="cap"><div class="cap-row"><span class="cap-num">03</span><span class="cap-title">Cover Cards</span><span class="cap-insp">Inspired by · Nike Training Club</span></div>
+  <div class="cap-desc">Bold, energetic and visual. Every workout gets a vivid gradient cover keyed to its type, with the title set large over a watermark icon and exercises listed cleanly below. The most expressive option — great for motivation and supporting real cover photos later. Trades a little density for impact.</div></div>
+  <div class="devrow">
+    <div><div class="devlabel">Mobile</div>
+      <div class="phone"><div class="screen">${statusbar()}
+        <div class="scroll">${pageHead()}
+          <div style="margin-top:16px" class="d3-hero"><svg class="d3-wm icon"><use href="#i-flame"/></svg><div class="d3-hero-k">This week</div><div class="d3-hero-t">3 of 4 done</div><div class="d3-hero-s">1,840 kcal burned • 141 min trained</div></div>
+          ${chips()}
+          <div class="sec-label">This week</div>
+          ${d3card('t-strength','dumbbell','Strength','Push Day',52,[['Bench Press','4×8'],['Incline DB Press','3×10'],['Overhead Press','4×8']])}
+          ${d3card('t-cardio','activity','Cardio','5K Tempo Run',28,[['Tempo Run','5.0 km']])}
+        </div>${bnav()}
+      </div></div>
+    </div>
+    <div style="flex:1"><div class="devlabel">Desktop</div>
+      <div class="desktop"><div class="bbar"><span class="tl r"></span><span class="tl y"></span><span class="tl g"></span><div class="urlbar"><svg class=icon style="font-size:13px"><use href="#i-search"/></svg>app.beme.fit/body</div></div>
+        <div class="dbody">${sidebar()}
+          <div class="dmain"><div class="dmain-inner">
+            <div class="d-head"><div><div class="pg-kicker">Body</div><div class="d-title">Workouts</div></div><div class="d-searchbar"><svg class=icon><use href="#i-search"/></svg>Search workouts…</div></div>
+            <div style="margin-top:18px" class="d3-hero"><svg class="d3-wm icon"><use href="#i-flame"/></svg><div class="d3-hero-k">This week</div><div class="d3-hero-t">3 of 4 workouts done</div><div class="d3-hero-s">1,840 kcal burned • 141 min trained • 2 PRs</div></div>
+            ${chips()}
+            <div class="sec-label">This week</div>
+            <div class="grid3">
+              ${d3card('t-strength','dumbbell','Strength','Push Day',52,[['Bench Press','4×8'],['Incline DB Press','3×10'],['Overhead Press','4×8']])}
+              ${d3card('t-cardio','activity','Cardio','5K Tempo Run',28,[['Tempo Run','5.0 km'],['Cooldown','5 min']])}
+              ${d3card('t-strength','dumbbell','Strength','Leg Day',61,[['Back Squat','5×5'],['Romanian Deadlift','4×8'],['Leg Press','3×12']])}
+              ${d3card('t-flex','figure','Flexibility','Mobility Flow',20,[['Hip Opener','3×60s'],['Thoracic Rotation','2×12']])}
+              ${d3card('t-sports','ball','Sports','5-a-side',60,[['Match Play','60 min']])}
+              ${d3card('t-strength','dumbbell','Strength','Pull Day',48,[['Deadlift','3×5'],['Pull-ups','4×8'],['Barbell Row','4×10']])}
+            </div>
+          </div></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>`);
+
+/* ============ DESIGN 4 : DIARY LIST ============ */
+function d4row(cls,icon,title,sub,dur,done){return `
+  <div class="d4-row ${cls}"><div class="d4-ic"><svg class=icon><use href="#i-${icon}"/></svg></div>
+    <div class="d4-rmain"><div class="d4-rt ${done?'done':''}">${title}</div><div class="d4-rs">${sub}</div></div>
+    <div class="d4-rmeta">${dur} min<svg class="chev icon"><use href="#i-chev"/></svg></div></div>`;}
+function d4day(label,meta,rows){return `
+  <div class="d4-card"><div class="d4-dhead"><span class="dl">${label}</span><span class="dm">${meta}</span></div>${rows}</div>`;}
+const d4sum=`
+  <div class="d4-summary">
+    <div class="d4-sumc"><svg class=icon><use href="#i-flame"/></svg><b>3</b><span>This week</span></div>
+    <div class="d4-sumc"><svg class=icon><use href="#i-clock"/></svg><b>141</b><span>Minutes</span></div>
+    <div class="d4-sumc"><svg class=icon><use href="#i-weight"/></svg><b>14.2k</b><span>Volume kg</span></div>
+  </div>`;
+
+G.insertAdjacentHTML('beforeend',`
+<div class="section" id="design-4">
+  <div class="cap"><div class="cap-row"><span class="cap-num">04</span><span class="cap-title">Diary List</span><span class="cap-insp">Inspired by · MyFitnessPal</span></div>
+  <div class="cap-desc">Ultra-scannable and efficient. Workouts are grouped into day cards as tight rows — type icon, title, a muted exercise summary, duration and chevron. Per-day totals add context. The most information-dense option: ideal once a user has lots of history and wants to scan weeks at a glance.</div></div>
+  <div class="devrow">
+    <div><div class="devlabel">Mobile</div>
+      <div class="phone"><div class="screen">${statusbar()}
+        <div class="scroll">${pageHead()}<div style="margin-top:16px">${d4sum}</div>${chips()}
+          <div class="sec-label">This week</div>
+          ${d4day('Today','1 workout • 61 min', d4row('t-strength','dumbbell','Leg Day','Squat, RDL, Leg Press +1',61,false))}
+          ${d4day('Wednesday, Jun 5','2 workouts • 80 min',
+            d4row('t-strength','dumbbell','Push Day','Bench, Incline DB, OHP +2',52,true)+
+            d4row('t-cardio','activity','5K Tempo Run','Tempo Run • 5.0 km',28,true))}
+          ${d4day('Monday, Jun 3','1 workout • 20 min', d4row('t-flex','figure','Mobility Flow','Hip Opener, T-Rotation',20,true))}
+        </div>${bnav()}
+      </div></div>
+    </div>
+    <div style="flex:1"><div class="devlabel">Desktop</div>
+      <div class="desktop"><div class="bbar"><span class="tl r"></span><span class="tl y"></span><span class="tl g"></span><div class="urlbar"><svg class=icon style="font-size:13px"><use href="#i-search"/></svg>app.beme.fit/body</div></div>
+        <div class="dbody">${sidebar()}
+          <div class="dmain"><div class="dmain-inner">
+            <div class="d-head"><div><div class="pg-kicker">Body</div><div class="d-title">Workouts</div></div><div class="d-searchbar"><svg class=icon><use href="#i-search"/></svg>Search workouts…</div></div>
+            <div style="margin-top:18px">${d4sum}</div>
+            ${chips()}
+            <div class="sec-label">This week</div>
+            <div class="grid2" style="align-items:start">
+              <div>
+                ${d4day('Today','1 workout • 61 min', d4row('t-strength','dumbbell','Leg Day','Back Squat, RDL, Leg Press, Calf Raise',61,false))}
+                ${d4day('Wednesday, Jun 5','2 workouts • 80 min',
+                  d4row('t-strength','dumbbell','Push Day','Bench, Incline DB, OHP, Cable Fly, Pushdown',52,true)+
+                  d4row('t-cardio','activity','5K Tempo Run','Tempo Run • 5.0 km • 5:36/km',28,true))}
+              </div>
+              <div>
+                ${d4day('Monday, Jun 3','2 workouts • 68 min',
+                  d4row('t-strength','dumbbell','Pull Day','Deadlift, Pull-ups, Barbell Row, Face Pull',48,true)+
+                  d4row('t-flex','figure','Mobility Flow','Hip Opener, Thoracic Rotation',20,true))}
+                ${d4day('Sunday, Jun 2','1 workout • 60 min', d4row('t-sports','ball','5-a-side Football','Match play',60,true))}
+              </div>
+            </div>
+          </div></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>`);
+
+/* ============ DESIGN 5 : STAT CARD ============ */
+function d5card(cls,icon,type,title,stats,ex){return `
+  <div class="d5-card ${cls}">
+    <div class="d5-head"><span class="d5-chip"><svg class=icon><use href="#i-${icon}"/></svg>${type}</span><div class="d5-title">${title}</div><svg class="d5-more icon"><use href="#i-more"/></svg></div>
+    <div class="d5-stats">${stats.map(s=>`<div class="d5-stat ${s[2]?'hl':''}"><b>${s[0]}</b><span>${s[1]}</span></div>`).join('')}</div>
+    <div class="d5-ex">${ex.map(e=>`<div class="d5-ex-row"><span class="d5-x">${e[0]}</span><span class="nm">${e[1]}</span><span class="bs">${e[2]}</span></div>`).join('')}</div>
+  </div>`;}
+
+G.insertAdjacentHTML('beforeend',`
+<div class="section" id="design-5">
+  <div class="cap"><div class="cap-row"><span class="cap-num">05</span><span class="cap-title">Stat Card</span><span class="cap-insp">Inspired by · Hevy</span></div>
+  <div class="cap-desc">Modern and analytical. A type chip + menu header tops each card, followed by a four-up stat band (duration, volume, sets, PRs) and an "n × exercise" list with the best set. The hero turns the week into four KPI tiles. Best if you want a contemporary, data-rich product that still feels clean.</div></div>
+  <div class="devrow">
+    <div><div class="devlabel">Mobile</div>
+      <div class="phone"><div class="screen">${statusbar()}
+        <div class="scroll">${pageHead()}
+          <div style="margin-top:16px" class="d5-hero">
+            <div class="d5-hcard"><div class="ic"><svg class=icon><use href="#i-flame"/></svg></div><b>3</b><span>Workouts</span></div>
+            <div class="d5-hcard"><div class="ic"><svg class=icon><use href="#i-clock"/></svg></div><b>141</b><span>Minutes</span></div>
+            <div class="d5-hcard"><div class="ic"><svg class=icon><use href="#i-weight"/></svg></div><b>14k</b><span>Volume</span></div>
+            <div class="d5-hcard"><div class="ic gold"><svg class=icon><use href="#i-trophy"/></svg></div><b>2</b><span>PRs</span></div>
+          </div>
+          ${chips()}
+          <div class="sec-label">This week</div>
+          ${d5card('t-strength','dumbbell','Strength','Push Day',[['52m','Time'],['4,250','Volume'],['19','Sets'],['2','PRs',true]],[['4×','Bench Press','80 kg'],['3×','Incline DB Press','28 kg'],['4×','Overhead Press','45 kg']])}
+          ${d5card('t-cardio','activity','Cardio','5K Tempo Run',[['28m','Time'],['5.0','km'],['172','Avg HR'],['—','PRs']],[['1×','Tempo Run','5:36/km']])}
+        </div>${bnav()}
+      </div></div>
+    </div>
+    <div style="flex:1"><div class="devlabel">Desktop</div>
+      <div class="desktop"><div class="bbar"><span class="tl r"></span><span class="tl y"></span><span class="tl g"></span><div class="urlbar"><svg class=icon style="font-size:13px"><use href="#i-search"/></svg>app.beme.fit/body</div></div>
+        <div class="dbody">${sidebar()}
+          <div class="dmain"><div class="dmain-inner">
+            <div class="d-head"><div><div class="pg-kicker">Body</div><div class="d-title">Workouts</div></div><div class="d-searchbar"><svg class=icon><use href="#i-search"/></svg>Search workouts…</div></div>
+            <div style="margin-top:18px" class="d5-hero">
+              <div class="d5-hcard"><div class="ic"><svg class=icon><use href="#i-flame"/></svg></div><b>3</b><span>Workouts</span></div>
+              <div class="d5-hcard"><div class="ic"><svg class=icon><use href="#i-clock"/></svg></div><b>141</b><span>Minutes</span></div>
+              <div class="d5-hcard"><div class="ic"><svg class=icon><use href="#i-weight"/></svg></div><b>14.2k</b><span>Volume kg</span></div>
+              <div class="d5-hcard"><div class="ic gold"><svg class=icon><use href="#i-trophy"/></svg></div><b>2</b><span>PRs</span></div>
+            </div>
+            ${chips()}
+            <div class="sec-label">This week</div>
+            <div class="grid2">
+              ${d5card('t-strength','dumbbell','Strength','Push Day',[['52m','Time'],['4,250','Volume'],['19','Sets'],['2','PRs',true]],[['4×','Bench Press','80 kg'],['3×','Incline DB Press','28 kg'],['4×','Overhead Press','45 kg']])}
+              ${d5card('t-strength','dumbbell','Strength','Leg Day',[['61m','Time'],['7,100','Volume'],['16','Sets'],['1','PRs',true]],[['5×','Back Squat','100 kg'],['4×','Romanian Deadlift','70 kg'],['3×','Leg Press','160 kg']])}
+              ${d5card('t-cardio','activity','Cardio','5K Tempo Run',[['28m','Time'],['5.0','km'],['172','Avg HR'],['—','PRs']],[['1×','Tempo Run','5:36/km']])}
+              ${d5card('t-flex','figure','Flexibility','Mobility Flow',[['20m','Time'],['—','Volume'],['9','Sets'],['—','PRs']],[['3×','Hip Opener','60 s'],['2×','Thoracic Rotation','12 reps']])}
+            </div>
+          </div></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>`);
+</script>
+</body>
+</html>
