@@ -131,7 +131,7 @@ function EditableSetValueInput({
         setDraft(String(normalized));
         onValueChange(normalized);
       }}
-      className="h-9 border-0 bg-transparent px-0 text-center text-sm font-extrabold tabular-nums text-foreground shadow-none focus-visible:ring-1 focus-visible:ring-primary"
+      className="h-9 w-full min-w-0 border-0 bg-transparent px-1 text-center text-sm font-extrabold tabular-nums text-foreground shadow-none focus-visible:ring-1 focus-visible:ring-primary"
       aria-label={ariaLabel}
     />
   );
@@ -698,7 +698,7 @@ export function WorkoutModal({ open, onOpenChange, onSave, workout }: WorkoutMod
                     )}
                   </div>
                   <div className="grid grid-cols-2 gap-4">
-                    <div>
+                    <div className="min-w-0">
                       <Label htmlFor="type">Type</Label>
                       <Controller
                         name="type"
@@ -719,7 +719,7 @@ export function WorkoutModal({ open, onOpenChange, onSave, workout }: WorkoutMod
                         )}
                       />
                     </div>
-                    <div>
+                    <div className="min-w-0">
                       <Label htmlFor="duration">Duration (min)</Label>
                       <Input
                         id="duration"
@@ -828,7 +828,7 @@ export function WorkoutModal({ open, onOpenChange, onSave, workout }: WorkoutMod
                                   <span className="flex h-7 w-7 items-center justify-center rounded-md bg-muted text-xs font-bold text-muted-foreground">{i + 1}</span>
 
                                   {/* Weight cell */}
-                                  <div className="flex items-center overflow-hidden rounded-lg border border-border bg-background">
+                                  <div className="flex min-w-0 items-center overflow-hidden rounded-lg border border-border bg-background">
                                     <button
                                       type="button"
                                       className="flex h-9 w-7 items-center justify-center text-muted-foreground transition-colors hover:bg-muted"
@@ -854,7 +854,7 @@ export function WorkoutModal({ open, onOpenChange, onSave, workout }: WorkoutMod
                                   </div>
 
                                   {/* Reps cell */}
-                                  <div className="flex items-center overflow-hidden rounded-lg border border-border bg-background">
+                                  <div className="flex min-w-0 items-center overflow-hidden rounded-lg border border-border bg-background">
                                     <button
                                       type="button"
                                       className="flex h-9 w-7 items-center justify-center text-muted-foreground transition-colors hover:bg-muted"
@@ -928,21 +928,22 @@ export function WorkoutModal({ open, onOpenChange, onSave, workout }: WorkoutMod
               </div>
 
               <DialogFooter className="mt-6">
-                <div className="flex justify-between w-full">
-                    <Button
-                      type="button"
-                      variant="outline"
-                      onClick={saveAsTemplate}
-                      disabled={!watchedTitle?.trim() || (watchedExercises?.length ?? 0) === 0}
-                    >
-                      <Save className="w-4 h-4 mr-1" />
-                      Save as Template
-                    </Button>
-                  <div className="flex gap-2 ml-auto">
-                    <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
+                <div className="flex w-full flex-col-reverse gap-2 sm:flex-row sm:items-center sm:justify-between">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={saveAsTemplate}
+                    disabled={!watchedTitle?.trim() || (watchedExercises?.length ?? 0) === 0}
+                    className="w-full sm:w-auto"
+                  >
+                    <Save className="w-4 h-4 mr-1" />
+                    Save as Template
+                  </Button>
+                  <div className="flex flex-col-reverse gap-2 sm:flex-row">
+                    <Button type="button" variant="outline" onClick={() => onOpenChange(false)} className="w-full sm:w-auto">
                       Cancel
                     </Button>
-                    <Button type="submit" disabled={!isValid}>
+                    <Button type="submit" disabled={!isValid} className="w-full sm:w-auto">
                       {workout ? 'Update' : 'Add'} Workout
                     </Button>
                   </div>
