@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useMemo } from 'react';
 import { useForm, Controller, useFieldArray } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { Workout, Exercise, WorkoutType, WORKOUT_TYPES } from '@/types/workout';
@@ -21,13 +21,14 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { Plus, Minus, Trash2, Copy, Save, X, Pencil, Check, Dumbbell } from 'lucide-react';
+import { Plus, Minus, Trash2, Copy, Save, X, Pencil, Check, Dumbbell, Timer } from 'lucide-react';
 import { STORAGE_KEYS, storage } from '@/lib/storage';
 import { toLocalDateString, parseLocalDateString } from '@/lib/dateRanges';
 import { toast } from 'sonner';
 import { useSettings } from '@/hooks/useSettings';
 import { cn, formatDate, getWeightUnit } from '@/lib/utils';
 import { useExercises, type CatalogExercise } from '@/hooks/useExercises';
+import { useWorkouts } from '@/hooks/useWorkouts';
 import { ImagePlaceholder } from '@/components/shared/ImagePlaceholder';
 import { ImageLightbox } from '@/components/shared/ImageLightbox';
 
@@ -61,6 +62,67 @@ function getSetRows(ex: Exercise): Array<{ reps: number; weight: number | undefi
 
 function exerciseVolume(ex: Exercise): number {
   return getSetRows(ex).reduce((sum, row) => sum + (row.weight ?? 0) * (row.reps ?? 0), 0);
+}
+
+/** Compact "5×5 · 100kg" (or a per-set list) used for the "Last time" hint. */
+function summarizeSets(ex: Exercise, unit: string): string {
+  const rows = getSetRows(ex);
+  if (rows.length === 0) return '';
+  const sameWeight = rows.every((r) => r.weight === rows[0].weight);
+  const sameReps = rows.every((r) => r.reps === rows[0].reps);
+  if (sameWeight && sameReps) {
+    return `${rows.length}×${rows[0].reps}${rows[0].weight != null ? ` · ${rows[0].weight}${unit}` : ''}`;
+  }
+  return rows.map((r) => (r.weight != null ? `${r.weight}${unit}×${r.reps}` : `${r.reps}`)).join(', ');
+}
+
+/** Lightweight rest timer for the editor — client-side only, not persisted. */
+function RestTimer() {
+  const [remaining, setRemaining] = useState<number | null>(null);
+
+  useEffect(() => {
+    if (remaining === null) return;
+    if (remaining <= 0) {
+      toast.success('Rest complete');
+      setRemaining(null);
+      return;
+    }
+    const id = setTimeout(() => setRemaining((r) => (r === null ? null : r - 1)), 1000);
+    return () => clearTimeout(id);
+  }, [remaining]);
+
+  const fmt = (s: number) => `${Math.floor(s / 60)}:${String(s % 60).padStart(2, '0')}`;
+
+  return (
+    <div className="flex items-center gap-2">
+      <span className="inline-flex items-center gap-1 text-[11px] font-bold uppercase tracking-wide text-muted-foreground">
+        <Timer className="h-3.5 w-3.5" />
+        Rest
+      </span>
+      {remaining === null ? (
+        [60, 90, 120].map((s) => (
+          <button
+            key={s}
+            type="button"
+            onClick={() => setRemaining(s)}
+            className="rounded-full border border-border bg-card px-2.5 py-1 text-[11px] font-bold tabular-nums text-muted-foreground transition-colors hover:border-primary hover:text-primary"
+          >
+            {fmt(s)}
+          </button>
+        ))
+      ) : (
+        <button
+          type="button"
+          onClick={() => setRemaining(null)}
+          className="inline-flex items-center gap-1.5 rounded-full bg-primary/10 px-3 py-1 text-sm font-extrabold tabular-nums text-primary"
+          aria-label={`Rest timer: ${fmt(remaining)} remaining, tap to stop`}
+        >
+          {fmt(remaining)}
+          <X className="h-3.5 w-3.5 opacity-70" />
+        </button>
+      )}
+    </div>
+  );
 }
 
 const defaultExercise: WorkoutFormValues['exercises'][0] = {
@@ -250,14 +312,18 @@ function WorkoutDetailView({
   workout,
   unit,
   dateLabel,
+  dateFormat,
   getImageUrl,
+  getPrevious,
   onEdit,
   onLightbox,
 }: {
   workout: Workout;
   unit: string;
   dateLabel: string;
+  dateFormat: string;
   getImageUrl: (name: string) => string | undefined;
+  getPrevious: (name: string) => { date: Date; exercise: Exercise } | undefined;
   onEdit: () => void;
   onLightbox: (img: { src: string; alt: string }) => void;
 }) {
@@ -305,6 +371,7 @@ function WorkoutDetailView({
         {workout.exercises.map((ex, idx) => {
           const rows = getSetRows(ex);
           const imageUrl = ex.name ? getImageUrl(ex.name) : undefined;
+          const prev = getPrevious(ex.name);
           return (
             <div key={idx} className="rounded-2xl border border-border bg-card p-3 shadow-card">
               <div className="flex items-center gap-3">
@@ -323,6 +390,11 @@ function WorkoutDetailView({
                     {ex.sets} {ex.sets === 1 ? 'set' : 'sets'}
                     {exerciseVolume(ex) > 0 ? ` · ${exerciseVolume(ex).toLocaleString()} ${unit}` : ''}
                   </p>
+                  {prev && (
+                    <p className="mt-0.5 truncate text-[11px] text-muted-foreground">
+                      <span className="font-bold uppercase tracking-wide">Last</span> {formatDate(prev.date, dateFormat)} · {summarizeSets(prev.exercise, unit)}
+                    </p>
+                  )}
                 </div>
               </div>
               <table className="mt-2 w-full">
@@ -371,9 +443,27 @@ export function WorkoutModal({ open, onOpenChange, onSave, workout }: WorkoutMod
   const unit = getWeightUnit(settings.units);
   const [templates, setTemplates] = useState<WorkoutTemplate[]>([]);
   const { exercises: catalogExercises, getImageUrl } = useExercises();
+  const { workouts } = useWorkouts();
   const [lightboxImage, setLightboxImage] = useState<{ src: string; alt: string } | null>(null);
   // Existing workouts open in a read-only view first; new workouts open straight into the editor.
   const [mode, setMode] = useState<'view' | 'edit'>(workout ? 'view' : 'edit');
+
+  // Most recent prior performance of each exercise (by name), for the "Last time" hint.
+  const previousByName = useMemo(() => {
+    const map = new Map<string, { date: Date; exercise: Exercise }>();
+    [...workouts]
+      .filter((w) => w.id !== workout?.id)
+      .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
+      .forEach((w) => {
+        w.exercises.forEach((ex) => {
+          const key = ex.name.trim().toLowerCase();
+          if (key && !map.has(key)) map.set(key, { date: new Date(w.date), exercise: ex });
+        });
+      });
+    return map;
+  }, [workouts, workout?.id]);
+  const getPrevious = (name: string | undefined) =>
+    name ? previousByName.get(name.trim().toLowerCase()) : undefined;
 
   const {
     register,
@@ -637,7 +727,9 @@ export function WorkoutModal({ open, onOpenChange, onSave, workout }: WorkoutMod
             workout={workout}
             unit={unit}
             dateLabel={formatDate(workout.date, settings.dateFormat)}
+            dateFormat={settings.dateFormat}
             getImageUrl={getImageUrl}
+            getPrevious={getPrevious}
             onEdit={() => setMode('edit')}
             onLightbox={setLightboxImage}
           />
@@ -758,6 +850,9 @@ export function WorkoutModal({ open, onOpenChange, onSave, workout }: WorkoutMod
                       Add Exercise
                     </Button>
                   </div>
+                  <div className="mb-3 flex items-center gap-2 rounded-xl border border-border bg-muted/40 px-3 py-2">
+                    <RestTimer />
+                  </div>
                   <div className="space-y-3">
                     {fields.map((field, idx) => {
                       const setsCount = Math.min(20, Math.max(1, Number(watchedExercises?.[idx]?.sets) || 1));
@@ -767,6 +862,7 @@ export function WorkoutModal({ open, onOpenChange, onSave, workout }: WorkoutMod
                       const weightError = errors.exercises?.[idx]?.weightPerSet;
                       const exerciseName = watchedExercises?.[idx]?.name;
                       const exerciseImageUrl = exerciseName ? getImageUrl(exerciseName) : undefined;
+                      const prevForEx = getPrevious(exerciseName);
                       return (
                         <div key={field.id} className="rounded-2xl border border-border bg-card p-3 shadow-card">
                           {/* Exercise header: thumbnail + name + remove */}
@@ -811,6 +907,11 @@ export function WorkoutModal({ open, onOpenChange, onSave, workout }: WorkoutMod
                           {errors.exercises?.[idx]?.name && (
                             <p id={`exercise-${idx}-name-error`} className="mt-1.5 text-xs text-destructive">
                               {errors.exercises[idx]?.name?.message}
+                            </p>
+                          )}
+                          {prevForEx && (
+                            <p className="mt-1.5 truncate pl-1 text-[11px] text-muted-foreground">
+                              <span className="font-bold uppercase tracking-wide">Last</span> {formatDate(prevForEx.date, settings.dateFormat)} · {summarizeSets(prevForEx.exercise, unit)}
                             </p>
                           )}
 
