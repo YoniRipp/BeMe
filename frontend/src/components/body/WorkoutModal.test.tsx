@@ -84,13 +84,39 @@ describe('WorkoutModal', () => {
     expect(saved.exercises[0].weight).toBe(2.5);
   });
 
-  it('loads workout with repsPerSet into form', () => {
+  it('shows a read-only view for an existing workout before editing', () => {
     const workout: Workout = {
       id: '1',
       date: new Date(2025, 0, 17),
       title: 'Chest Day',
       type: 'strength',
       durationMinutes: 60,
+      completed: false,
+      exercises: [
+        { name: 'Bench Press', sets: 3, reps: 10, repsPerSet: [10, 8, 6], weight: 135 },
+      ],
+    };
+
+    render(
+      <WorkoutModal open={true} onOpenChange={vi.fn()} onSave={vi.fn()} workout={workout} />
+    );
+
+    // View mode: title shown as heading, no editable inputs, an Edit button present.
+    expect(screen.getByRole('heading', { name: 'Chest Day' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /edit workout/i })).toBeInTheDocument();
+    expect(screen.queryByDisplayValue('Bench Press')).not.toBeInTheDocument();
+    expect(screen.queryByRole('heading', { name: 'Edit Workout' })).not.toBeInTheDocument();
+  });
+
+  it('loads workout with repsPerSet into form after pressing Edit', async () => {
+    const user = userEvent.setup();
+    const workout: Workout = {
+      id: '1',
+      date: new Date(2025, 0, 17),
+      title: 'Chest Day',
+      type: 'strength',
+      durationMinutes: 60,
+      completed: false,
       exercises: [
         {
           name: 'Bench Press',
@@ -106,6 +132,8 @@ describe('WorkoutModal', () => {
       <WorkoutModal open={true} onOpenChange={vi.fn()} onSave={vi.fn()} workout={workout} />
     );
 
+    await user.click(screen.getByRole('button', { name: /edit workout/i }));
+
     expect(screen.getByRole('heading', { name: 'Edit Workout' })).toBeInTheDocument();
     expect(screen.getByDisplayValue('Bench Press')).toBeInTheDocument();
     expect(screen.getByLabelText('Set 1 reps')).toHaveValue(10);
@@ -113,13 +141,15 @@ describe('WorkoutModal', () => {
     expect(screen.getByLabelText('Set 3 reps')).toHaveValue(6);
   });
 
-  it('loads workout without repsPerSet using reps for each set', () => {
+  it('loads workout without repsPerSet using reps for each set after pressing Edit', async () => {
+    const user = userEvent.setup();
     const workout: Workout = {
       id: '2',
       date: new Date(2025, 0, 18),
       title: 'Leg Day',
       type: 'strength',
       durationMinutes: 45,
+      completed: false,
       exercises: [
         {
           name: 'Squat',
@@ -133,6 +163,8 @@ describe('WorkoutModal', () => {
     render(
       <WorkoutModal open={true} onOpenChange={vi.fn()} onSave={vi.fn()} workout={workout} />
     );
+
+    await user.click(screen.getByRole('button', { name: /edit workout/i }));
 
     expect(screen.getByDisplayValue('Squat')).toBeInTheDocument();
     expect(screen.getByLabelText('Set 1 reps')).toHaveValue(10);
