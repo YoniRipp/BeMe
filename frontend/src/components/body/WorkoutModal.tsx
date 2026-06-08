@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, useMemo } from 'react';
+import { useState, useEffect, useRef, useMemo, useCallback } from 'react';
 import { useForm, Controller, useFieldArray } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { Workout, Exercise, WorkoutType, WORKOUT_TYPES } from '@/types/workout';
@@ -31,6 +31,8 @@ import { useExercises, type CatalogExercise } from '@/hooks/useExercises';
 import { useWorkouts } from '@/hooks/useWorkouts';
 import { ImagePlaceholder } from '@/components/shared/ImagePlaceholder';
 import { ImageLightbox } from '@/components/shared/ImageLightbox';
+import { SetRow, EditableSetValueInput } from './SetRow';
+import { LIMITS } from '@/lib/constants';
 
 export type WorkoutTemplate = Omit<Workout, 'id' | 'date'>;
 
@@ -143,62 +145,6 @@ const defaultValues: WorkoutFormValues = {
   exercises: [defaultExercise],
 };
 
-function EditableSetValueInput({
-  value,
-  onValueChange,
-  ariaLabel,
-  allowDecimal = false,
-}: {
-  value: number | undefined;
-  onValueChange: (value: number) => void;
-  ariaLabel: string;
-  allowDecimal?: boolean;
-}) {
-  const [draft, setDraft] = useState(String(value ?? 0));
-  const [isFocused, setIsFocused] = useState(false);
-
-  useEffect(() => {
-    if (!isFocused) {
-      setDraft(String(value ?? 0));
-    }
-  }, [isFocused, value]);
-
-  const normalize = (raw: string) => {
-    const parsed = Number(raw);
-    if (!Number.isFinite(parsed)) return 0;
-    return Math.max(0, allowDecimal ? parsed : Math.floor(parsed));
-  };
-
-  return (
-    <Input
-      type="number"
-      min={0}
-      step={allowDecimal ? 0.5 : 1}
-      inputMode={allowDecimal ? 'decimal' : 'numeric'}
-      value={draft}
-      onFocus={(event) => {
-        setIsFocused(true);
-        event.currentTarget.select();
-      }}
-      onChange={(event) => {
-        const nextDraft = event.target.value;
-        setDraft(nextDraft);
-        if (nextDraft.trim() !== '') {
-          onValueChange(normalize(nextDraft));
-        }
-      }}
-      onBlur={() => {
-        const normalized = normalize(draft);
-        setIsFocused(false);
-        setDraft(String(normalized));
-        onValueChange(normalized);
-      }}
-      className="h-9 w-full min-w-0 border-0 bg-transparent px-1 text-center text-sm font-extrabold tabular-nums text-foreground shadow-none focus-visible:ring-1 focus-visible:ring-primary"
-      aria-label={ariaLabel}
-    />
-  );
-}
-
 function ExerciseNameInput({
   value,
   onChange,
@@ -307,7 +253,50 @@ function ExerciseNameInput({
   );
 }
 
-/** Read-only "logger" view of a saved workout (Hevy-style). */
+/** Per-exercise set cap, matching the editor's behaviour. */
+const MAX_SETS = 20;
+
+/** Expand an exercise into explicit per-set reps/weight/completed arrays (length === sets). */
+function normalizeExerciseForLogging(ex: Exercise, workoutCompleted: boolean): Exercise {
+  const rows = getSetRows(ex);
+  const sets = rows.length;
+  const completedPerSet =
+    ex.completedPerSet && ex.completedPerSet.length === sets
+      ? [...ex.completedPerSet]
+      : // Legacy workouts marked done (but without per-set data) show every set ticked,
+        // matching the previous read-only view.
+        Array.from({ length: sets }, () => workoutCompleted);
+  return {
+    ...ex,
+    sets,
+    reps: rows[0]?.reps ?? ex.reps,
+    repsPerSet: rows.map((r) => r.reps),
+    weightPerSet: rows.map((r) => r.weight),
+    completedPerSet,
+  };
+}
+
+/** Shape an in-progress exercise back into the persisted form (mirrors the editor's onSubmit). */
+function finalizeExercise(ex: Exercise): Exercise {
+  const reps = ex.repsPerSet?.[0] ?? ex.reps;
+  return {
+    name: ex.name,
+    sets: ex.sets,
+    reps,
+    ...(ex.repsPerSet && ex.repsPerSet.length === ex.sets ? { repsPerSet: ex.repsPerSet } : undefined),
+    ...(ex.weightPerSet && ex.weightPerSet.length === ex.sets ? { weightPerSet: ex.weightPerSet } : undefined),
+    ...(ex.completedPerSet && ex.completedPerSet.length === ex.sets ? { completedPerSet: ex.completedPerSet } : undefined),
+    weight: ex.weightPerSet?.find((v) => v !== undefined) ?? ex.weight,
+    ...(ex.notes ? { notes: ex.notes } : undefined),
+  };
+}
+
+/**
+ * Interactive "logger" view of a saved workout (Strong / Hevy style): adjust each set's
+ * weight & reps with steppers, tick a set off as you complete it, and add/remove sets — all
+ * persisted in place (debounced) without entering the full editor. The "Edit workout" button
+ * stays for structural changes (title, type, date, adding/removing exercises).
+ */
 function WorkoutDetailView({
   workout,
   unit,
@@ -317,6 +306,7 @@ function WorkoutDetailView({
   getPrevious,
   onEdit,
   onLightbox,
+  onPersist,
 }: {
   workout: Workout;
   unit: string;
@@ -326,13 +316,119 @@ function WorkoutDetailView({
   getPrevious: (name: string) => { date: Date; exercise: Exercise } | undefined;
   onEdit: () => void;
   onLightbox: (img: { src: string; alt: string }) => void;
+  onPersist: (updates: Partial<Workout>) => void;
 }) {
-  const totalSets = workout.exercises.reduce((sum, ex) => sum + ex.sets, 0);
-  const totalVolume = workout.exercises.reduce((sum, ex) => sum + exerciseVolume(ex), 0);
+  const [exercises, setExercises] = useState<Exercise[]>(() =>
+    workout.exercises.map((ex) => normalizeExerciseForLogging(ex, workout.completed)),
+  );
+
+  // Re-seed only when a different workout is opened, so background refetches (including our
+  // own optimistic save echo) never clobber edits in progress.
+  useEffect(() => {
+    setExercises(workout.exercises.map((ex) => normalizeExerciseForLogging(ex, workout.completed)));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [workout.id]);
+
+  const saveTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const pending = useRef<Partial<Workout> | null>(null);
+  const onPersistRef = useRef(onPersist);
+  onPersistRef.current = onPersist;
+
+  const flush = useCallback(() => {
+    if (saveTimer.current) {
+      clearTimeout(saveTimer.current);
+      saveTimer.current = null;
+    }
+    if (pending.current) {
+      onPersistRef.current(pending.current);
+      pending.current = null;
+    }
+  }, []);
+
+  // Flush any pending save when the view unmounts (modal closed / switched to the editor).
+  useEffect(() => flush, [flush]);
+
+  const commit = (next: Exercise[]) => {
+    setExercises(next);
+    const totalSets = next.reduce((sum, ex) => sum + ex.sets, 0);
+    const doneSets = next.reduce((sum, ex) => sum + (ex.completedPerSet?.filter(Boolean).length ?? 0), 0);
+    const updates: Partial<Workout> = { exercises: next.map(finalizeExercise) };
+    // Keep the workout-level completed flag in sync with per-set progress.
+    if (totalSets > 0) updates.completed = doneSets === totalSets;
+    pending.current = updates;
+    if (saveTimer.current) clearTimeout(saveTimer.current);
+    saveTimer.current = setTimeout(flush, 700);
+  };
+
+  const updateExercise = (exIdx: number, updater: (ex: Exercise) => Exercise) => {
+    commit(exercises.map((ex, i) => (i === exIdx ? updater(ex) : ex)));
+  };
+
+  const setWeight = (exIdx: number, setIdx: number, value: number) => {
+    const clamped = Math.max(0, Math.min(LIMITS.MAX_EXERCISE_WEIGHT, value));
+    updateExercise(exIdx, (ex) => {
+      const weightPerSet = [...(ex.weightPerSet ?? [])];
+      weightPerSet[setIdx] = clamped;
+      return { ...ex, weightPerSet, weight: weightPerSet.find((v) => v !== undefined) ?? ex.weight };
+    });
+  };
+
+  const setReps = (exIdx: number, setIdx: number, value: number) => {
+    const clamped = Math.max(0, Math.min(LIMITS.MAX_EXERCISE_REPS, Math.floor(value)));
+    updateExercise(exIdx, (ex) => {
+      const repsPerSet = [...(ex.repsPerSet ?? [])];
+      repsPerSet[setIdx] = clamped;
+      return { ...ex, repsPerSet, reps: setIdx === 0 ? clamped : ex.reps };
+    });
+  };
+
+  const toggleComplete = (exIdx: number, setIdx: number) => {
+    updateExercise(exIdx, (ex) => {
+      const completedPerSet = [...(ex.completedPerSet ?? [])];
+      completedPerSet[setIdx] = !completedPerSet[setIdx];
+      return { ...ex, completedPerSet };
+    });
+  };
+
+  const addSet = (exIdx: number) => {
+    updateExercise(exIdx, (ex) => {
+      if (ex.sets >= MAX_SETS) return ex;
+      const repsPerSet = [...(ex.repsPerSet ?? [])];
+      const weightPerSet = [...(ex.weightPerSet ?? [])];
+      const completedPerSet = [...(ex.completedPerSet ?? [])];
+      repsPerSet.push(repsPerSet[repsPerSet.length - 1] ?? ex.reps ?? 0);
+      weightPerSet.push(weightPerSet[weightPerSet.length - 1] ?? ex.weight);
+      completedPerSet.push(false);
+      return { ...ex, sets: ex.sets + 1, repsPerSet, weightPerSet, completedPerSet };
+    });
+  };
+
+  const removeSet = (exIdx: number, setIdx: number) => {
+    updateExercise(exIdx, (ex) => {
+      if (ex.sets <= 1) return ex;
+      const repsPerSet = (ex.repsPerSet ?? []).filter((_, i) => i !== setIdx);
+      const weightPerSet = (ex.weightPerSet ?? []).filter((_, i) => i !== setIdx);
+      const completedPerSet = (ex.completedPerSet ?? []).filter((_, i) => i !== setIdx);
+      return {
+        ...ex,
+        sets: ex.sets - 1,
+        repsPerSet,
+        weightPerSet,
+        completedPerSet,
+        reps: repsPerSet[0] ?? 0,
+        weight: weightPerSet.find((v) => v !== undefined) ?? ex.weight,
+      };
+    });
+  };
+
+  const totalSets = exercises.reduce((sum, ex) => sum + ex.sets, 0);
+  const doneSets = exercises.reduce((sum, ex) => sum + (ex.completedPerSet?.filter(Boolean).length ?? 0), 0);
+  const totalVolume = exercises.reduce((sum, ex) => sum + exerciseVolume(ex), 0);
+  const allDone = totalSets > 0 && doneSets === totalSets;
   const stats: Array<{ label: string; value: string }> = [
     { label: `Volume (${unit})`, value: totalVolume > 0 ? totalVolume.toLocaleString() : '—' },
     { label: 'Sets', value: String(totalSets) },
-    { label: 'Exercises', value: String(workout.exercises.length) },
+    { label: 'Exercises', value: String(exercises.length) },
   ];
 
   return (
@@ -346,7 +442,7 @@ function WorkoutDetailView({
           <DialogTitle className="mt-2 text-2xl font-extrabold tracking-tight">{workout.title}</DialogTitle>
           <p className="mt-1 text-sm text-muted-foreground">
             {dateLabel} · {workout.durationMinutes} min
-            {workout.completed && (
+            {allDone && (
               <span className="ml-1 inline-flex items-center gap-0.5 font-semibold text-success">
                 · <Check className="h-3.5 w-3.5" /> Completed
               </span>
@@ -361,17 +457,34 @@ function WorkoutDetailView({
             </div>
           ))}
         </div>
-        <Button type="button" onClick={onEdit} className="w-full gap-2">
+
+        {totalSets > 0 && (
+          <div>
+            <div className="mb-1 flex items-center justify-between text-[11px] font-bold uppercase tracking-wide text-muted-foreground">
+              <span>Progress</span>
+              <span className="tabular-nums">{doneSets}/{totalSets} sets</span>
+            </div>
+            <div className="h-1.5 overflow-hidden rounded-full bg-muted" role="progressbar" aria-valuenow={doneSets} aria-valuemin={0} aria-valuemax={totalSets}>
+              <div className="h-full rounded-full bg-success transition-all" style={{ width: `${Math.round((doneSets / totalSets) * 100)}%` }} />
+            </div>
+          </div>
+        )}
+
+        <div className="flex items-center gap-2 rounded-xl border border-border bg-muted/40 px-3 py-2">
+          <RestTimer />
+        </div>
+
+        <Button type="button" variant="outline" onClick={() => { flush(); onEdit(); }} className="w-full gap-2">
           <Pencil className="h-4 w-4" />
           Edit workout
         </Button>
       </DialogHeader>
 
       <div className="space-y-3 py-1">
-        {workout.exercises.map((ex, idx) => {
-          const rows = getSetRows(ex);
+        {exercises.map((ex, idx) => {
           const imageUrl = ex.name ? getImageUrl(ex.name) : undefined;
           const prev = getPrevious(ex.name);
+          const exDone = ex.completedPerSet?.filter(Boolean).length ?? 0;
           return (
             <div key={idx} className="rounded-2xl border border-border bg-card p-3 shadow-card">
               <div className="flex items-center gap-3">
@@ -384,10 +497,10 @@ function WorkoutDetailView({
                 >
                   <ImagePlaceholder type="exercise" size="md" imageUrl={imageUrl} />
                 </button>
-                <div className="min-w-0">
+                <div className="min-w-0 flex-1">
                   <p className="truncate text-[15px] font-bold">{ex.name}</p>
                   <p className="text-xs text-muted-foreground">
-                    {ex.sets} {ex.sets === 1 ? 'set' : 'sets'}
+                    {exDone}/{ex.sets} {ex.sets === 1 ? 'set' : 'sets'} done
                     {exerciseVolume(ex) > 0 ? ` · ${exerciseVolume(ex).toLocaleString()} ${unit}` : ''}
                   </p>
                   {prev && (
@@ -397,32 +510,41 @@ function WorkoutDetailView({
                   )}
                 </div>
               </div>
-              <table className="mt-2 w-full">
-                <thead>
-                  <tr className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">
-                    <th className="w-10 py-1 text-left">Set</th>
-                    <th className="py-1 text-center">{unit}</th>
-                    <th className="py-1 text-center">Reps</th>
-                    {workout.completed && <th className="w-8 py-1" aria-label="Completed" />}
-                  </tr>
-                </thead>
-                <tbody>
-                  {rows.map((row, i) => (
-                    <tr key={i} className="border-t border-border/60">
-                      <td className="py-1.5">
-                        <span className="flex h-6 w-6 items-center justify-center rounded-md bg-muted text-xs font-bold text-muted-foreground">{i + 1}</span>
-                      </td>
-                      <td className="py-1.5 text-center text-sm font-bold tabular-nums">{row.weight != null ? row.weight : '—'}</td>
-                      <td className="py-1.5 text-center text-sm font-bold tabular-nums">{row.reps}</td>
-                      {workout.completed && (
-                        <td className="py-1.5 text-center">
-                          <Check className="mx-auto h-4 w-4 text-success" />
-                        </td>
-                      )}
-                    </tr>
+
+              <div className="mt-3">
+                <div className="grid grid-cols-[1.75rem_1fr_1fr_auto] items-center gap-2 px-0.5 pb-1 text-[10px] font-bold uppercase tracking-wider text-muted-foreground">
+                  <span className="text-center">Set</span>
+                  <span className="text-center">{unit}</span>
+                  <span className="text-center">Reps</span>
+                  <span className="pr-1 text-right">Done</span>
+                </div>
+                <div className="space-y-1.5">
+                  {Array.from({ length: ex.sets }, (_, i) => (
+                    <SetRow
+                      key={i}
+                      setNumber={i + 1}
+                      weight={ex.weightPerSet?.[i]}
+                      reps={ex.repsPerSet?.[i] ?? 0}
+                      unit={unit}
+                      onWeightChange={(v) => setWeight(idx, i, v)}
+                      onRepsChange={(v) => setReps(idx, i, v)}
+                      completed={ex.completedPerSet?.[i] ?? false}
+                      onToggleComplete={() => toggleComplete(idx, i)}
+                      onRemove={() => removeSet(idx, i)}
+                      removeDisabled={ex.sets <= 1}
+                    />
                   ))}
-                </tbody>
-              </table>
+                </div>
+                <button
+                  type="button"
+                  className="mt-2 flex w-full items-center justify-center gap-1.5 rounded-lg border border-dashed border-primary/45 bg-primary/5 py-2 text-xs font-bold uppercase tracking-wide text-primary transition-colors hover:border-primary hover:bg-primary/10 disabled:cursor-not-allowed disabled:opacity-50"
+                  onClick={() => addSet(idx)}
+                  disabled={ex.sets >= MAX_SETS}
+                >
+                  <Plus className="h-3.5 w-3.5" />
+                  Add set
+                </button>
+              </div>
             </div>
           );
         })}
@@ -443,7 +565,7 @@ export function WorkoutModal({ open, onOpenChange, onSave, workout }: WorkoutMod
   const unit = getWeightUnit(settings.units);
   const [templates, setTemplates] = useState<WorkoutTemplate[]>([]);
   const { exercises: catalogExercises, getImageUrl } = useExercises();
-  const { workouts } = useWorkouts();
+  const { workouts, updateWorkout } = useWorkouts();
   const [lightboxImage, setLightboxImage] = useState<{ src: string; alt: string } | null>(null);
   // Existing workouts open in a read-only view first; new workouts open straight into the editor.
   const [mode, setMode] = useState<'view' | 'edit'>(workout ? 'view' : 'edit');
@@ -732,6 +854,9 @@ export function WorkoutModal({ open, onOpenChange, onSave, workout }: WorkoutMod
             getPrevious={getPrevious}
             onEdit={() => setMode('edit')}
             onLightbox={setLightboxImage}
+            onPersist={(updates) =>
+              updateWorkout(workout.id, updates).catch(() => toast.error('Could not save changes. Please try again.'))
+            }
           />
         ) : (
           <>

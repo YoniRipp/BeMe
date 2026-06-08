@@ -7,7 +7,7 @@ export interface ApiWorkout {
   title: string;
   type: string;
   durationMinutes: number;
-  exercises: { name: string; sets: number; reps: number; repsPerSet?: number[]; weightPerSet?: Array<number | null | undefined>; weight?: number; notes?: string }[];
+  exercises: { name: string; sets: number; reps: number; repsPerSet?: number[]; weightPerSet?: Array<number | null | undefined>; completedPerSet?: boolean[]; weight?: number; notes?: string }[];
   notes?: string;
   completed: boolean;
 }

@@ -24,6 +24,8 @@ export interface Exercise {
   sets: number;
   reps: number;
   repsPerSet?: number[];
+  weightPerSet?: Array<number | null | undefined>;
+  completedPerSet?: boolean[];
   weight?: number;
   notes?: string;
 }

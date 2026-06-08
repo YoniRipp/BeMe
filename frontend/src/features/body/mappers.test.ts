@@ -69,6 +69,66 @@ describe('apiWorkoutToWorkout', () => {
     expect(result.exercises[0].sets).toBe(5);
   });
 
+  it('keeps completedPerSet when length equals sets', () => {
+    const api = {
+      id: '5',
+      date: '2025-01-21',
+      title: 'Lower Body',
+      type: 'strength',
+      durationMinutes: 60,
+      exercises: [
+        {
+          name: 'Squat',
+          sets: 3,
+          reps: 8,
+          completedPerSet: [true, false, true],
+        },
+      ],
+    };
+    const result = apiWorkoutToWorkout(api);
+    expect(result.exercises[0].completedPerSet).toEqual([true, false, true]);
+  });
+
+  it('drops completedPerSet when length does not match sets', () => {
+    const api = {
+      id: '6',
+      date: '2025-01-21',
+      title: 'Lower Body',
+      type: 'strength',
+      durationMinutes: 60,
+      exercises: [
+        {
+          name: 'Squat',
+          sets: 3,
+          reps: 8,
+          completedPerSet: [true],
+        },
+      ],
+    };
+    const result = apiWorkoutToWorkout(api);
+    expect(result.exercises[0].completedPerSet).toBeUndefined();
+  });
+
+  it('normalizes null entries in weightPerSet to undefined when length matches', () => {
+    const api = {
+      id: '7',
+      date: '2025-01-21',
+      title: 'Lower Body',
+      type: 'strength',
+      durationMinutes: 60,
+      exercises: [
+        {
+          name: 'Squat',
+          sets: 3,
+          reps: 8,
+          weightPerSet: [100, null, 120],
+        },
+      ],
+    };
+    const result = apiWorkoutToWorkout(api);
+    expect(result.exercises[0].weightPerSet).toEqual([100, undefined, 120]);
+  });
+
   it('parses date to Date object', () => {
     const api = {
       id: '4',

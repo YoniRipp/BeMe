@@ -22,6 +22,8 @@ const exerciseSchema = z.object({
   sets: z.number().int().min(0).max(999),
   reps: z.number().int().min(0).max(999),
   repsPerSet: z.array(z.number().int().min(0)).optional(),
+  weightPerSet: z.array(z.number().min(0).max(9999).nullable().optional()).optional(),
+  completedPerSet: z.array(z.boolean()).optional(),
   weight: z.number().min(0).max(9999).optional(),
   notes: z.string().max(500).optional(),
 });
