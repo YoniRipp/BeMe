@@ -2,11 +2,11 @@
  * Gemini-based food lookup when the food is not in the DB.
  * Returns nutrition per 100g or per 100ml (one row); inserts into foods and returns it.
  */
-import { GoogleGenerativeAI, HarmCategory, HarmBlockThreshold } from '@google/generative-ai';
 import { z } from 'zod';
 import { config } from '../config/index.js';
 import { logger } from '../lib/logger.js';
 import { recordGeminiCall } from '../lib/metrics.js';
+import { getModel, SAFETY_BLOCK_NONE } from '../lib/genai.js';
 
 const FOOD_LOOKUP_PROMPT = `You are a nutrition data assistant. Given a food or drink name, return exactly one JSON object (no array, no markdown, no code fence) with nutrition per 100g for solid foods or per 100ml for liquids.
 
@@ -88,41 +88,68 @@ async function findExistingByName(pool: { query: (sql: string, params: unknown[]
   return result.rows[0] || null;
 }
 
+type FoodPool = { query: (sql: string, params: unknown[]) => Promise<{ rows: Record<string, unknown>[] }> };
+type FoodRow = Awaited<ReturnType<typeof doLookupAndCreateFood>>;
+
+/** Coalesce concurrent lookups for the same food so we make ONE Gemini call + insert. */
+const inFlight = new Map<string, Promise<FoodRow>>();
+
+function normalizeKey(name: string): string {
+  return name.toLowerCase().trim().replace(/\s+/g, ' ');
+}
+
+/** One Gemini text generation with a single retry on transient failure. */
+async function generateFoodJson(name: string): Promise<string | null> {
+  const model = getModel({ model: config.geminiModel, safetySettings: SAFETY_BLOCK_NONE });
+  const prompt = `${FOOD_LOOKUP_PROMPT}\n\nFood or drink name: ${name}`;
+  const contents = [{ role: 'user', parts: [{ text: prompt }] }];
+
+  for (let attempt = 0; attempt < 2; attempt++) {
+    const geminiStart = Date.now();
+    try {
+      const result = await model.generateContent({ contents });
+      recordGeminiCall(Date.now() - geminiStart, true);
+      const response = result.response;
+      const text = response?.text?.();
+      return text ?? null;
+    } catch (e: unknown) {
+      recordGeminiCall(Date.now() - geminiStart, false);
+      if (attempt === 0) {
+        logger.warn({ err: e, name }, 'foodLookupGemini generateContent failed, retrying');
+        await new Promise((r) => setTimeout(r, 300));
+        continue;
+      }
+      logger.error({ err: e }, 'foodLookupGemini generateContent');
+      return null;
+    }
+  }
+  return null;
+}
+
 /**
  * Look up a food by name via Gemini, optionally insert into foods, and return the row (per 100g or 100ml).
- * @param {import('pg').Pool} pool
- * @param {string} foodName
- * @param {{ liquidHint?: boolean }} [options]
- * @returns {Promise<{ id: string, name: string, calories: number, protein: number, carbs: number, fat: number, is_liquid: boolean, serving_sizes_ml: object | null } | null>}
+ * Concurrent calls for the same name share a single in-flight lookup to avoid
+ * duplicate Gemini calls and duplicate `foods` rows (cache stampede).
  */
-export async function lookupAndCreateFood(pool: { query: (sql: string, params: unknown[]) => Promise<{ rows: Record<string, unknown>[] }> }, foodName: string, options: { liquidHint?: boolean } = {}) {
+export function lookupAndCreateFood(pool: FoodPool, foodName: string, options: { liquidHint?: boolean } = {}): Promise<FoodRow> {
   const name = typeof foodName === 'string' ? foodName.trim() : '';
-  if (!name) return null;
-  if (!config.geminiApiKey) return null;
+  if (!name) return Promise.resolve(null);
+  if (!config.geminiApiKey) return Promise.resolve(null);
 
-  const genAI = new GoogleGenerativeAI(config.geminiApiKey);
-  const safetySettings = [
-    { category: HarmCategory.HARM_CATEGORY_HATE_SPEECH, threshold: HarmBlockThreshold.BLOCK_NONE },
-    { category: HarmCategory.HARM_CATEGORY_SEXUALLY_EXPLICIT, threshold: HarmBlockThreshold.BLOCK_NONE },
-    { category: HarmCategory.HARM_CATEGORY_HARASSMENT, threshold: HarmBlockThreshold.BLOCK_NONE },
-    { category: HarmCategory.HARM_CATEGORY_DANGEROUS_CONTENT, threshold: HarmBlockThreshold.BLOCK_NONE },
-  ];
-  const model = genAI.getGenerativeModel({ model: config.geminiModel, safetySettings });
-  const prompt = `${FOOD_LOOKUP_PROMPT}\n\nFood or drink name: ${name}`;
+  const key = normalizeKey(name);
+  const existing = inFlight.get(key);
+  if (existing) return existing;
 
-  let text;
-  const geminiStart = Date.now();
-  try {
-    const result = await model.generateContent({ contents: [{ role: 'user', parts: [{ text: prompt }] }] });
-    recordGeminiCall(Date.now() - geminiStart, true);
-    const response = result.response;
-    if (!response || !response.text) return null;
-    text = response.text();
-  } catch (e: unknown) {
-    recordGeminiCall(Date.now() - geminiStart, false);
-    logger.error({ err: e }, 'foodLookupGemini generateContent');
-    return null;
-  }
+  const promise = doLookupAndCreateFood(pool, name, options).finally(() => {
+    inFlight.delete(key);
+  });
+  inFlight.set(key, promise);
+  return promise;
+}
+
+async function doLookupAndCreateFood(pool: FoodPool, name: string, _options: { liquidHint?: boolean } = {}) {
+  const text = await generateFoodJson(name);
+  if (!text) return null;
 
   const raw = extractJson(text);
   if (!raw) return null;

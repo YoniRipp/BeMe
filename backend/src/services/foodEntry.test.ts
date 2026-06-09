@@ -13,6 +13,7 @@ vi.mock('./embeddings.js', () => ({
   buildEmbeddingText: vi.fn(() => 'food embedding'),
   deleteEmbedding: vi.fn(),
   upsertEmbedding: vi.fn(),
+  upsertEmbeddingsBatch: vi.fn(),
 }));
 
 const client = {

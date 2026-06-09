@@ -4,8 +4,7 @@ import { useNativeSpeech } from './useNativeSpeech';
 import { useWebSpeech } from './useWebSpeech';
 import { useVoiceStream } from './useVoiceStream';
 import { understandTranscript, type VoiceUnderstandResult } from '@/lib/voiceApi';
-
-const TAG = '[SpeechRecognition]';
+import { voiceLog, voiceWarn, voiceError } from '@/lib/voiceDebug';
 
 interface UseSpeechRecognitionOptions {
   language?: string;
@@ -62,52 +61,52 @@ export function useSpeechRecognition(
   );
 
   const startListening = useCallback(async (): Promise<void> => {
-    console.log(TAG, 'startListening — useStreamImpl:', useStreamImpl, 'useNativeImpl:', useNativeImpl);
+    voiceLog('startListening — useStreamImpl:', useStreamImpl, 'useNativeImpl:', useNativeImpl);
     lastResultRef.current = null;
 
     if (useStreamImpl) {
       try {
-        console.log(TAG, 'trying stream.startListening...');
+        voiceLog('trying stream.startListening...');
         await stream.startListening();
         activeImplRef.current = 'stream';
-        console.log(TAG, 'stream.startListening OK — active: stream');
+        voiceLog('stream.startListening OK — active: stream');
         return;
       } catch (e) {
         // Streaming failed — fall back to batch for this session.
-        console.warn(TAG, 'stream.startListening FAILED:', e, '— falling back to web batch');
+        voiceWarn('stream.startListening FAILED:', e, '— falling back to web batch');
         streamingFailedRef.current = true;
-        console.log(TAG, 'trying web.startListening (fallback)...');
+        voiceLog('trying web.startListening (fallback)...');
         await web.startListening();
         activeImplRef.current = 'web';
-        console.log(TAG, 'web.startListening OK — active: web');
+        voiceLog('web.startListening OK — active: web');
         return;
       }
     }
 
     if (useNativeImpl) {
-      console.log(TAG, 'trying native.startListening...');
+      voiceLog('trying native.startListening...');
       await native.startListening();
       activeImplRef.current = 'native';
-      console.log(TAG, 'native.startListening OK — active: native');
+      voiceLog('native.startListening OK — active: native');
     } else {
-      console.log(TAG, 'trying web.startListening (primary)...');
+      voiceLog('trying web.startListening (primary)...');
       await web.startListening();
       activeImplRef.current = 'web';
-      console.log(TAG, 'web.startListening OK — active: web');
+      voiceLog('web.startListening OK — active: web');
     }
   }, [useNativeImpl, useStreamImpl, stream, web, native]);
 
   const stopListening = useCallback(async (): Promise<void> => {
     const active = activeImplRef.current;
-    console.log(TAG, 'stopListening — active impl:', active);
+    voiceLog('stopListening — active impl:', active);
     const activeHook = active === 'native' ? native : active === 'stream' ? stream : web;
 
     let transcript: string;
     try {
       transcript = await activeHook.stopListening();
-      console.log(TAG, 'stopListening resolved — transcript length:', transcript.length);
+      voiceLog('stopListening resolved — transcript length:', transcript.length);
     } catch (e) {
-      console.error(TAG, 'stopListening FAILED:', e);
+      voiceError('stopListening FAILED:', e);
       // Even if stopListening fails, ensure all impls are reset
       setIsProcessing(false);
       throw e;
@@ -118,12 +117,12 @@ export function useSpeechRecognition(
       if (transcript.trim()) {
         setIsProcessing(true);
         try {
-          console.log(TAG, 'sending transcript for understanding...');
+          voiceLog('sending transcript for understanding...');
           const result = await understandTranscript(transcript, language);
           lastResultRef.current = result;
-          console.log(TAG, 'understandTranscript OK — actions:', result.actions.length);
+          voiceLog('understandTranscript OK — actions:', result.actions.length);
         } catch (e) {
-          console.error(TAG, 'understandTranscript FAILED:', e);
+          voiceError('understandTranscript FAILED:', e);
           const errorResult: VoiceUnderstandResult = {
             actions: [{ intent: 'unknown', message: e instanceof Error ? e.message : 'Could not understand. Please try again.' }],
           };
@@ -132,19 +131,19 @@ export function useSpeechRecognition(
           setIsProcessing(false);
         }
       } else {
-        console.log(TAG, 'empty transcript — returning unknown');
+        voiceLog('empty transcript — returning unknown');
         const emptyResult: VoiceUnderstandResult = { actions: [{ intent: 'unknown' }] };
         lastResultRef.current = emptyResult;
       }
     } else if (active === 'stream') {
       // Streaming: result was set in the stream hook via done message
       const streamResult = await stream.getVoiceResult();
-      console.log(TAG, 'stream result — actions:', streamResult?.actions?.length ?? 0);
+      voiceLog('stream result — actions:', streamResult?.actions?.length ?? 0);
       lastResultRef.current = streamResult;
     } else {
       // Web batch: the result was already processed in useWebSpeech
       const webResult = await web.getVoiceResult();
-      console.log(TAG, 'web result — actions:', webResult?.actions?.length ?? 0);
+      voiceLog('web result — actions:', webResult?.actions?.length ?? 0);
       lastResultRef.current = webResult;
     }
   }, [native, stream, web, language]);

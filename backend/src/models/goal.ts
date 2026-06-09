@@ -43,6 +43,20 @@ export async function findByUserId(userId: string, pagination?: PaginationParams
   return { data: result.rows.map(rowToGoal), total };
 }
 
+/** Find a goal by id, or the oldest goal of a given type. Targeted query. */
+export async function findOne(userId: string, opts: { goalId?: string; type?: string }, client?: pg.Pool | pg.PoolClient): Promise<Goal | null> {
+  const db = client ?? getPool('goals');
+  if (opts.goalId) {
+    const r = await db.query(`SELECT ${RETURNING} FROM goals WHERE id = $1 AND user_id = $2 LIMIT 1`, [opts.goalId, userId]);
+    return r.rows[0] ? rowToGoal(r.rows[0]) : null;
+  }
+  if (opts.type) {
+    const r = await db.query(`SELECT ${RETURNING} FROM goals WHERE user_id = $1 AND type = $2 ORDER BY created_at ASC LIMIT 1`, [userId, opts.type]);
+    return r.rows[0] ? rowToGoal(r.rows[0]) : null;
+  }
+  return null;
+}
+
 export async function create(input: CreateGoalInput, client?: pg.Pool | pg.PoolClient): Promise<Goal> {
   const db = client ?? getPool('goals');
   const result = await db.query(

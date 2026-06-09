@@ -11,9 +11,11 @@ import { WebSocketServer, WebSocket, RawData } from 'ws';
 import { IncomingMessage } from 'http';
 import jwt from 'jsonwebtoken';
 import { config } from '../config/index.js';
-import { HANDLERS, VOICE_PROMPT } from '../services/voice.js';
+import { VOICE_PROMPT } from '../services/voice.js';
+import { buildActionsFromFunctionCalls, filterHallucinatedActions } from '../services/voice/geminiClient.js';
 import { VOICE_TOOLS } from '../../voice/tools.js';
 import { executeActions } from '../services/voiceExecutor.js';
+import { checkAiQuota, tryConsumeAiCall } from '../services/aiQuota.js';
 import { logger } from '../lib/logger.js';
 
 const INACTIVITY_TIMEOUT_MS = 30_000;
@@ -40,11 +42,14 @@ async function authenticateWs(req: IncomingMessage): Promise<{ id: string; email
   }
 }
 
-/** Check Pro subscription or free-tier quota. */
+/**
+ * Check Pro subscription or free-tier quota WITHOUT consuming a call.
+ * The call is only consumed in finishSession() once there is a real result,
+ * so opening the sheet and saying nothing doesn't burn a free-tier call.
+ */
 async function checkProOrQuota(userId: string): Promise<{ allowed: boolean; message?: string }> {
-  const { tryConsumeAiCall } = await import('../services/aiQuota.js');
   try {
-    const result = await tryConsumeAiCall(userId);
+    const result = await checkAiQuota(userId);
     if (result.allowed) return { allowed: true };
     return {
       allowed: false,
@@ -112,6 +117,7 @@ async function handleConnection(clientWs: WebSocket, req: IncomingMessage) {
 
   let geminiWs: WebSocket | null = null;
   let sessionReady = false;
+  let finished = false; // guard so actions are executed exactly once
   let sessionMetadata: { today: string; timezone: string; mimeType: string } | null = null;
   let allActions: Record<string, unknown>[] = [];
   let inactivityTimer: ReturnType<typeof setTimeout> | null = null;
@@ -183,19 +189,11 @@ async function handleConnection(clientWs: WebSocket, req: IncomingMessage) {
             timezone: sessionMetadata?.timezone,
           };
 
-          for (const fc of functionCalls) {
-            const handler = HANDLERS[fc.name];
-            if (!handler) {
-              logger.warn({ name: fc.name }, 'Voice stream: unknown function');
-              continue;
-            }
-
-            const action: Record<string, unknown> = { intent: fc.name };
-            const result = await handler(fc.args ?? {}, ctx);
-            if (result.merge) Object.assign(action, result.merge);
+          // Build actions in parallel (each may do its own DB / Gemini food lookup).
+          const built = await buildActionsFromFunctionCalls(functionCalls, ctx);
+          for (const action of built) {
+            if (action.intent === 'unknown') continue; // unsupported function — skip
             allActions.push(action);
-
-            // Stream action to client immediately
             sendToClient(clientWs, { type: 'action', action });
           }
 
@@ -265,22 +263,13 @@ async function handleConnection(clientWs: WebSocket, req: IncomingMessage) {
     });
   }
 
-  /** Execute actions server-side and send final 'done' message. */
+  /** Execute actions server-side and send final 'done' message. Runs once. */
   async function finishSession() {
-    // Filter out likely-hallucinated actions from background noise.
-    // A workout with no exercises and a very short/generic title is suspicious.
-    allActions = allActions.filter((a) => {
-      if (a.intent === 'add_workout') {
-        const exercises = Array.isArray(a.exercises) ? a.exercises : [];
-        const title = String(a.title ?? '').trim();
-        // If no exercises and title is default or very short, treat as hallucination
-        if (exercises.length === 0 && (title === 'Workout' || title.length <= 3)) {
-          logger.info({ userId: user.id, title }, 'Voice stream: filtered likely-hallucinated workout');
-          return false;
-        }
-      }
-      return true;
-    });
+    if (finished) return; // guard against turnComplete + ws-close double fire
+    finished = true;
+
+    // Drop likely-hallucinated actions (shared with the batch path).
+    allActions = filterHallucinatedActions(allActions);
 
     if (allActions.length === 0) {
       allActions.push({ intent: 'unknown' });
@@ -292,10 +281,20 @@ async function handleConnection(clientWs: WebSocket, req: IncomingMessage) {
         results = await executeActions(
           allActions as { intent: string; [key: string]: unknown }[],
           user.id,
+          { today: sessionMetadata?.today },
         );
       } catch (err) {
         logger.error({ err }, 'Voice stream: execute actions failed');
       }
+    }
+
+    // Only now consume a free-tier AI call — and only if we actually did
+    // something — so empty/failed attempts don't count against the user.
+    const didSomething = results
+      ? results.some((r) => r.success)
+      : allActions.some((a) => a.intent !== 'unknown');
+    if (didSomething) {
+      tryConsumeAiCall(user.id).catch((err) => logger.warn({ err }, 'Voice stream: quota consume failed'));
     }
 
     sendToClient(clientWs, { type: 'done', actions: allActions, results });
@@ -334,6 +333,7 @@ async function handleConnection(clientWs: WebSocket, req: IncomingMessage) {
           mimeType: msg.mimeType ?? 'audio/webm',
         };
         allActions = [];
+        finished = false;
         connectToGemini();
         resetInactivityTimer();
         return;

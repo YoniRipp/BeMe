@@ -146,6 +146,7 @@ backend/
 │   │   └── voiceWorker.ts    # BullMQ worker: process audio jobs via Gemini
 │   ├── lib/
 │   │   ├── logger.ts         # Pino structured logger
+│   │   ├── genai.ts          # Cached Google Generative AI client + model singletons
 │   │   └── keyValueStore.ts  # Redis KV with in-memory LRU fallback
 │   └── utils/
 │       ├── response.ts       # sendJson, sendError, sendCreated, sendNoContent
@@ -867,6 +868,28 @@ Client polls: GET /api/jobs/abc123
 | `copy_workout` | Copy a workout from one date to another |
 
 These enable multi-step reasoning where Gemini can first read data, then act on it.
+
+### Performance & Reliability
+
+The voice path is optimized for real multi-action utterances and for cost/latency:
+
+| Concern | Implementation | Files |
+|---------|----------------|-------|
+| Re-instantiating the Gemini SDK per call | Singleton client + cached models keyed by name/options | `src/lib/genai.ts` (`getModel`, `SAFETY_BLOCK_NONE`) |
+| Per-food nutrition lookups run serially | `buildActionsFromFunctionCalls()` runs handlers with `Promise.all`; shared by batch + streaming | `src/services/voice/geminiClient.ts` |
+| Hallucination filter duplicated across paths | Single `filterHallucinatedActions()` used by both | `src/services/voice/geminiClient.ts` |
+| One `INSERT` per food | ≥2 same-date `add_food` actions go through one transactional `createBatch`; falls back to per-item on batch error | `src/services/voiceExecutor.ts`, `src/services/foodEntry.ts` |
+| One embedding write per food | `upsertEmbeddingsBatch()` embeds concurrently + one multi-row upsert | `src/services/embeddings.ts` |
+| Edit/delete loads whole tables | Targeted single-row finders (`findForVoice`, `findByDate`, `findLatest`, `findOne`) | `src/services/{workout,foodEntry,goal,dailyCheckIn}.ts`, `src/models/{weight,cycle,...}.ts` |
+| Prompt re-sent as user content | `VOICE_PROMPT` baked into the model as a cached `systemInstruction` | `src/services/voice.ts`, `geminiClient.ts` (`getGeminiModel(systemInstruction)`) |
+| Cache stampede / duplicate `foods` rows | In-flight promise de-duplication keyed by normalized name; 1 retry on transient Gemini error | `src/services/foodLookupGemini.ts` |
+| `add_water` writes N rows for N glasses | Single count-based upsert | `src/models/water.ts` (`addGlasses`) |
+| Streaming double-execution | `finished` guard so `executeActions` runs once | `src/ws/voiceStreaming.ts` |
+| Free AI call burned on empty/failed attempts | Gate with non-consuming `checkAiQuota`; consume only on a real result | `src/services/aiQuota.ts`, `src/ws/voiceStreaming.ts` |
+| Server-UTC date defaults | User's local `today` threaded through `executeActions(actions, userId, { today })` | `src/services/voice.ts`, `voiceExecutor.ts`, `ws/voiceStreaming.ts` |
+| Silent 0-kcal entries | `add_food` actions carry `nutritionResolved`; the result message flags unresolved nutrition | `actionBuilders.ts`, `voiceExecutor.ts` |
+
+`executeActions` returns results in the original action order and never throws; per-action errors are captured individually.
 
 ---
 

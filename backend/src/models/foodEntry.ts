@@ -4,6 +4,7 @@
 import pg from 'pg';
 import { getPool } from '../db/pool.js';
 import { buildUpdateQuery, type UpdateBuilder } from '../db/queryBuilder.js';
+import { escapeLike } from '../utils/escapeLike.js';
 import type { FoodEntry, CreateFoodEntryInput, UpdateFoodEntryInput, PaginationParams } from '../types/domain.js';
 
 const RETURNING = 'id, date, name, calories, protein, carbs, fats, portion_amount, portion_unit, serving_type, start_time, end_time, meal_type';
@@ -70,6 +71,28 @@ export async function findByUserIdAndDate(userId: string, date: string, client?:
     [userId, date],
   );
   return result.rows.map(rowToEntry);
+}
+
+/**
+ * Find a single entry by id, or the most recent entry whose name matches
+ * (case-insensitive substring). Targeted query — avoids loading the whole table.
+ */
+export async function findOne(userId: string, opts: { entryId?: string; name?: string }, client?: pg.Pool | pg.PoolClient): Promise<FoodEntry | null> {
+  const db = client ?? getPool('energy');
+  if (opts.entryId) {
+    const r = await db.query(`SELECT ${RETURNING} FROM food_entries WHERE id = $1 AND user_id = $2 LIMIT 1`, [opts.entryId, userId]);
+    return r.rows[0] ? rowToEntry(r.rows[0]) : null;
+  }
+  if (opts.name) {
+    const r = await db.query(
+      `SELECT ${RETURNING} FROM food_entries
+       WHERE user_id = $1 AND name ILIKE $2
+       ORDER BY date DESC, created_at DESC LIMIT 1`,
+      [userId, `%${escapeLike(opts.name)}%`],
+    );
+    return r.rows[0] ? rowToEntry(r.rows[0]) : null;
+  }
+  return null;
 }
 
 export async function create(input: CreateFoodEntryInput, client?: pg.Pool | pg.PoolClient): Promise<FoodEntry> {

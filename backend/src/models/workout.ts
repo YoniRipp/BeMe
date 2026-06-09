@@ -4,6 +4,7 @@
 import pg from 'pg';
 import { getPool } from '../db/pool.js';
 import { buildUpdateQuery, type UpdateBuilder } from '../db/queryBuilder.js';
+import { escapeLike } from '../utils/escapeLike.js';
 import type { Workout, CreateWorkoutInput, UpdateWorkoutInput, Exercise, PaginationParams, WorkoutType } from '../types/domain.js';
 
 const RETURNING = 'id, date, title, type, duration_minutes, exercises, notes, completed';
@@ -50,6 +51,28 @@ export async function findByUserId(userId: string, pagination?: PaginationParams
 
   const result = await db.query(sql, params);
   return { data: result.rows.map(rowToWorkout), total };
+}
+
+/**
+ * Find a single workout by id, or the most recent workout whose title matches
+ * (case-insensitive substring). Targeted query — avoids loading the whole table.
+ */
+export async function findOne(userId: string, opts: { workoutId?: string; title?: string }, client?: pg.Pool | pg.PoolClient): Promise<Workout | null> {
+  const db = client ?? getPool('body');
+  if (opts.workoutId) {
+    const r = await db.query(`SELECT ${RETURNING} FROM workouts WHERE id = $1 AND user_id = $2 LIMIT 1`, [opts.workoutId, userId]);
+    return r.rows[0] ? rowToWorkout(r.rows[0]) : null;
+  }
+  if (opts.title) {
+    const r = await db.query(
+      `SELECT ${RETURNING} FROM workouts
+       WHERE user_id = $1 AND title ILIKE $2
+       ORDER BY date DESC, created_at DESC LIMIT 1`,
+      [userId, `%${escapeLike(opts.title)}%`],
+    );
+    return r.rows[0] ? rowToWorkout(r.rows[0]) : null;
+  }
+  return null;
 }
 
 export async function create(input: CreateWorkoutInput, client?: pg.Pool | pg.PoolClient): Promise<Workout> {
