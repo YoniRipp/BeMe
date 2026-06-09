@@ -12,6 +12,11 @@ export async function list(userId: string, pagination?: PaginationParams) {
   return dailyCheckInModel.findByUserId(userId, pagination);
 }
 
+/** Resolve the check-in for a specific date (voice sleep edit/delete). */
+export async function findByDate(userId: string, date: string) {
+  return dailyCheckInModel.findByDate(userId, date);
+}
+
 export async function create(userId: string, body: CreateCheckInBody): Promise<DailyCheckIn> {
   const checkIn = await dailyCheckInModel.create({
     userId,

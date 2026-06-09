@@ -42,21 +42,26 @@ const mockWorkoutUpdate = vi.fn();
 const mockWorkoutRemove = vi.fn();
 const mockWorkoutRemoveAll = vi.fn();
 const mockWorkoutList = vi.fn();
+const mockWorkoutFindForVoice = vi.fn();
 
 const mockFoodEntryCreate = vi.fn();
+const mockFoodEntryCreateBatch = vi.fn();
 const mockFoodEntryUpdate = vi.fn();
 const mockFoodEntryRemove = vi.fn();
 const mockFoodEntryList = vi.fn();
+const mockFoodEntryFindForVoice = vi.fn();
 
 const mockDailyCheckInCreate = vi.fn();
 const mockDailyCheckInUpdate = vi.fn();
 const mockDailyCheckInRemove = vi.fn();
 const mockDailyCheckInList = vi.fn();
+const mockDailyCheckInFindByDate = vi.fn();
 
 const mockGoalCreate = vi.fn();
 const mockGoalUpdate = vi.fn();
 const mockGoalRemove = vi.fn();
 const mockGoalList = vi.fn();
+const mockGoalFindForVoice = vi.fn();
 
 vi.mock('./workout.js', () => ({
   create: (...args: unknown[]) => mockWorkoutCreate(...args),
@@ -64,13 +69,16 @@ vi.mock('./workout.js', () => ({
   remove: (...args: unknown[]) => mockWorkoutRemove(...args),
   removeAll: (...args: unknown[]) => mockWorkoutRemoveAll(...args),
   list: (...args: unknown[]) => mockWorkoutList(...args),
+  findForVoice: (...args: unknown[]) => mockWorkoutFindForVoice(...args),
 }));
 
 vi.mock('./foodEntry.js', () => ({
   create: (...args: unknown[]) => mockFoodEntryCreate(...args),
+  createBatch: (...args: unknown[]) => mockFoodEntryCreateBatch(...args),
   update: (...args: unknown[]) => mockFoodEntryUpdate(...args),
   remove: (...args: unknown[]) => mockFoodEntryRemove(...args),
   list: (...args: unknown[]) => mockFoodEntryList(...args),
+  findForVoice: (...args: unknown[]) => mockFoodEntryFindForVoice(...args),
 }));
 
 vi.mock('./dailyCheckIn.js', () => ({
@@ -78,6 +86,7 @@ vi.mock('./dailyCheckIn.js', () => ({
   update: (...args: unknown[]) => mockDailyCheckInUpdate(...args),
   remove: (...args: unknown[]) => mockDailyCheckInRemove(...args),
   list: (...args: unknown[]) => mockDailyCheckInList(...args),
+  findByDate: (...args: unknown[]) => mockDailyCheckInFindByDate(...args),
 }));
 
 vi.mock('./goal.js', () => ({
@@ -85,6 +94,7 @@ vi.mock('./goal.js', () => ({
   update: (...args: unknown[]) => mockGoalUpdate(...args),
   remove: (...args: unknown[]) => mockGoalRemove(...args),
   list: (...args: unknown[]) => mockGoalList(...args),
+  findForVoice: (...args: unknown[]) => mockGoalFindForVoice(...args),
 }));
 
 vi.mock('../db/pool.js', () => ({
@@ -163,7 +173,7 @@ describe('voiceExecutor', () => {
 
   describe('edit_workout', () => {
     it('returns failure when workout not found', async () => {
-      mockWorkoutList.mockResolvedValue({ data: [], total: 0 });
+      mockWorkoutFindForVoice.mockResolvedValue(null);
 
       const results = await executeActions(
         [{ intent: 'edit_workout', workoutTitle: 'Unknown', title: 'New Title' }],
@@ -250,7 +260,7 @@ describe('voiceExecutor', () => {
 
   describe('log_sleep', () => {
     it('creates check-in when none exists', async () => {
-      mockDailyCheckInList.mockResolvedValue({ data: [], total: 0 });
+      mockDailyCheckInFindByDate.mockResolvedValue(null);
       mockDailyCheckInCreate.mockResolvedValue(undefined);
 
       const results = await executeActions(
@@ -267,7 +277,7 @@ describe('voiceExecutor', () => {
 
     it('updates check-in when one exists for date', async () => {
       const existing = { id: 'c1', date: '2025-02-24', sleepHours: 6 };
-      mockDailyCheckInList.mockResolvedValue({ data: [existing], total: 1 });
+      mockDailyCheckInFindByDate.mockResolvedValue(existing);
       mockDailyCheckInUpdate.mockResolvedValue(undefined);
 
       const results = await executeActions(

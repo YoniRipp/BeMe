@@ -2,17 +2,11 @@ import { FoodEntry } from '@/types/energy';
 import { FoodCard } from '@/components/energy/FoodCard';
 import { PulseCard } from '@/components/pulse/PulseUI';
 import { CloudSun, Cookie, Mic, Plus, Sun, Sunset } from 'lucide-react';
+import { groupByMeal, type MealType, type MealGroup } from '@/features/energy/mealType';
 
-export type MealType = 'Breakfast' | 'Lunch' | 'Dinner' | 'Snack';
-
-export interface MealGroup {
-  meal: MealType;
-  entries: FoodEntry[];
-  totalCal: number;
-  totalProtein: number;
-  totalCarbs: number;
-  totalFats: number;
-}
+// Re-exported for existing importers (e.g. Energy page).
+export { groupByMeal };
+export type { MealType, MealGroup };
 
 const MEAL_ICONS: Record<MealType, typeof Sun> = {
   Breakfast: Sun,
@@ -20,47 +14,6 @@ const MEAL_ICONS: Record<MealType, typeof Sun> = {
   Dinner: Sunset,
   Snack: Cookie,
 };
-
-function getMealType(entry: FoodEntry): MealType {
-  if (entry.mealType) {
-    const mt = entry.mealType.charAt(0).toUpperCase() + entry.mealType.slice(1);
-    if (mt === 'Breakfast' || mt === 'Lunch' || mt === 'Dinner' || mt === 'Snack') return mt;
-  }
-  const time = entry.startTime ?? entry.endTime;
-  if (!time) {
-    const h = new Date(entry.date).getHours();
-    if (h < 11) return 'Breakfast';
-    if (h < 14) return 'Lunch';
-    if (h < 17) return 'Snack';
-    return 'Dinner';
-  }
-  const hour = parseInt(time.split(':')[0], 10);
-  if (hour < 11) return 'Breakfast';
-  if (hour < 14) return 'Lunch';
-  if (hour < 17) return 'Snack';
-  return 'Dinner';
-}
-
-export function groupByMeal(entries: FoodEntry[]): MealGroup[] {
-  const order: MealType[] = ['Breakfast', 'Lunch', 'Dinner', 'Snack'];
-  const groups = new Map<MealType, FoodEntry[]>();
-  for (const m of order) groups.set(m, []);
-  for (const e of entries) {
-    const meal = getMealType(e);
-    groups.get(meal)!.push(e);
-  }
-  return order.map((meal) => {
-    const mealEntries = groups.get(meal)!;
-    return {
-      meal,
-      entries: mealEntries,
-      totalCal: mealEntries.reduce((s, e) => s + e.calories, 0),
-      totalProtein: mealEntries.reduce((s, e) => s + e.protein, 0),
-      totalCarbs: mealEntries.reduce((s, e) => s + e.carbs, 0),
-      totalFats: mealEntries.reduce((s, e) => s + e.fats, 0),
-    };
-  });
-}
 
 function MealGroupHeader({
   meal,

@@ -77,7 +77,9 @@ async function parseWithGemini(
   userId: string | null,
   transcriptForFallback?: string,
 ) {
-  const model = getGeminiModel();
+  // VOICE_PROMPT is baked into the model as a systemInstruction (cached), so it
+  // is not re-sent as user content on every request.
+  const model = getGeminiModel(VOICE_PROMPT);
   let result;
   const geminiStart = Date.now();
   try {
@@ -104,9 +106,10 @@ async function maybeExecuteAndPublish(
   actions: Record<string, unknown>[],
   userId: string | null,
   transcript: string,
+  todayStr?: string,
 ) {
   if (config.voiceExecuteOnServer && userId) {
-    const results = await executeActions(actions as { intent: string; [key: string]: unknown }[], userId);
+    const results = await executeActions(actions as { intent: string; [key: string]: unknown }[], userId, { today: todayStr });
     await publishEvent('voice.VoiceUnderstand', {
       transcript, actionCount: actions.length,
       intents: actions.map((a) => a.intent as string), executed: true,
@@ -129,9 +132,9 @@ export async function parseTranscript(text: string, lang = 'auto', userId: strin
   const todayStr = options.today && /^\d{4}-\d{2}-\d{2}$/.test(options.today) ? options.today : new Date().toISOString().slice(0, 10);
   const ctx = { todayStr, timezone: options.timezone || undefined };
 
-  const contents = [{ role: 'user', parts: [{ text: `${VOICE_PROMPT}\n\nUser transcript (lang: ${lang}):\n${text}` }] }];
+  const contents = [{ role: 'user', parts: [{ text: `User transcript (lang: ${lang}):\n${text}` }] }];
   const { actions } = await parseWithGemini(contents, ctx, userId, text);
-  return maybeExecuteAndPublish(actions, userId, text);
+  return maybeExecuteAndPublish(actions, userId, text, ctx.todayStr);
 }
 
 export async function parseAudio(audioBase64: string, mimeType: string, userId: string | null = null, options: { today?: string; timezone?: string } = {}) {
@@ -139,7 +142,7 @@ export async function parseAudio(audioBase64: string, mimeType: string, userId: 
   const todayStr = options.today && /^\d{4}-\d{2}-\d{2}$/.test(options.today) ? options.today : new Date().toISOString().slice(0, 10);
   const ctx = { todayStr, timezone: options.timezone || undefined };
 
-  const contents = [{ role: 'user', parts: [{ inlineData: { mimeType, data: audioBase64 } }, { text: VOICE_PROMPT }] }];
+  const contents = [{ role: 'user', parts: [{ inlineData: { mimeType, data: audioBase64 } }] }];
   const { actions } = await parseWithGemini(contents, ctx, userId);
-  return maybeExecuteAndPublish(actions, userId, '[audio]');
+  return maybeExecuteAndPublish(actions, userId, '[audio]', ctx.todayStr);
 }

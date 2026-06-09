@@ -5,13 +5,18 @@
 import { NotFoundError, ValidationError } from '../errors.js';
 import * as foodEntryModel from '../models/foodEntry.js';
 import { publishEvent } from '../events/publish.js';
-import { upsertEmbedding, buildEmbeddingText, deleteEmbedding } from './embeddings.js';
+import { upsertEmbedding, upsertEmbeddingsBatch, buildEmbeddingText, deleteEmbedding } from './embeddings.js';
 import type { FoodEntry, UpdateFoodEntryInput, PaginationParams } from '../types/domain.js';
 import { getPool } from '../db/pool.js';
 import type { CreateFoodEntryBody, UpdateFoodEntryBody, CreateFoodEntriesBatchBody } from '../schemas/routeSchemas.js';
 
 export async function list(userId: string, pagination?: PaginationParams) {
   return foodEntryModel.findByUserId(userId, pagination);
+}
+
+/** Resolve a single entry for voice edit/delete (by id, else latest by name). */
+export async function findForVoice(userId: string, opts: { entryId?: string; foodName?: string }) {
+  return foodEntryModel.findOne(userId, { entryId: opts.entryId, name: opts.foodName });
 }
 
 export async function create(userId: string, body: CreateFoodEntryBody): Promise<FoodEntry> {
@@ -83,11 +88,18 @@ export async function createBatch(userId: string, body: CreateFoodEntriesBatchBo
       created.push(entry);
     }
     await client.query('COMMIT');
-    // Fire-and-forget: publish events and upsert embeddings after commit
+    // Fire-and-forget after commit: publish events individually, embed in one batch.
     for (const entry of created) {
       publishEvent('energy.FoodEntryCreated', entry as unknown as Record<string, unknown>, userId);
-      upsertEmbedding(userId, 'food_entry', entry.id, buildEmbeddingText('food_entry', entry as unknown as Record<string, unknown>));
     }
+    upsertEmbeddingsBatch(
+      userId,
+      created.map((entry) => ({
+        recordType: 'food_entry',
+        recordId: entry.id,
+        text: buildEmbeddingText('food_entry', entry as unknown as Record<string, unknown>),
+      })),
+    );
     return created;
   } catch (err) {
     await client.query('ROLLBACK');

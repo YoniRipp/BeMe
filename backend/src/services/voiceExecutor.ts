@@ -15,6 +15,7 @@ import { isDbConfigured } from '../db/index.js';
 import { getPool } from '../db/pool.js';
 import { voiceContext } from '../lib/voiceContext.js';
 import type { WorkoutType, GoalType, GoalPeriod } from '../types/domain.js';
+import type { CreateFoodEntriesBatchBody } from '../schemas/routeSchemas.js';
 
 const MEAL_TYPES = ['breakfast', 'lunch', 'dinner', 'snack'] as const;
 type MealType = typeof MEAL_TYPES[number];
@@ -28,6 +29,11 @@ export interface ExecuteResult {
 interface VoiceAction {
   intent: string;
   [key: string]: unknown;
+}
+
+interface ExecuteOptions {
+  /** User's local "today" (YYYY-MM-DD) for date defaults; falls back to server UTC. */
+  today?: string;
 }
 
 // ─── Query user data (read-only tool for agent) ─────────────────────────────
@@ -106,83 +112,58 @@ async function queryUserData(userId: string, dataType: string, dateFrom?: string
   }
 }
 
-function parseDate(v: unknown): string {
-  if (v == null || v === '') return new Date().toISOString().slice(0, 10);
+function todayUtc(): string {
+  return new Date().toISOString().slice(0, 10);
+}
+
+function parseDate(v: unknown, fallbackToday: string): string {
+  if (v == null || v === '') return fallbackToday;
+  if (typeof v === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(v)) return v;
   const d = new Date(v as string);
-  return isNaN(d.getTime()) ? new Date().toISOString().slice(0, 10) : d.toISOString().slice(0, 10);
+  return isNaN(d.getTime()) ? fallbackToday : d.toISOString().slice(0, 10);
 }
 
 function parseMealType(v: unknown): MealType | undefined {
   return typeof v === 'string' && MEAL_TYPES.includes(v as MealType) ? v as MealType : undefined;
 }
 
+// ─── Resolvers (targeted single-row lookups; no full-table scans) ───────────
+
 async function resolveWorkout(userId: string, action: VoiceAction) {
-  const result = await workoutService.list(userId);
-  const workouts = result.data;
-  if (action.workoutId) {
-    return workouts.find((w) => w.id === action.workoutId) ?? null;
-  }
-  if (action.workoutTitle) {
-    const lower = String(action.workoutTitle).toLowerCase();
-    return workouts.find((w) => w.title.toLowerCase().includes(lower)) ?? null;
-  }
-  return null;
+  return workoutService.findForVoice(userId, {
+    workoutId: action.workoutId as string | undefined,
+    workoutTitle: action.workoutTitle as string | undefined,
+  });
 }
 
 async function resolveFoodEntry(userId: string, action: VoiceAction) {
-  const result = await foodEntryService.list(userId);
-  const entries = result.data;
-  if (action.entryId) {
-    return entries.find((e) => e.id === action.entryId) ?? null;
-  }
-  if (action.foodName) {
-    const lower = String(action.foodName).toLowerCase();
-    return entries.find((e) => e.name.toLowerCase().includes(lower)) ?? null;
-  }
-  return null;
+  return foodEntryService.findForVoice(userId, {
+    entryId: action.entryId as string | undefined,
+    foodName: action.foodName as string | undefined,
+  });
 }
 
-async function resolveCheckIn(userId: string, date: string) {
-  const result = await dailyCheckInService.list(userId);
-  const items = result.data;
-  const dateStr = parseDate(date);
-  return items.find((c) => String(c.date ?? '').startsWith(dateStr)) ?? null;
+async function resolveCheckIn(userId: string, date: string, today: string) {
+  return dailyCheckInService.findByDate(userId, parseDate(date, today));
 }
 
 async function resolveGoal(userId: string, action: VoiceAction) {
-  const result = await goalService.list(userId);
-  const goals = result.data;
-  if (action.goalId) {
-    return goals.find((g) => g.id === action.goalId) ?? null;
-  }
-  if (action.goalType) {
-    return goals.find((g) => g.type === action.goalType) ?? null;
-  }
-  return null;
+  return goalService.findForVoice(userId, {
+    goalId: action.goalId as string | undefined,
+    goalType: action.goalType as string | undefined,
+  });
 }
 
-async function resolveWeightEntry(userId: string, action: VoiceAction) {
-  const entries = await weightModel.findByUserId(userId);
-  if (action.entryId) {
-    return entries.find((e) => e.id === action.entryId) ?? null;
-  }
-  if (action.date) {
-    const dateStr = parseDate(action.date);
-    return entries.find((e) => String(e.date).startsWith(dateStr)) ?? null;
-  }
-  return entries[0] ?? null;
+async function resolveWeightEntry(userId: string, action: VoiceAction, today: string) {
+  if (action.entryId) return weightModel.findById(action.entryId as string, userId);
+  if (action.date) return weightModel.findByDate(userId, parseDate(action.date, today));
+  return weightModel.findLatest(userId);
 }
 
-async function resolveCycleEntry(userId: string, action: VoiceAction) {
-  const entries = await cycleModel.findByUserId(userId);
-  if (action.entryId) {
-    return entries.find((e) => e.id === action.entryId) ?? null;
-  }
-  if (action.date) {
-    const dateStr = parseDate(action.date);
-    return entries.find((e) => String(e.date).startsWith(dateStr)) ?? null;
-  }
-  return entries[0] ?? null;
+async function resolveCycleEntry(userId: string, action: VoiceAction, today: string) {
+  if (action.entryId) return cycleModel.findById(action.entryId as string, userId);
+  if (action.date) return cycleModel.findByDate(userId, parseDate(action.date, today));
+  return cycleModel.findLatest(userId);
 }
 
 type ClientResolveResult =
@@ -224,482 +205,431 @@ async function resolveClientId(trainerId: string, action: VoiceAction): Promise<
 }
 
 /**
- * Execute parsed voice actions. Returns results; does not throw.
+ * Resolve a trainer's client for an action, returning either the clientId or a
+ * ready-to-return failure result (ambiguous / not found). Removes the identical
+ * resolve+guard boilerplate that was repeated across every trainer action.
  */
-export async function executeActions(actions: VoiceAction[], userId: string): Promise<ExecuteResult[]> {
+async function resolveClientOrError(
+  trainerId: string,
+  action: VoiceAction,
+  intent: string,
+): Promise<{ clientId: string } | { error: ExecuteResult }> {
+  const resolved = await resolveClientId(trainerId, action);
+  if (resolved.kind === 'ambiguous') {
+    const list = resolved.matches.map((m) => `${m.name} (#${m.traineeNumber})`).join(', ');
+    return { error: { intent, success: false, message: `Multiple clients match "${action.clientName}": ${list}. Please say the full name or say "number X".` } };
+  }
+  if (resolved.kind === 'not_found') {
+    return { error: { intent, success: false, message: `Client "${action.clientName ?? action.clientTraineeNumber}" not found` } };
+  }
+  return { clientId: resolved.clientId };
+}
+
+// ─── add_food message + entry mapping (shared by single + batch paths) ──────
+
+function addFoodMessage(action: VoiceAction): string {
+  const name = (action.name as string) ?? 'food';
+  const calories = Number(action.calories) || 0;
+  if (action.nutritionResolved === false && calories === 0) {
+    return `Logged ${name} — couldn't find nutrition, tap to edit`;
+  }
+  return `Logged ${name}${calories ? `, ${calories} cal` : ''}`;
+}
+
+function actionToFoodEntry(action: VoiceAction) {
+  return {
+    name: (action.name as string) ?? 'Unknown',
+    calories: Number(action.calories) || 0,
+    protein: Number(action.protein) || 0,
+    carbs: Number(action.carbs) || 0,
+    fats: Number(action.fats) || 0,
+    portionAmount: action.portionAmount != null ? Number(action.portionAmount) : undefined,
+    portionUnit: action.portionUnit as string | undefined,
+    startTime: action.startTime as string | undefined,
+    endTime: action.endTime as string | undefined,
+    mealType: parseMealType(action.mealType),
+  };
+}
+
+// ─── Single-action execution ────────────────────────────────────────────────
+
+/**
+ * Execute one parsed voice action. Returns a result; never throws.
+ */
+async function executeOne(action: VoiceAction, userId: string, today: string): Promise<ExecuteResult> {
+  if (action.intent === 'unknown') {
+    return { intent: 'unknown', success: false, message: (action.message as string) ?? 'Could not understand' };
+  }
+
+  try {
+    switch (action.intent) {
+      case 'add_workout':
+        await workoutService.create(userId, {
+          date: parseDate(action.date, today),
+          title: (action.title as string) ?? 'Workout',
+          type: ((action.type as string) ?? 'cardio') as WorkoutType,
+          durationMinutes: Number(action.durationMinutes) || 30,
+          exercises: Array.isArray(action.exercises) ? action.exercises : [],
+          notes: action.notes as string,
+        });
+        return { intent: 'add_workout', success: true, message: `Logged workout: ${(action.title as string) ?? 'Workout'} (${(action.type as string) ?? 'cardio'}, ${Number(action.durationMinutes) || 30} min)` };
+
+      case 'edit_workout': {
+        const w = await resolveWorkout(userId, action);
+        if (!w) return { intent: 'edit_workout', success: false, message: 'Workout not found' };
+        await workoutService.update(userId, w.id as string, {
+          title: action.title as string,
+          type: action.type as WorkoutType | undefined,
+          durationMinutes: action.durationMinutes != null ? Number(action.durationMinutes) : undefined,
+          notes: action.notes as string,
+          date: action.date ? parseDate(action.date, today) : undefined,
+          exercises: Array.isArray(action.exercises) ? action.exercises : undefined,
+        });
+        return { intent: 'edit_workout', success: true, message: 'Updated workout' };
+      }
+
+      case 'delete_workout': {
+        const w = await resolveWorkout(userId, action);
+        if (!w) return { intent: 'delete_workout', success: false, message: 'Workout not found' };
+        await workoutService.remove(userId, w.id as string);
+        return { intent: 'delete_workout', success: true, message: 'Deleted workout' };
+      }
+
+      case 'delete_workouts': {
+        const isDate = (v: unknown): v is string => typeof v === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(v);
+        const range: { from?: string; to?: string } = {};
+        if (isDate(action.from)) range.from = action.from;
+        if (isDate(action.to)) range.to = action.to;
+        // A single `date` means "just that day".
+        if (!range.from && !range.to && isDate(action.date)) {
+          range.from = action.date;
+          range.to = action.date;
+        }
+        const count = await workoutService.removeAll(userId, range);
+        const scope = range.from || range.to
+          ? ` (${range.from ?? 'start'} to ${range.to ?? 'end'})`
+          : '';
+        return {
+          intent: 'delete_workouts',
+          success: true,
+          message: count > 0
+            ? `Deleted ${count} workout${count === 1 ? '' : 's'}${scope}`
+            : `No workouts found to delete${scope}`,
+        };
+      }
+
+      case 'add_food':
+        await foodEntryService.create(userId, {
+          date: parseDate(action.date, today),
+          ...actionToFoodEntry(action),
+        });
+        return { intent: 'add_food', success: true, message: addFoodMessage(action) };
+
+      case 'edit_food_entry': {
+        const e = await resolveFoodEntry(userId, action);
+        if (!e) return { intent: 'edit_food_entry', success: false, message: 'Food entry not found' };
+        await foodEntryService.update(userId, e.id as string, {
+          name: action.name as string,
+          calories: action.calories != null ? Number(action.calories) : undefined,
+          protein: action.protein != null ? Number(action.protein) : undefined,
+          carbs: action.carbs != null ? Number(action.carbs) : undefined,
+          fats: action.fats != null ? Number(action.fats) : undefined,
+          date: action.date ? parseDate(action.date, today) : undefined,
+          mealType: parseMealType(action.mealType),
+        });
+        return { intent: 'edit_food_entry', success: true, message: 'Updated food entry' };
+      }
+
+      case 'delete_food_entry': {
+        const e = await resolveFoodEntry(userId, action);
+        if (!e) return { intent: 'delete_food_entry', success: false, message: 'Food entry not found' };
+        await foodEntryService.remove(userId, e.id as string);
+        return { intent: 'delete_food_entry', success: true, message: 'Deleted food entry' };
+      }
+
+      case 'log_sleep': {
+        const dateStr = parseDate(action.date, today);
+        const existing = await resolveCheckIn(userId, dateStr, today);
+        const hours = Number(action.sleepHours) || 0;
+        if (existing) {
+          await dailyCheckInService.update(userId, existing.id as string, { sleepHours: hours });
+        } else {
+          await dailyCheckInService.create(userId, { date: dateStr, sleepHours: hours });
+        }
+        return { intent: 'log_sleep', success: true, message: `Logged ${hours} hours of sleep` };
+      }
+
+      case 'edit_check_in': {
+        if (!action.date) return { intent: 'edit_check_in', success: false, message: 'Date required' };
+        const existing = await resolveCheckIn(userId, parseDate(action.date, today), today);
+        if (!existing) return { intent: 'edit_check_in', success: false, message: 'Check-in not found' };
+        await dailyCheckInService.update(userId, existing.id as string, { sleepHours: Number(action.sleepHours) || 0 });
+        return { intent: 'edit_check_in', success: true, message: 'Updated sleep log' };
+      }
+
+      case 'delete_check_in': {
+        if (!action.date) return { intent: 'delete_check_in', success: false, message: 'Date required' };
+        const existing = await resolveCheckIn(userId, parseDate(action.date, today), today);
+        if (!existing) return { intent: 'delete_check_in', success: false, message: 'Check-in not found' };
+        await dailyCheckInService.remove(userId, existing.id as string);
+        return { intent: 'delete_check_in', success: true, message: 'Deleted sleep log' };
+      }
+
+      case 'add_goal':
+        await goalService.create(userId, {
+          type: ((action.type as string) ?? 'workouts') as GoalType,
+          target: Number(action.target) || 0,
+          period: ((action.period as string) ?? 'weekly') as GoalPeriod,
+        });
+        return { intent: 'add_goal', success: true, message: `Added goal: ${Number(action.target) || 0} ${(action.type as string) ?? 'workouts'} ${(action.period as string) ?? 'weekly'}` };
+
+      case 'edit_goal': {
+        const g = await resolveGoal(userId, action);
+        if (!g) return { intent: 'edit_goal', success: false, message: 'Goal not found' };
+        await goalService.update(userId, g.id as string, {
+          target: action.target != null ? Number(action.target) : undefined,
+          period: action.period as GoalPeriod | undefined,
+        });
+        return { intent: 'edit_goal', success: true, message: 'Updated goal target' };
+      }
+
+      case 'delete_goal': {
+        const g = await resolveGoal(userId, action);
+        if (!g) return { intent: 'delete_goal', success: false, message: 'Goal not found' };
+        await goalService.remove(userId, g.id as string);
+        return { intent: 'delete_goal', success: true, message: 'Deleted goal' };
+      }
+
+      // ─── Weight ─────────────────────────────────────────
+      case 'log_weight': {
+        const dateStr = parseDate(action.date, today);
+        const weightKg = Number(action.weightKg) || 0;
+        await weightModel.create({ userId, date: dateStr, weight: weightKg, notes: action.notes as string });
+        return { intent: 'log_weight', success: true, message: `Logged weight: ${weightKg} kg` };
+      }
+
+      case 'edit_weight': {
+        const entry = await resolveWeightEntry(userId, action, today);
+        if (!entry) return { intent: 'edit_weight', success: false, message: 'Weight entry not found' };
+        await weightModel.update(entry.id, userId, {
+          weight: action.weightKg != null ? Number(action.weightKg) : undefined,
+          date: action.date ? parseDate(action.date, today) : undefined,
+          notes: action.notes as string | undefined,
+        });
+        return { intent: 'edit_weight', success: true, message: 'Updated weight entry' };
+      }
+
+      case 'delete_weight': {
+        const entry = await resolveWeightEntry(userId, action, today);
+        if (!entry) return { intent: 'delete_weight', success: false, message: 'Weight entry not found' };
+        await weightModel.deleteById(entry.id, userId);
+        return { intent: 'delete_weight', success: true, message: 'Deleted weight entry' };
+      }
+
+      // ─── Water ──────────────────────────────────────────
+      case 'add_water': {
+        const dateStr = parseDate(action.date, today);
+        const glasses = Number(action.glasses) || 1;
+        await waterModel.addGlasses(userId, dateStr, glasses);
+        return { intent: 'add_water', success: true, message: `Added ${glasses} glass${glasses > 1 ? 'es' : ''} of water` };
+      }
+
+      case 'remove_water': {
+        const dateStr = parseDate(action.date, today);
+        await waterModel.removeGlass(userId, dateStr);
+        return { intent: 'remove_water', success: true, message: 'Removed a glass of water' };
+      }
+
+      // ─── Cycle ──────────────────────────────────────────
+      case 'log_cycle': {
+        const dateStr = parseDate(action.date, today);
+        const symptoms = action.symptoms ? String(action.symptoms).split(',').map((s: string) => s.trim()).filter(Boolean) : [];
+        await cycleModel.create({
+          userId,
+          date: dateStr,
+          periodStart: action.periodStart === true,
+          flow: action.flow as string | undefined,
+          symptoms,
+          notes: action.notes as string | undefined,
+        });
+        return { intent: 'log_cycle', success: true, message: 'Logged cycle entry' };
+      }
+
+      case 'edit_cycle': {
+        const entry = await resolveCycleEntry(userId, action, today);
+        if (!entry) return { intent: 'edit_cycle', success: false, message: 'Cycle entry not found' };
+        const updates: Record<string, unknown> = {};
+        if (action.periodStart != null) updates.periodStart = action.periodStart === true;
+        if (action.flow != null) updates.flow = action.flow as string;
+        if (action.symptoms != null) updates.symptoms = String(action.symptoms).split(',').map((s: string) => s.trim()).filter(Boolean);
+        if (action.notes != null) updates.notes = action.notes as string;
+        if (action.date) updates.date = parseDate(action.date, today);
+        await cycleModel.update(entry.id, userId, updates as Parameters<typeof cycleModel.update>[2]);
+        return { intent: 'edit_cycle', success: true, message: 'Updated cycle entry' };
+      }
+
+      case 'delete_cycle': {
+        const entry = await resolveCycleEntry(userId, action, today);
+        if (!entry) return { intent: 'delete_cycle', success: false, message: 'Cycle entry not found' };
+        await cycleModel.deleteById(entry.id, userId);
+        return { intent: 'delete_cycle', success: true, message: 'Deleted cycle entry' };
+      }
+
+      // ─── Profile ────────────────────────────────────────
+      case 'update_profile': {
+        await profileModel.upsert({
+          userId,
+          heightCm: action.heightCm != null ? Number(action.heightCm) : undefined,
+          currentWeight: action.currentWeight != null ? Number(action.currentWeight) : undefined,
+          targetWeight: action.targetWeight != null ? Number(action.targetWeight) : undefined,
+          activityLevel: action.activityLevel as string | undefined,
+          sex: action.sex as string | undefined,
+        });
+        return { intent: 'update_profile', success: true, message: 'Updated profile' };
+      }
+
+      // ─── Trainer: client workouts ───────────────────────
+      case 'add_client_workout': {
+        const c = await resolveClientOrError(userId, action, 'add_client_workout');
+        if ('error' in c) return c.error;
+        await workoutService.create(c.clientId, {
+          date: parseDate(action.date, today),
+          title: (action.title as string) ?? 'Workout',
+          type: ((action.type as string) ?? 'cardio') as WorkoutType,
+          durationMinutes: Number(action.durationMinutes) || 30,
+          exercises: Array.isArray(action.exercises) ? action.exercises : [],
+          notes: action.notes as string,
+        });
+        return { intent: 'add_client_workout', success: true, message: `Logged workout for ${action.clientName ?? 'client'}: ${(action.title as string) ?? 'Workout'}` };
+      }
+
+      case 'edit_client_workout': {
+        const c = await resolveClientOrError(userId, action, 'edit_client_workout');
+        if ('error' in c) return c.error;
+        const w = await resolveWorkout(c.clientId, action);
+        if (!w) return { intent: 'edit_client_workout', success: false, message: 'Client workout not found' };
+        await workoutService.update(c.clientId, w.id as string, {
+          title: action.title as string,
+          type: action.type as WorkoutType | undefined,
+          durationMinutes: action.durationMinutes != null ? Number(action.durationMinutes) : undefined,
+          exercises: Array.isArray(action.exercises) ? action.exercises : undefined,
+        });
+        return { intent: 'edit_client_workout', success: true, message: `Updated ${action.clientName ?? 'client'}'s workout` };
+      }
+
+      case 'delete_client_workout': {
+        const c = await resolveClientOrError(userId, action, 'delete_client_workout');
+        if ('error' in c) return c.error;
+        const w = await resolveWorkout(c.clientId, action);
+        if (!w) return { intent: 'delete_client_workout', success: false, message: 'Client workout not found' };
+        await workoutService.remove(c.clientId, w.id as string);
+        return { intent: 'delete_client_workout', success: true, message: `Deleted ${action.clientName ?? 'client'}'s workout` };
+      }
+
+      // ─── Trainer: client food ───────────────────────────
+      case 'add_client_food': {
+        const c = await resolveClientOrError(userId, action, 'add_client_food');
+        if ('error' in c) return c.error;
+        await foodEntryService.create(c.clientId, {
+          date: parseDate(action.date, today),
+          ...actionToFoodEntry(action),
+        });
+        return { intent: 'add_client_food', success: true, message: `Logged food for ${action.clientName ?? 'client'}: ${(action.name as string) ?? 'food'}` };
+      }
+
+      case 'edit_client_food': {
+        const c = await resolveClientOrError(userId, action, 'edit_client_food');
+        if ('error' in c) return c.error;
+        const e = await resolveFoodEntry(c.clientId, action);
+        if (!e) return { intent: 'edit_client_food', success: false, message: 'Client food entry not found' };
+        await foodEntryService.update(c.clientId, e.id as string, {
+          name: action.name as string,
+          calories: action.calories != null ? Number(action.calories) : undefined,
+          protein: action.protein != null ? Number(action.protein) : undefined,
+          carbs: action.carbs != null ? Number(action.carbs) : undefined,
+          fats: action.fats != null ? Number(action.fats) : undefined,
+        });
+        return { intent: 'edit_client_food', success: true, message: `Updated ${action.clientName ?? 'client'}'s food entry` };
+      }
+
+      case 'delete_client_food': {
+        const c = await resolveClientOrError(userId, action, 'delete_client_food');
+        if ('error' in c) return c.error;
+        const e = await resolveFoodEntry(c.clientId, action);
+        if (!e) return { intent: 'delete_client_food', success: false, message: 'Client food entry not found' };
+        await foodEntryService.remove(c.clientId, e.id as string);
+        return { intent: 'delete_client_food', success: true, message: `Deleted ${action.clientName ?? 'client'}'s food entry` };
+      }
+
+      default:
+        return { intent: action.intent, success: false, message: 'Unsupported action' };
+    }
+  } catch (err) {
+    return {
+      intent: action.intent,
+      success: false,
+      message: (err as Error)?.message ?? 'An error occurred',
+    };
+  }
+}
+
+/**
+ * Execute parsed voice actions. Returns results in the original order; never throws.
+ *
+ * Multiple self `add_food` actions that share a date are inserted via one
+ * transactional batch (`createBatch`) instead of one INSERT each. All other
+ * actions run sequentially so edit/delete/sleep ordering stays predictable.
+ */
+export async function executeActions(actions: VoiceAction[], userId: string, options: ExecuteOptions = {}): Promise<ExecuteResult[]> {
   if (!isDbConfigured()) {
     return actions.map((a) => ({ intent: a.intent, success: false, message: 'Database not configured' }));
   }
 
+  const today = options.today && /^\d{4}-\d{2}-\d{2}$/.test(options.today) ? options.today : todayUtc();
+
   return voiceContext.run(async () => {
-  const results: ExecuteResult[] = [];
+    const results: ExecuteResult[] = new Array(actions.length);
 
-  for (const action of actions) {
-    if (action.intent === 'unknown') {
-      results.push({ intent: 'unknown', success: false, message: (action.message as string) ?? 'Could not understand' });
-      continue;
+    // ── A3: batch self add_food actions that share a date ──────────────────
+    const foodByDate = new Map<string, number[]>();
+    actions.forEach((a, i) => {
+      if (a.intent !== 'add_food') return;
+      const d = parseDate(a.date, today);
+      const list = foodByDate.get(d) ?? [];
+      list.push(i);
+      foodByDate.set(d, list);
+    });
+
+    const batched = new Set<number>();
+    await Promise.all(
+      [...foodByDate.entries()].map(async ([date, idxs]) => {
+        if (idxs.length < 2) return; // single foods keep the simple create path
+        idxs.forEach((i) => batched.add(i));
+        const entries = idxs.map((i) => actionToFoodEntry(actions[i])) as CreateFoodEntriesBatchBody['entries'];
+        try {
+          await foodEntryService.createBatch(userId, { date, entries });
+          idxs.forEach((i) => {
+            results[i] = { intent: 'add_food', success: true, message: addFoodMessage(actions[i]) };
+          });
+        } catch {
+          // If the batch fails as a unit, fall back to per-item creates so one
+          // bad row doesn't drop the whole meal.
+          for (const i of idxs) {
+            results[i] = await executeOne(actions[i], userId, today);
+          }
+        }
+      }),
+    );
+
+    // ── Everything else: sequential, original order ────────────────────────
+    for (let i = 0; i < actions.length; i++) {
+      if (batched.has(i)) continue;
+      results[i] = await executeOne(actions[i], userId, today);
     }
 
-    try {
-      switch (action.intent) {
-        case 'add_workout':
-          await workoutService.create(userId, {
-            date: parseDate(action.date),
-            title: (action.title as string) ?? 'Workout',
-            type: ((action.type as string) ?? 'cardio') as WorkoutType,
-            durationMinutes: Number(action.durationMinutes) || 30,
-            exercises: Array.isArray(action.exercises) ? action.exercises : [],
-            notes: action.notes as string,
-          });
-          results.push({ intent: 'add_workout', success: true, message: `Logged workout: ${(action.title as string) ?? 'Workout'} (${(action.type as string) ?? 'cardio'}, ${Number(action.durationMinutes) || 30} min)` });
-          break;
-
-        case 'edit_workout': {
-          const w = await resolveWorkout(userId, action);
-          if (!w) {
-            results.push({ intent: 'edit_workout', success: false, message: 'Workout not found' });
-            break;
-          }
-          await workoutService.update(userId, w.id as string, {
-            title: action.title as string,
-            type: action.type as WorkoutType | undefined,
-            durationMinutes: action.durationMinutes != null ? Number(action.durationMinutes) : undefined,
-            notes: action.notes as string,
-            date: action.date ? parseDate(action.date) : undefined,
-            exercises: Array.isArray(action.exercises) ? action.exercises : undefined,
-          });
-          results.push({ intent: 'edit_workout', success: true, message: 'Updated workout' });
-          break;
-        }
-
-        case 'delete_workout': {
-          const w = await resolveWorkout(userId, action);
-          if (!w) {
-            results.push({ intent: 'delete_workout', success: false, message: 'Workout not found' });
-            break;
-          }
-          await workoutService.remove(userId, w.id as string);
-          results.push({ intent: 'delete_workout', success: true, message: 'Deleted workout' });
-          break;
-        }
-
-        case 'delete_workouts': {
-          const isDate = (v: unknown): v is string => typeof v === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(v);
-          const range: { from?: string; to?: string } = {};
-          if (isDate(action.from)) range.from = action.from;
-          if (isDate(action.to)) range.to = action.to;
-          // A single `date` means "just that day".
-          if (!range.from && !range.to && isDate(action.date)) {
-            range.from = action.date;
-            range.to = action.date;
-          }
-          const count = await workoutService.removeAll(userId, range);
-          const scope = range.from || range.to
-            ? ` (${range.from ?? 'start'} to ${range.to ?? 'end'})`
-            : '';
-          results.push({
-            intent: 'delete_workouts',
-            success: true,
-            message: count > 0
-              ? `Deleted ${count} workout${count === 1 ? '' : 's'}${scope}`
-              : `No workouts found to delete${scope}`,
-          });
-          break;
-        }
-
-        case 'add_food':
-          await foodEntryService.create(userId, {
-            date: parseDate(action.date),
-            name: (action.name as string) ?? 'Unknown',
-            calories: Number(action.calories) || 0,
-            protein: Number(action.protein) || 0,
-            carbs: Number(action.carbs) || 0,
-            fats: Number(action.fats) || 0,
-            portionAmount: action.portionAmount != null ? Number(action.portionAmount) : undefined,
-            portionUnit: action.portionUnit as string,
-            startTime: action.startTime as string,
-            endTime: action.endTime as string,
-            mealType: parseMealType(action.mealType),
-          });
-          results.push({ intent: 'add_food', success: true, message: `Logged ${(action.name as string) ?? 'food'}${action.calories ? `, ${Number(action.calories)} cal` : ''}` });
-          break;
-
-        case 'edit_food_entry': {
-          const e = await resolveFoodEntry(userId, action);
-          if (!e) {
-            results.push({ intent: 'edit_food_entry', success: false, message: 'Food entry not found' });
-            break;
-          }
-          await foodEntryService.update(userId, e.id as string, {
-            name: action.name as string,
-            calories: action.calories != null ? Number(action.calories) : undefined,
-            protein: action.protein != null ? Number(action.protein) : undefined,
-            carbs: action.carbs != null ? Number(action.carbs) : undefined,
-            fats: action.fats != null ? Number(action.fats) : undefined,
-            date: action.date ? parseDate(action.date) : undefined,
-            mealType: parseMealType(action.mealType),
-          });
-          results.push({ intent: 'edit_food_entry', success: true, message: 'Updated food entry' });
-          break;
-        }
-
-        case 'delete_food_entry': {
-          const e = await resolveFoodEntry(userId, action);
-          if (!e) {
-            results.push({ intent: 'delete_food_entry', success: false, message: 'Food entry not found' });
-            break;
-          }
-          await foodEntryService.remove(userId, e.id as string);
-          results.push({ intent: 'delete_food_entry', success: true, message: 'Deleted food entry' });
-          break;
-        }
-
-        case 'log_sleep': {
-          const dateStr = parseDate(action.date);
-          const existing = await resolveCheckIn(userId, dateStr);
-          const hours = Number(action.sleepHours) || 0;
-          if (existing) {
-            await dailyCheckInService.update(userId, existing.id as string, { sleepHours: hours });
-          } else {
-            await dailyCheckInService.create(userId, { date: dateStr, sleepHours: hours });
-          }
-          results.push({ intent: 'log_sleep', success: true, message: `Logged ${hours} hours of sleep` });
-          break;
-        }
-
-        case 'edit_check_in': {
-          if (!action.date) {
-            results.push({ intent: 'edit_check_in', success: false, message: 'Date required' });
-            break;
-          }
-          const existing = await resolveCheckIn(userId, parseDate(action.date));
-          if (!existing) {
-            results.push({ intent: 'edit_check_in', success: false, message: 'Check-in not found' });
-            break;
-          }
-          await dailyCheckInService.update(userId, existing.id as string, { sleepHours: Number(action.sleepHours) || 0 });
-          results.push({ intent: 'edit_check_in', success: true, message: 'Updated sleep log' });
-          break;
-        }
-
-        case 'delete_check_in': {
-          if (!action.date) {
-            results.push({ intent: 'delete_check_in', success: false, message: 'Date required' });
-            break;
-          }
-          const existing = await resolveCheckIn(userId, parseDate(action.date));
-          if (!existing) {
-            results.push({ intent: 'delete_check_in', success: false, message: 'Check-in not found' });
-            break;
-          }
-          await dailyCheckInService.remove(userId, existing.id as string);
-          results.push({ intent: 'delete_check_in', success: true, message: 'Deleted sleep log' });
-          break;
-        }
-
-        case 'add_goal':
-          await goalService.create(userId, {
-            type: ((action.type as string) ?? 'workouts') as GoalType,
-            target: Number(action.target) || 0,
-            period: ((action.period as string) ?? 'weekly') as GoalPeriod,
-          });
-          results.push({ intent: 'add_goal', success: true, message: `Added goal: ${Number(action.target) || 0} ${(action.type as string) ?? 'workouts'} ${(action.period as string) ?? 'weekly'}` });
-          break;
-
-        case 'edit_goal': {
-          const g = await resolveGoal(userId, action);
-          if (!g) {
-            results.push({ intent: 'edit_goal', success: false, message: 'Goal not found' });
-            break;
-          }
-          await goalService.update(userId, g.id as string, {
-            target: action.target != null ? Number(action.target) : undefined,
-            period: action.period as GoalPeriod | undefined,
-          });
-          results.push({ intent: 'edit_goal', success: true, message: 'Updated goal target' });
-          break;
-        }
-
-        case 'delete_goal': {
-          const g = await resolveGoal(userId, action);
-          if (!g) {
-            results.push({ intent: 'delete_goal', success: false, message: 'Goal not found' });
-            break;
-          }
-          await goalService.remove(userId, g.id as string);
-          results.push({ intent: 'delete_goal', success: true, message: 'Deleted goal' });
-          break;
-        }
-
-        // ─── Weight ─────────────────────────────────────────
-        case 'log_weight': {
-          const dateStr = parseDate(action.date);
-          const weightKg = Number(action.weightKg) || 0;
-          await weightModel.create({ userId, date: dateStr, weight: weightKg, notes: action.notes as string });
-          results.push({ intent: 'log_weight', success: true, message: `Logged weight: ${weightKg} kg` });
-          break;
-        }
-
-        case 'edit_weight': {
-          const entry = await resolveWeightEntry(userId, action);
-          if (!entry) {
-            results.push({ intent: 'edit_weight', success: false, message: 'Weight entry not found' });
-            break;
-          }
-          await weightModel.update(entry.id, userId, {
-            weight: action.weightKg != null ? Number(action.weightKg) : undefined,
-            date: action.date ? parseDate(action.date) : undefined,
-            notes: action.notes as string | undefined,
-          });
-          results.push({ intent: 'edit_weight', success: true, message: 'Updated weight entry' });
-          break;
-        }
-
-        case 'delete_weight': {
-          const entry = await resolveWeightEntry(userId, action);
-          if (!entry) {
-            results.push({ intent: 'delete_weight', success: false, message: 'Weight entry not found' });
-            break;
-          }
-          await weightModel.deleteById(entry.id, userId);
-          results.push({ intent: 'delete_weight', success: true, message: 'Deleted weight entry' });
-          break;
-        }
-
-        // ─── Water ──────────────────────────────────────────
-        case 'add_water': {
-          const dateStr = parseDate(action.date);
-          const glasses = Number(action.glasses) || 1;
-          for (let i = 0; i < glasses; i++) {
-            await waterModel.addGlass(userId, dateStr);
-          }
-          results.push({ intent: 'add_water', success: true, message: `Added ${glasses} glass${glasses > 1 ? 'es' : ''} of water` });
-          break;
-        }
-
-        case 'remove_water': {
-          const dateStr = parseDate(action.date);
-          await waterModel.removeGlass(userId, dateStr);
-          results.push({ intent: 'remove_water', success: true, message: 'Removed a glass of water' });
-          break;
-        }
-
-        // ─── Cycle ──────────────────────────────────────────
-        case 'log_cycle': {
-          const dateStr = parseDate(action.date);
-          const symptoms = action.symptoms ? String(action.symptoms).split(',').map((s: string) => s.trim()).filter(Boolean) : [];
-          await cycleModel.create({
-            userId,
-            date: dateStr,
-            periodStart: action.periodStart === true,
-            flow: action.flow as string | undefined,
-            symptoms,
-            notes: action.notes as string | undefined,
-          });
-          results.push({ intent: 'log_cycle', success: true, message: 'Logged cycle entry' });
-          break;
-        }
-
-        case 'edit_cycle': {
-          const entry = await resolveCycleEntry(userId, action);
-          if (!entry) {
-            results.push({ intent: 'edit_cycle', success: false, message: 'Cycle entry not found' });
-            break;
-          }
-          const updates: Record<string, unknown> = {};
-          if (action.periodStart != null) updates.periodStart = action.periodStart === true;
-          if (action.flow != null) updates.flow = action.flow as string;
-          if (action.symptoms != null) updates.symptoms = String(action.symptoms).split(',').map((s: string) => s.trim()).filter(Boolean);
-          if (action.notes != null) updates.notes = action.notes as string;
-          if (action.date) updates.date = parseDate(action.date);
-          await cycleModel.update(entry.id, userId, updates as Parameters<typeof cycleModel.update>[2]);
-          results.push({ intent: 'edit_cycle', success: true, message: 'Updated cycle entry' });
-          break;
-        }
-
-        case 'delete_cycle': {
-          const entry = await resolveCycleEntry(userId, action);
-          if (!entry) {
-            results.push({ intent: 'delete_cycle', success: false, message: 'Cycle entry not found' });
-            break;
-          }
-          await cycleModel.deleteById(entry.id, userId);
-          results.push({ intent: 'delete_cycle', success: true, message: 'Deleted cycle entry' });
-          break;
-        }
-
-        // ─── Profile ────────────────────────────────────────
-        case 'update_profile': {
-          await profileModel.upsert({
-            userId,
-            heightCm: action.heightCm != null ? Number(action.heightCm) : undefined,
-            currentWeight: action.currentWeight != null ? Number(action.currentWeight) : undefined,
-            targetWeight: action.targetWeight != null ? Number(action.targetWeight) : undefined,
-            activityLevel: action.activityLevel as string | undefined,
-            sex: action.sex as string | undefined,
-          });
-          results.push({ intent: 'update_profile', success: true, message: 'Updated profile' });
-          break;
-        }
-
-        // ─── Trainer: client workouts ───────────────────────
-        case 'add_client_workout': {
-          const resolved = await resolveClientId(userId, action);
-          if (resolved.kind === 'ambiguous') {
-            const list = resolved.matches.map((m) => `${m.name} (#${m.traineeNumber})`).join(', ');
-            results.push({ intent: 'add_client_workout', success: false, message: `Multiple clients match "${action.clientName}": ${list}. Please say the full name or say "number X".` });
-            break;
-          }
-          if (resolved.kind === 'not_found') {
-            results.push({ intent: 'add_client_workout', success: false, message: `Client "${action.clientName ?? action.clientTraineeNumber}" not found` });
-            break;
-          }
-          await workoutService.create(resolved.clientId, {
-            date: parseDate(action.date),
-            title: (action.title as string) ?? 'Workout',
-            type: ((action.type as string) ?? 'cardio') as WorkoutType,
-            durationMinutes: Number(action.durationMinutes) || 30,
-            exercises: Array.isArray(action.exercises) ? action.exercises : [],
-            notes: action.notes as string,
-          });
-          results.push({ intent: 'add_client_workout', success: true, message: `Logged workout for ${action.clientName ?? 'client'}: ${(action.title as string) ?? 'Workout'}` });
-          break;
-        }
-
-        case 'edit_client_workout': {
-          const resolved = await resolveClientId(userId, action);
-          if (resolved.kind === 'ambiguous') {
-            const list = resolved.matches.map((m) => `${m.name} (#${m.traineeNumber})`).join(', ');
-            results.push({ intent: 'edit_client_workout', success: false, message: `Multiple clients match "${action.clientName}": ${list}. Please say the full name or say "number X".` });
-            break;
-          }
-          if (resolved.kind === 'not_found') {
-            results.push({ intent: 'edit_client_workout', success: false, message: `Client "${action.clientName ?? action.clientTraineeNumber}" not found` });
-            break;
-          }
-          const w = await resolveWorkout(resolved.clientId, action);
-          if (!w) {
-            results.push({ intent: 'edit_client_workout', success: false, message: 'Client workout not found' });
-            break;
-          }
-          await workoutService.update(resolved.clientId, w.id as string, {
-            title: action.title as string,
-            type: action.type as WorkoutType | undefined,
-            durationMinutes: action.durationMinutes != null ? Number(action.durationMinutes) : undefined,
-            exercises: Array.isArray(action.exercises) ? action.exercises : undefined,
-          });
-          results.push({ intent: 'edit_client_workout', success: true, message: `Updated ${action.clientName ?? 'client'}'s workout` });
-          break;
-        }
-
-        case 'delete_client_workout': {
-          const resolved = await resolveClientId(userId, action);
-          if (resolved.kind === 'ambiguous') {
-            const list = resolved.matches.map((m) => `${m.name} (#${m.traineeNumber})`).join(', ');
-            results.push({ intent: 'delete_client_workout', success: false, message: `Multiple clients match "${action.clientName}": ${list}. Please say the full name or say "number X".` });
-            break;
-          }
-          if (resolved.kind === 'not_found') {
-            results.push({ intent: 'delete_client_workout', success: false, message: `Client "${action.clientName ?? action.clientTraineeNumber}" not found` });
-            break;
-          }
-          const w = await resolveWorkout(resolved.clientId, action);
-          if (!w) {
-            results.push({ intent: 'delete_client_workout', success: false, message: 'Client workout not found' });
-            break;
-          }
-          await workoutService.remove(resolved.clientId, w.id as string);
-          results.push({ intent: 'delete_client_workout', success: true, message: `Deleted ${action.clientName ?? 'client'}'s workout` });
-          break;
-        }
-
-        // ─── Trainer: client food ───────────────────────────
-        case 'add_client_food': {
-          const resolved = await resolveClientId(userId, action);
-          if (resolved.kind === 'ambiguous') {
-            const list = resolved.matches.map((m) => `${m.name} (#${m.traineeNumber})`).join(', ');
-            results.push({ intent: 'add_client_food', success: false, message: `Multiple clients match "${action.clientName}": ${list}. Please say the full name or say "number X".` });
-            break;
-          }
-          if (resolved.kind === 'not_found') {
-            results.push({ intent: 'add_client_food', success: false, message: `Client "${action.clientName ?? action.clientTraineeNumber}" not found` });
-            break;
-          }
-          await foodEntryService.create(resolved.clientId, {
-            date: parseDate(action.date),
-            name: (action.name as string) ?? 'Unknown',
-            calories: Number(action.calories) || 0,
-            protein: Number(action.protein) || 0,
-            carbs: Number(action.carbs) || 0,
-            fats: Number(action.fats) || 0,
-            portionAmount: action.portionAmount != null ? Number(action.portionAmount) : undefined,
-            portionUnit: action.portionUnit as string,
-            mealType: parseMealType(action.mealType),
-          });
-          results.push({ intent: 'add_client_food', success: true, message: `Logged food for ${action.clientName ?? 'client'}: ${(action.name as string) ?? 'food'}` });
-          break;
-        }
-
-        case 'edit_client_food': {
-          const resolved = await resolveClientId(userId, action);
-          if (resolved.kind === 'ambiguous') {
-            const list = resolved.matches.map((m) => `${m.name} (#${m.traineeNumber})`).join(', ');
-            results.push({ intent: 'edit_client_food', success: false, message: `Multiple clients match "${action.clientName}": ${list}. Please say the full name or say "number X".` });
-            break;
-          }
-          if (resolved.kind === 'not_found') {
-            results.push({ intent: 'edit_client_food', success: false, message: `Client "${action.clientName ?? action.clientTraineeNumber}" not found` });
-            break;
-          }
-          const e = await resolveFoodEntry(resolved.clientId, action);
-          if (!e) {
-            results.push({ intent: 'edit_client_food', success: false, message: 'Client food entry not found' });
-            break;
-          }
-          await foodEntryService.update(resolved.clientId, e.id as string, {
-            name: action.name as string,
-            calories: action.calories != null ? Number(action.calories) : undefined,
-            protein: action.protein != null ? Number(action.protein) : undefined,
-            carbs: action.carbs != null ? Number(action.carbs) : undefined,
-            fats: action.fats != null ? Number(action.fats) : undefined,
-          });
-          results.push({ intent: 'edit_client_food', success: true, message: `Updated ${action.clientName ?? 'client'}'s food entry` });
-          break;
-        }
-
-        case 'delete_client_food': {
-          const resolved = await resolveClientId(userId, action);
-          if (resolved.kind === 'ambiguous') {
-            const list = resolved.matches.map((m) => `${m.name} (#${m.traineeNumber})`).join(', ');
-            results.push({ intent: 'delete_client_food', success: false, message: `Multiple clients match "${action.clientName}": ${list}. Please say the full name or say "number X".` });
-            break;
-          }
-          if (resolved.kind === 'not_found') {
-            results.push({ intent: 'delete_client_food', success: false, message: `Client "${action.clientName ?? action.clientTraineeNumber}" not found` });
-            break;
-          }
-          const e = await resolveFoodEntry(resolved.clientId, action);
-          if (!e) {
-            results.push({ intent: 'delete_client_food', success: false, message: 'Client food entry not found' });
-            break;
-          }
-          await foodEntryService.remove(resolved.clientId, e.id as string);
-          results.push({ intent: 'delete_client_food', success: true, message: `Deleted ${action.clientName ?? 'client'}'s food entry` });
-          break;
-        }
-
-        default:
-          results.push({ intent: action.intent, success: false, message: 'Unsupported action' });
-      }
-    } catch (err) {
-      results.push({
-        intent: action.intent,
-        success: false,
-        message: (err as Error)?.message ?? 'An error occurred',
-      });
-    }
-  }
-
-  return results;
-  }); // end voiceContext.run
+    return results;
+  });
 }
+
+// Retained for the agent read-only data tool (see chat/agent services).
+void queryUserData;

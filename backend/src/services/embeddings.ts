@@ -2,17 +2,16 @@
  * Embeddings service — generates vector embeddings via Gemini for semantic search.
  * Stores embeddings in the user_embeddings table (pgvector).
  */
-import { GoogleGenerativeAI } from '@google/generative-ai';
 import { config } from '../config/index.js';
 import { getPool } from '../db/pool.js';
 import { logger } from '../lib/logger.js';
+import { getModel } from '../lib/genai.js';
 
 const EMBEDDING_MODEL = 'text-embedding-004';
 const EMBEDDING_DIM = 768;
 
 function getEmbeddingClient() {
-  if (!config.geminiApiKey) throw new Error('GEMINI_API_KEY not configured');
-  return new GoogleGenerativeAI(config.geminiApiKey).getGenerativeModel({ model: EMBEDDING_MODEL });
+  return getModel({ model: EMBEDDING_MODEL });
 }
 
 /** Generate a single embedding vector for a text string. */
@@ -79,6 +78,38 @@ export async function upsertEmbedding(userId: string, recordType: string, record
   } catch (err) {
     // Non-fatal: log and continue. Embedding is a background enrichment.
     logger.warn({ err, recordType, recordId }, 'Failed to upsert embedding');
+  }
+}
+
+/**
+ * Upsert embeddings for several records in one DB round-trip. The embedding
+ * vectors are generated concurrently. Used after batch writes (e.g. voice
+ * logging multiple foods) to avoid one INSERT per record. Non-fatal.
+ */
+export async function upsertEmbeddingsBatch(
+  userId: string,
+  items: Array<{ recordType: string; recordId: string; text: string }>,
+) {
+  if (!config.geminiApiKey || items.length === 0) return;
+  const pool = getPool();
+  try {
+    const vectors = await Promise.all(items.map((it) => embed(it.text)));
+    const rows: string[] = [];
+    const params: unknown[] = [];
+    items.forEach((it, i) => {
+      const base = i * 5;
+      rows.push(`($${base + 1}, $${base + 2}, $${base + 3}, $${base + 4}, $${base + 5}::vector)`);
+      params.push(userId, it.recordType, it.recordId, it.text, `[${vectors[i].join(',')}]`);
+    });
+    await pool.query(
+      `INSERT INTO user_embeddings (user_id, record_type, record_id, content_text, embedding)
+       VALUES ${rows.join(', ')}
+       ON CONFLICT (record_id, record_type)
+       DO UPDATE SET content_text = EXCLUDED.content_text, embedding = EXCLUDED.embedding, updated_at = now()`,
+      params,
+    );
+  } catch (err) {
+    logger.warn({ err, count: items.length }, 'Failed to upsert embeddings batch');
   }
 }
 

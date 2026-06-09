@@ -12,6 +12,11 @@ export async function list(userId: string, pagination?: PaginationParams) {
   return goalModel.findByUserId(userId, pagination);
 }
 
+/** Resolve a single goal for voice edit/delete (by id, else by type). */
+export async function findForVoice(userId: string, opts: { goalId?: string; goalType?: string }) {
+  return goalModel.findOne(userId, { goalId: opts.goalId, type: opts.goalType });
+}
+
 export async function create(userId: string, body: CreateGoalBody): Promise<Goal> {
   const goal = await goalModel.create({
     userId,

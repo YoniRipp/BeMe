@@ -200,6 +200,20 @@ Response: { actions: [...], results: [...] }
 
 When a food is not found in the local database, Gemini is used as a nutrition data assistant. See [Food Lookup Pipeline](#food-lookup-pipeline) for the full flow.
 
+### 3. Performance & Reliability
+
+The voice/AI path is tuned to be fast and cheap under real multi-item utterances:
+
+- **Singleton Gemini clients** — the `@google/generative-ai` client and model wrappers are created once and cached (`backend/src/lib/genai.ts`), not re-instantiated on every parse / food lookup / embedding.
+- **Parallel nutrition lookups** — "two eggs and toast and coffee" resolves all per-food lookups concurrently (`buildActionsFromFunctionCalls` in `services/voice/geminiClient.ts`) instead of one-at-a-time. The batch and streaming paths share this builder.
+- **Batched inserts** — when one utterance logs several foods for the same date, they are written in a single transaction via `foodEntryService.createBatch` instead of one `INSERT` per food; their embeddings are upserted in one round-trip (`upsertEmbeddingsBatch`).
+- **Targeted resolvers** — voice edit/delete resolves the one matching row with a SQL query (`findForVoice` / `findByDate` / `findLatest`) rather than loading the whole table and scanning in memory.
+- **System-instruction prompt** — the voice prompt is sent as a cached `systemInstruction`, not re-sent as user content on every request.
+- **In-flight de-duplication** — concurrent lookups for the same unknown food share one Gemini call + insert, preventing duplicate `foods` rows (`foodLookupGemini.ts`).
+- **Exactly-once streaming** — the Gemini Live session executes its actions once (a `finished` guard), so a `turnComplete`+socket-close race can't double-log.
+- **Quota on success** — a free-tier AI call is only consumed once there is a real result, so opening the mic and saying nothing (or a failed attempt) doesn't burn a call.
+- **Timezone-correct dates** — the user's local "today" is threaded through to execution, so voice writes land on the right calendar day regardless of server timezone.
+
 ---
 
 ## Food Lookup Pipeline

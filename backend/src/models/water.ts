@@ -72,6 +72,22 @@ export async function addGlass(userId: string, date: string, client?: pg.Pool | 
   return rowToEntry(result.rows[0]);
 }
 
+/** Add N glasses (each 250ml) in a single upsert. Used by voice ("8 glasses"). */
+export async function addGlasses(userId: string, date: string, count: number, client?: pg.Pool | pg.PoolClient): Promise<WaterEntry> {
+  const n = Math.max(1, Math.floor(Number(count) || 1));
+  if (n === 1) return addGlass(userId, date, client);
+  const db = client ?? getPool();
+  const result = await db.query(
+    `INSERT INTO water_entries (user_id, date, glasses, ml_total)
+     VALUES ($1, $2::date, $3, $4)
+     ON CONFLICT (user_id, date)
+     DO UPDATE SET glasses = water_entries.glasses + $3, ml_total = water_entries.ml_total + $4, updated_at = NOW()
+     RETURNING ${RETURNING}`,
+    [userId, date, n, n * 250],
+  );
+  return rowToEntry(result.rows[0]);
+}
+
 export async function removeGlass(userId: string, date: string, client?: pg.Pool | pg.PoolClient): Promise<WaterEntry> {
   const db = client ?? getPool();
   const result = await db.query(

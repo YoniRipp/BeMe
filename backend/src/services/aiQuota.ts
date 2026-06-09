@@ -74,6 +74,33 @@ export async function tryConsumeAiCall(userId: string): Promise<QuotaResult> {
 }
 
 /**
+ * Check whether the user may make an AI call WITHOUT consuming one.
+ * Use to gate a session at the start (e.g. WebSocket connect) and only
+ * `tryConsumeAiCall` once there is a real, successful result — so empty or
+ * failed attempts don't burn a free-tier call.
+ */
+export async function checkAiQuota(userId: string): Promise<QuotaResult> {
+  if (!config.lemonSqueezyApiKey) {
+    return { allowed: true, remaining: -1, isPro: true };
+  }
+
+  const pool = getPool();
+  const { rows } = await pool.query(
+    'SELECT subscription_status, ai_calls_used, ai_calls_reset_month FROM users WHERE id = $1',
+    [userId],
+  );
+  const row = rows[0];
+  const status = row?.subscription_status || 'free';
+  if (PRO_STATUSES.includes(status)) {
+    return { allowed: true, remaining: -1, isPro: true };
+  }
+
+  const used = row?.ai_calls_reset_month === currentMonth() ? Number(row?.ai_calls_used || 0) : 0;
+  const remaining = Math.max(0, FREE_TIER_LIMIT - used);
+  return { allowed: remaining > 0, remaining, isPro: false };
+}
+
+/**
  * Get remaining AI calls without consuming one. Used for profile/status endpoints.
  */
 export async function getAiCallsRemaining(userId: string, subscriptionStatus?: string): Promise<number> {

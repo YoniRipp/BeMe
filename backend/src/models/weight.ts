@@ -47,6 +47,27 @@ export async function findByUserId(userId: string, startDate?: string, endDate?:
   return result.rows.map(rowToEntry);
 }
 
+/** Find one weight entry by id. Targeted query. */
+export async function findById(id: string, userId: string, client?: pg.Pool | pg.PoolClient): Promise<WeightEntry | null> {
+  const db = client ?? getPool();
+  const r = await db.query(`SELECT ${RETURNING} FROM weight_entries WHERE id = $1 AND user_id = $2 LIMIT 1`, [id, userId]);
+  return r.rows[0] ? rowToEntry(r.rows[0]) : null;
+}
+
+/** Find the weight entry for a date. Targeted query. */
+export async function findByDate(userId: string, date: string, client?: pg.Pool | pg.PoolClient): Promise<WeightEntry | null> {
+  const db = client ?? getPool();
+  const r = await db.query(`SELECT ${RETURNING} FROM weight_entries WHERE user_id = $1 AND date = $2::date ORDER BY date DESC LIMIT 1`, [userId, date]);
+  return r.rows[0] ? rowToEntry(r.rows[0]) : null;
+}
+
+/** Find the most recent weight entry. Targeted query. */
+export async function findLatest(userId: string, client?: pg.Pool | pg.PoolClient): Promise<WeightEntry | null> {
+  const db = client ?? getPool();
+  const r = await db.query(`SELECT ${RETURNING} FROM weight_entries WHERE user_id = $1 ORDER BY date DESC LIMIT 1`, [userId]);
+  return r.rows[0] ? rowToEntry(r.rows[0]) : null;
+}
+
 export async function create(input: CreateWeightEntryInput, client?: pg.Pool | pg.PoolClient): Promise<WeightEntry> {
   const db = client ?? getPool();
   const result = await db.query(

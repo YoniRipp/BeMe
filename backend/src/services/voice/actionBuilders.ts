@@ -113,6 +113,9 @@ export async function buildAddFood(args: Record<string, unknown>, ctx: BuildCont
   action.protein = nutrition.protein;
   action.carbs = nutrition.carbs;
   action.fats = nutrition.fats;
+  // false when neither the DB nor Gemini could resolve nutrition (0-kcal fallback),
+  // so the executor / UI can prompt the user to edit instead of silently logging 0.
+  action.nutritionResolved = nutrition.source !== 'fallback';
 
   return action;
 }

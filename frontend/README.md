@@ -160,6 +160,10 @@ The API base URL (`VITE_API_URL`) may point to the main backend or a gateway tha
 
 [src/lib/voiceApi.ts](src/lib/voiceApi.ts) exposes `understand(text)`, which sends `POST /api/voice/understand` with the user’s utterance. The backend (Gemini) returns a list of actions (e.g. `add_workout`, `add_food`). The frontend parses these into [VoiceAction](src/lib/voiceApi.ts) and the voice UI ([src/components/voice/VoiceAgentPanel.tsx](src/components/voice/VoiceAgentPanel.tsx)) applies them by calling the relevant context APIs (workouts, food, energy/check-in, goals).
 
+Speech capture uses a tiered strategy (native → WebSocket streaming → batch) across `useSpeechRecognition`, `useVoiceStream`, `useWebSpeech`, and `useNativeSpeech`. Shared cross-cutting concerns live in [src/lib/voiceDebug.ts](src/lib/voiceDebug.ts): a debug logger (`voiceLog`/`voiceWarn`/`voiceError`) gated to dev builds (set `VITE_VOICE_DEBUG=true` to force on) so the chatty `[voice]` traces stay out of production, plus centralized `VOICE_TIMEOUTS` instead of scattered magic numbers.
+
+Meal-type classification and grouping (used by the Energy page and `MealJournalCard`) live in one place — [src/features/energy/mealType.ts](src/features/energy/mealType.ts) (`getMealType`, `groupByMeal`) — preferring the stored `mealType` and falling back to time-of-day only for legacy entries.
+
 ## Theming
 
 Settings store the theme (light / dark / system). Inside protected routes, [routes.tsx](src/routes.tsx) applies it in a `useEffect`: for “system” it uses `prefers-color-scheme`; otherwise it toggles the `dark` class on `document.documentElement` so Tailwind dark mode applies.
@@ -178,6 +182,7 @@ The project uses the `@` alias for `src/` (see [vite.config.ts](vite.config.ts))
 
 ## Changelog (latest first)
 
+- **Update 18.0** — Voice/AI efficiency & architecture pass. Frontend: shared [voiceDebug.ts](src/lib/voiceDebug.ts) (dev-gated `[voice]` logging + centralized `VOICE_TIMEOUTS`) wired into `useVoiceStream`/`useSpeechRecognition`; meal-type logic extracted to [features/energy/mealType.ts](src/features/energy/mealType.ts). Backend: parallel multi-food nutrition lookups, transactional batch inserts for multi-food utterances, singleton Gemini clients, targeted edit/delete resolvers, exactly-once voice streaming, quota-on-success, and timezone-correct voice dates. See [backend/README.md](../backend/README.md#performance--reliability) and the root [README.md](../README.md#3-performance--reliability).
 - **Update 17.0** — AiInsightsSection: refresh button, thinking animations ("Analyzing your data…"); FoodEntryModal: trigger validation fix, liquid presets (can, bottle, 1L, 1.5L, 2L), solid presets (50g, 150g, 200g, 1 portion), "Look up with AI"; Money page: subtitle-only content ("Where does the money go?"); CSS: `animate-thinking-dots` keyframes. See root [CHANGELOG.md](../CHANGELOG.md).
 - **Update 14.0** — Voice API now uses async polling: `voiceApi.ts` updated with `pollForResult()` helper. See root README **Update 14.0** and [UPDATE_14.0.md](../UPDATE_14.0.md).
 - **Update 12.0** — Export documentation: [export.ts](src/lib/export.ts) and DataManagementSection/DataExportModal pass API-backed data (TanStack Query cache) to export functions. Backend received testing, security, observability, and migrations (see root README Update 12.0). See [UPDATE_12.0.md](../UPDATE_12.0.md).

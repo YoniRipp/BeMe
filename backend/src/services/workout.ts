@@ -13,6 +13,11 @@ export async function list(userId: string, pagination?: PaginationParams) {
   return workoutModel.findByUserId(userId, pagination);
 }
 
+/** Resolve a single workout for voice edit/delete (by id, else latest by title). */
+export async function findForVoice(userId: string, opts: { workoutId?: string; workoutTitle?: string }) {
+  return workoutModel.findOne(userId, { workoutId: opts.workoutId, title: opts.workoutTitle });
+}
+
 export async function create(userId: string, body: CreateWorkoutBody): Promise<Workout> {
   const workout = await workoutModel.create({
     userId,
