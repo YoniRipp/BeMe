@@ -55,9 +55,6 @@ async function exchangeAuthCode(code: string): Promise<string | null> {
   }
 }
 
-function base64UrlEncode(buf: Buffer) {
-  return buf.toString('base64').replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
-}
 
 export async function register(data: {
   email: string;

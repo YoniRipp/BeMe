@@ -45,7 +45,7 @@ function extractAmountAndUnit(text: string): { name: string; amount: number | nu
   const countMatch = trimmed.match(/^(\d+\.?\d*)\s+(.+)$/);
   if (countMatch) {
     const count = parseFloat(countMatch[1]);
-    let name = countMatch[2].trim();
+    const name = countMatch[2].trim();
     // Remove "of " prefix: "slices of bread" -> "bread" with unit "slice"
     const ofMatch = name.match(/^(slices?|pieces?|servings?|cups?|bowls?)\s+of\s+(.+)$/i);
     if (ofMatch) {

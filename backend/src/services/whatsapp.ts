@@ -8,7 +8,6 @@ import { getPool } from '../db/pool.js';
 import { logger } from '../lib/logger.js';
 import { sendMessage as sendChatMessage } from './chat.js';
 import { executeActions, type ExecuteResult } from './voiceExecutor.js';
-import { getGeminiText } from './insights.js';
 import { VOICE_PROMPT } from './voice.js';
 import { VOICE_TOOLS } from '../../voice/tools.js';
 import { processGeminiResponse } from './voice/geminiClient.js';

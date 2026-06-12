@@ -2,7 +2,7 @@
  * Lambda handler for SQS event queue. Processes domain events.
  * Invoked by SQS trigger. Requires EVENT_QUEUE_URL, AWS_REGION, DATABASE_URL, REDIS_URL.
  */
-import { SQSEvent, SQSRecord, Context } from 'aws-lambda';
+import { SQSEvent, Context } from 'aws-lambda';
 import { createDispatcher } from '../src/events/dispatcher.js';
 import { registerAllEventConsumers } from '../src/events/consumers/register.js';
 import { ensureDb, ensureRedis, closeConnections } from './connections.js';
@@ -10,7 +10,7 @@ import { ensureDb, ensureRedis, closeConnections } from './connections.js';
 const dispatcher = createDispatcher();
 registerAllEventConsumers(dispatcher.subscribe);
 
-export async function handler(event: SQSEvent, context: Context) {
+export async function handler(event: SQSEvent, _context: Context) {
   await ensureDb();
   await ensureRedis();
 

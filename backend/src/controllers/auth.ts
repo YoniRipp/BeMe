@@ -7,7 +7,7 @@ import { asyncHandler } from '../middleware/errorHandler.js';
 import { config } from '../config/index.js';
 import * as authService from '../services/auth.js';
 import { sendJson, sendCreated } from '../utils/response.js';
-import { ServiceUnavailableError, ValidationError } from '../errors.js';
+import { ServiceUnavailableError } from '../errors.js';
 
 const COOKIE_OPTIONS = {
   httpOnly: true,

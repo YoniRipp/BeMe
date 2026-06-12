@@ -141,7 +141,7 @@ export async function closePool() {
     await defaultPool.end();
     defaultPool = null;
   }
-  for (const [ctx, p] of contextPools) {
+  for (const p of contextPools.values()) {
     await p.end();
   }
   contextPools.clear();

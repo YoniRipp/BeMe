@@ -68,7 +68,7 @@ function sendToClient(ws: WebSocket, msg: Record<string, unknown>) {
 }
 
 /** Build Gemini Live API setup message. */
-function buildSetupMessage(mimeType: string) {
+function buildSetupMessage(_mimeType: string) {
   // Convert VOICE_TOOLS format to Gemini Live API format
   const toolDeclarations = VOICE_TOOLS[0]?.functionDeclarations ?? [];
 

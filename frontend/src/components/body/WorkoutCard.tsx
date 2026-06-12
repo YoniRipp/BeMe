@@ -29,7 +29,7 @@ export const WorkoutCard = memo(function WorkoutCard({ workout, onEdit, onDelete
       onKeyDown={(e) => {
         if (e.key === 'Enter' || e.key === ' ') {
           e.preventDefault();
-          onEdit && onEdit(workout);
+          onEdit?.(workout);
         }
       }}
     >

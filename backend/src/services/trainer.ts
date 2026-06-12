@@ -2,7 +2,7 @@
  * Trainer service — business logic for trainer-client relationships and invitations.
  */
 import crypto from 'crypto';
-import { NotFoundError, ForbiddenError, ConflictError, ValidationError } from '../errors.js';
+import { NotFoundError, ConflictError, ValidationError } from '../errors.js';
 import * as trainerClientModel from '../models/trainerClient.js';
 import * as userModel from '../models/user.js';
 import { publishEvent } from '../events/publish.js';

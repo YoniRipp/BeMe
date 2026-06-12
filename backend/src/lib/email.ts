@@ -38,11 +38,3 @@ export async function sendMail({ to, subject, html }: { to: string; subject: str
   }
 }
 
-function escapeHtml(s: unknown): string {
-  if (typeof s !== 'string') return '';
-  return s
-    .replace(/&/g, '&amp;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;')
-    .replace(/"/g, '&quot;');
-}

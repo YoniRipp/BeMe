@@ -6,7 +6,7 @@
 import { Router } from 'express';
 import { config } from '../config/index.js';
 import { asyncHandler } from '../middleware/errorHandler.js';
-import { sendJson, sendError } from '../utils/response.js';
+import { sendJson } from '../utils/response.js';
 import { handleWebhook, type WhatsAppWebhookPayload } from '../services/whatsapp.js';
 import { logger } from '../lib/logger.js';
 import type { Request, Response } from 'express';

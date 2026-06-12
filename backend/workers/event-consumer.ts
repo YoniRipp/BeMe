@@ -4,10 +4,9 @@
  *
  * Run: node workers/event-consumer.js (with REDIS_URL or EVENT_TRANSPORT=sqs + EVENT_QUEUE_URL + AWS_REGION)
  */
-import { config } from '../src/config/index.js';
 import { subscribe, startEventsWorker, closeEventsBus } from '../src/events/bus.js';
 import { registerAllEventConsumers } from '../src/events/consumers/register.js';
-import { getRedisClient, closeRedis } from '../src/redis/client.js';
+import { closeRedis } from '../src/redis/client.js';
 import { logger } from '../src/lib/logger.js';
 
 registerAllEventConsumers(subscribe);

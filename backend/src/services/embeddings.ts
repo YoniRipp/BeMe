@@ -8,7 +8,6 @@ import { logger } from '../lib/logger.js';
 import { getModel } from '../lib/genai.js';
 
 const EMBEDDING_MODEL = 'text-embedding-004';
-const EMBEDDING_DIM = 768;
 
 function getEmbeddingClient() {
   return getModel({ model: EMBEDDING_MODEL });

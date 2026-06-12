@@ -74,8 +74,7 @@ interface FoodEntryModalProps {
 const MIN_SEARCH_LENGTH = 2;
 const DEFAULT_REFERENCE_GRAMS = 100;
 const DEFAULT_SERVING_ML = { can: 330, bottle: 500, glass: 250 } as const;
-const LIQUID_SERVING_TYPES = ['can', 'bottle', 'bottle_1L', 'bottle_1_5L', 'bottle_2L', 'glass', 'other'] as const;
-type LiquidServingType = (typeof LIQUID_SERVING_TYPES)[number];
+type LiquidServingType = 'can' | 'bottle' | 'bottle_1L' | 'bottle_1_5L' | 'bottle_2L' | 'glass' | 'other';
 
 type Per100g = { calories: number; protein: number; carbs: number; fats: number };
 type ServingSizesMl = { can?: number; bottle?: number; glass?: number } | null;

@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
-import { storage, STORAGE_KEYS } from './storage';
+import { storage } from './storage';
 
 // Mock localStorage - setItem/removeItem must not throw so isLocalStorageAvailable() returns true in CI
 const localStorageMock = {

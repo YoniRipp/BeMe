@@ -7,7 +7,7 @@ import * as voiceService from '../src/services/voice.js';
 import { getRedisClient } from '../src/redis/client.js';
 import { ensureRedis, closeConnections } from './connections.js';
 
-export async function handler(event: SQSEvent, context: Context) {
+export async function handler(event: SQSEvent, _context: Context) {
   await ensureRedis();
 
   for (const record of event.Records) {

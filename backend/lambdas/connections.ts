@@ -6,7 +6,6 @@ import { getRedisClient, closeRedis } from '../src/redis/client.js';
 import { config } from '../src/config/index.js';
 
 let poolInit = false;
-let redisInit = false;
 
 export async function ensureDb() {
   if (!config.isDbConfigured) return;
@@ -18,7 +17,6 @@ export async function ensureDb() {
 
 export async function ensureRedis() {
   if (!config.isRedisConfigured) return;
-  redisInit = true;
   return getRedisClient();
 }
 

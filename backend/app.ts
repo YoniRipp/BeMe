@@ -102,7 +102,7 @@ export async function createApp() {
       const { getPool } = await import('./src/db/index.js');
       const pool = getPool();
       await pool.query('SELECT 1');
-    } catch (e) {
+    } catch {
       return res.status(503).json({ status: 'not ready', reason: 'Database unreachable' });
     }
     if (isRedisConfigured()) {
@@ -110,7 +110,7 @@ export async function createApp() {
         const redis = await getRedisClient();
         if (!redis) return res.status(503).json({ status: 'not ready', reason: 'Redis unavailable' });
         await redis.ping();
-      } catch (e) {
+      } catch {
         return res.status(503).json({ status: 'not ready', reason: 'Redis unreachable' });
       }
     }
