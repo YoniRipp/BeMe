@@ -41,7 +41,7 @@ import {
 } from '@/hooks/useTrainer';
 import { format, isSameDay } from 'date-fns';
 import { cn } from '@/lib/utils';
-import { toast } from 'sonner';
+import { toast } from '@/components/shared/ToastProvider';
 import type { DailyCheckIn, FoodEntry } from '@/types/energy';
 import type { Goal } from '@/types/goals';
 import type { Workout } from '@/types/workout';

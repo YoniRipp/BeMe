@@ -1,7 +1,7 @@
 import { useCallback } from 'react';
 import { useAuth } from '@/context/AuthContext';
 import { subscriptionApi } from '@/core/api/subscription';
-import { toast } from 'sonner';
+import { toast } from '@/components/shared/ToastProvider';
 
 export function useSubscription() {
   const { user } = useAuth();

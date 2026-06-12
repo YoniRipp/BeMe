@@ -8,7 +8,7 @@ import { Badge } from '@/components/ui/badge';
 import { Dumbbell, UtensilsCrossed, Moon, Target, Search } from 'lucide-react';
 import { useQuery } from '@tanstack/react-query';
 import { adminApi, type ApiUserSearchItem } from '@/core/api/admin';
-import { toast } from 'sonner';
+import { toast } from '@/components/shared/ToastProvider';
 
 export default function AdminUserDataPage() {
   const location = useLocation();

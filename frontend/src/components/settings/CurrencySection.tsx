@@ -10,7 +10,7 @@ import {
 } from '@/components/ui/select';
 import { CURRENCIES, CURRENCY_LABELS } from '@/types/settings';
 import { formatCurrency as formatCurrencyUtil } from '@/lib/utils';
-import { toast } from 'sonner';
+import { toast } from '@/components/shared/ToastProvider';
 import { SettingsSection } from './SettingsSection';
 
 export function CurrencySection() {

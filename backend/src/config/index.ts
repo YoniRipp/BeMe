@@ -156,3 +156,10 @@ if (!parsed.success) {
 }
 
 export const config = parsed.data;
+
+if (config.isProduction && !config.isRedisConfigured) {
+  logger.warn(
+    'REDIS_URL is not set in production: rate limiting, the voice job queue, and the JWT logout blocklist ' +
+    'fall back to in-memory stores that are not shared across instances. Configure Redis before scaling beyond one process.',
+  );
+}

@@ -63,6 +63,14 @@ vi.mock('../schemas/routeSchemas.js', () => {
       limit: z.coerce.number().optional().default(20),
       offset: z.coerce.number().optional().default(0),
     }),
+    exerciseListQuerySchema: z.object({
+      q: z.string().optional(),
+      muscleGroup: z.string().optional(),
+      limit: z.coerce.number().optional().default(500),
+      offset: z.coerce.number().optional().default(0),
+    }),
+    createExerciseSchema: passthrough,
+    updateExerciseSchema: passthrough,
     createWorkoutSchema: passthrough,
     updateWorkoutSchema: passthrough,
     createFoodEntrySchema: passthrough,
@@ -73,6 +81,19 @@ vi.mock('../schemas/routeSchemas.js', () => {
     updateGoalSchema: passthrough,
   };
 });
+
+const mockExerciseModel = {
+  listAdmin: vi.fn(),
+  upsert: vi.fn(),
+  update: vi.fn(),
+  deleteById: vi.fn(),
+};
+vi.mock('../models/exercise.js', () => ({
+  listAdmin: (...args) => mockExerciseModel.listAdmin(...args),
+  upsert: (...args) => mockExerciseModel.upsert(...args),
+  update: (...args) => mockExerciseModel.update(...args),
+  deleteById: (...args) => mockExerciseModel.deleteById(...args),
+}));
 
 import adminRouter from './admin.js';
 
@@ -245,6 +266,97 @@ describe('admin routes', () => {
         expect.stringContaining('SELECT id, email, name, role, created_at FROM users'),
         ['%test%', 20]
       );
+    });
+  });
+
+  describe('admin exercise catalog', () => {
+    const exercise = {
+      id: 'ex-1',
+      name: 'Bench Press',
+      muscleGroup: 'chest',
+      category: 'barbell',
+      imageUrl: null,
+      videoUrl: null,
+      createdAt: '2025-01-01T00:00:00.000Z',
+      updatedAt: '2025-01-01T00:00:00.000Z',
+    };
+
+    it('GET /api/admin/exercises lists via the model with default pagination', async () => {
+      mockExerciseModel.listAdmin.mockResolvedValueOnce([exercise]);
+
+      const res = await request(app)
+        .get('/api/admin/exercises')
+        .set('Authorization', 'Bearer test-token')
+        .expect(200);
+
+      expect(res.body).toEqual([exercise]);
+      expect(mockExerciseModel.listAdmin).toHaveBeenCalledWith({ limit: 500, offset: 0 });
+    });
+
+    it('GET /api/admin/exercises forwards limit and offset', async () => {
+      mockExerciseModel.listAdmin.mockResolvedValueOnce([]);
+
+      await request(app)
+        .get('/api/admin/exercises')
+        .query({ limit: '25', offset: '50' })
+        .set('Authorization', 'Bearer test-token')
+        .expect(200);
+
+      expect(mockExerciseModel.listAdmin).toHaveBeenCalledWith({ limit: 25, offset: 50 });
+    });
+
+    it('POST /api/admin/exercises upserts with the admin user as creator', async () => {
+      mockExerciseModel.upsert.mockResolvedValueOnce(exercise);
+
+      const res = await request(app)
+        .post('/api/admin/exercises')
+        .send({ name: 'Bench Press', muscleGroup: 'chest' })
+        .set('Authorization', 'Bearer test-token')
+        .expect(200);
+
+      expect(res.body).toEqual(exercise);
+      expect(mockExerciseModel.upsert).toHaveBeenCalledWith({
+        name: 'Bench Press',
+        muscleGroup: 'chest',
+        createdBy: 'admin-1',
+      });
+    });
+
+    it('PATCH /api/admin/exercises/:id updates via the model', async () => {
+      mockExerciseModel.update.mockResolvedValueOnce({ ...exercise, name: 'Incline Bench' });
+
+      const res = await request(app)
+        .patch('/api/admin/exercises/ex-1')
+        .send({ name: 'Incline Bench' })
+        .set('Authorization', 'Bearer test-token')
+        .expect(200);
+
+      expect(res.body.name).toBe('Incline Bench');
+      expect(mockExerciseModel.update).toHaveBeenCalledWith('ex-1', { name: 'Incline Bench' });
+    });
+
+    it('PATCH /api/admin/exercises/:id returns 404 when not found', async () => {
+      mockExerciseModel.update.mockResolvedValueOnce(null);
+
+      const res = await request(app)
+        .patch('/api/admin/exercises/missing')
+        .send({ name: 'Nope' })
+        .set('Authorization', 'Bearer test-token')
+        .expect(404);
+
+      expect(res.body.error.message).toBe('Exercise not found');
+    });
+
+    it('DELETE /api/admin/exercises/:id deletes via the model', async () => {
+      mockExerciseModel.deleteById.mockResolvedValueOnce(true);
+
+      const res = await request(app)
+        .delete('/api/admin/exercises/ex-1')
+        .set('Authorization', 'Bearer test-token')
+        .expect(200);
+
+      expect(res.body).toEqual({ success: true });
+      expect(mockExerciseModel.deleteById).toHaveBeenCalledWith('ex-1');
     });
   });
 });

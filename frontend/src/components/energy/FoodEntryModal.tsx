@@ -26,7 +26,7 @@ import {
 } from '@/components/ui/select';
 import { Loader2, ScanBarcode } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { toast } from 'sonner';
+import { toast } from '@/components/shared/ToastProvider';
 
 type MealTypeOption = 'breakfast' | 'lunch' | 'dinner' | 'snack';
 

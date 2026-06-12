@@ -8,7 +8,7 @@ import { useSpeechRecognition } from '@/hooks/useSpeechRecognition';
 import { PulseWave } from '@/components/pulse/PulseUI';
 import { cn } from '@/lib/utils';
 import type { AgentResponse, PlanProposal } from '@/core/api/chat';
-import { toast } from 'sonner';
+import { toast } from '@/components/shared/ToastProvider';
 
 function isRTL(text: string): boolean {
   return /[\u0590-\u05FF\uFB1D-\uFB4F]/.test(text);

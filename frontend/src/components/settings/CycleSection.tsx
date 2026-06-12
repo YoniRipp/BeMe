@@ -5,7 +5,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useProfile } from '@/hooks/useProfile';
 import { Heart } from 'lucide-react';
-import { toast } from 'sonner';
+import { toast } from '@/components/shared/ToastProvider';
 
 export function CycleSection() {
   const { profile, updateProfile, isUpdating } = useProfile();

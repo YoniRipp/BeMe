@@ -7,7 +7,7 @@ import { useGoalProgress } from '@/features/goals/useGoalProgress';
 import { useState } from 'react';
 import { cn } from '@/lib/utils';
 import { ConfirmationDialog } from '@/components/shared/ConfirmationDialog';
-import { toast } from 'sonner';
+import { toast } from '@/components/shared/ToastProvider';
 
 const GOAL_ICON_STYLES: Record<GoalType, { icon: React.ElementType; color: string }> = {
   calories: { icon: Flame, color: 'text-terracotta' },

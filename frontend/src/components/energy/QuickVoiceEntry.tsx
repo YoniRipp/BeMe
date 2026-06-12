@@ -1,6 +1,6 @@
 import { useState, useCallback, useEffect, useRef } from 'react';
 import { Mic, MicOff, X, Loader2, Keyboard, ChevronDown } from 'lucide-react';
-import { toast } from 'sonner';
+import { toast } from '@/components/shared/ToastProvider';
 import {
   Sheet,
   SheetContent,

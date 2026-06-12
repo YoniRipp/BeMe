@@ -13,7 +13,7 @@ export interface CatalogExercise {
 export function useExercises() {
   const { data } = useQuery({
     queryKey: ['exercises'],
-    queryFn: (): Promise<CatalogExercise[]> => request('/api/exercises'),
+    queryFn: (): Promise<CatalogExercise[]> => request('/api/exercises?limit=1000'),
     staleTime: 10 * 60 * 1000,
   });
 

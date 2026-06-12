@@ -1,6 +1,22 @@
 /**
  * Validation and normalization helpers.
  */
+import type { z } from 'zod';
+
+/**
+ * Parse query params against a Zod schema, throwing ValidationError (→ 400)
+ * instead of a raw ZodError (→ 500) on failure.
+ */
+export function parseQuery<S extends z.ZodTypeAny>(schema: S, query: unknown): z.infer<S> {
+  const result = schema.safeParse(query ?? {});
+  if (!result.success) {
+    const first = result.error.errors[0];
+    throw new ValidationError(
+      first ? `${first.path.length ? first.path.join('.') + ': ' : ''}${first.message}` : 'Invalid query parameters',
+    );
+  }
+  return result.data;
+}
 
 /**
  * Normalize time string to HH:MM 24h format.

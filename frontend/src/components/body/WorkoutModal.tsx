@@ -24,7 +24,7 @@ import {
 import { Plus, Minus, Trash2, Copy, Save, X, Pencil, Check, Dumbbell, Timer } from 'lucide-react';
 import { STORAGE_KEYS, storage } from '@/lib/storage';
 import { toLocalDateString, parseLocalDateString } from '@/lib/dateRanges';
-import { toast } from 'sonner';
+import { toast } from '@/components/shared/ToastProvider';
 import { useSettings } from '@/hooks/useSettings';
 import { cn, formatDate, getWeightUnit } from '@/lib/utils';
 import { useExercises, type CatalogExercise } from '@/hooks/useExercises';

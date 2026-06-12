@@ -8,7 +8,7 @@ import { useWorkouts } from '@/hooks/useWorkouts';
 import { useEnergy } from '@/hooks/useEnergy';
 import type { Workout } from '@/types/workout';
 import type { FoodEntry } from '@/types/energy';
-import { toast } from 'sonner';
+import { toast } from '@/components/shared/ToastProvider';
 
 const MENU_ITEMS = [
   { key: 'workout', label: 'Workout', icon: Dumbbell, bg: 'bg-info/10', color: 'text-info' },

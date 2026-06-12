@@ -196,6 +196,30 @@ export const updateCycleEntrySchema = z.object({
   notes: z.string().max(1000).optional().nullable(),
 }).strict().refine((obj) => Object.keys(obj).length > 0, 'At least one field required');
 
+// ─── Exercise catalog schemas ─────────────────────────────────
+export const exerciseListQuerySchema = z.object({
+  q: z.string().max(200).optional(),
+  muscleGroup: z.string().max(100).optional(),
+  limit: z.coerce.number().int().min(1).max(1000).default(500),
+  offset: z.coerce.number().int().min(0).default(0),
+});
+
+export const createExerciseSchema = z.object({
+  name: z.string().min(1).max(200).transform((s) => s.trim()),
+  muscleGroup: z.string().max(100).optional().nullable(),
+  category: z.string().max(100).optional().nullable(),
+  imageUrl: z.string().max(2000).optional().nullable(),
+  videoUrl: z.string().max(2000).optional().nullable(),
+});
+
+export const updateExerciseSchema = z.object({
+  name: z.string().min(1).max(200).transform((s) => s.trim()).optional(),
+  muscleGroup: z.string().max(100).optional().nullable(),
+  category: z.string().max(100).optional().nullable(),
+  imageUrl: z.string().max(2000).optional().nullable(),
+  videoUrl: z.string().max(2000).optional().nullable(),
+}).strict().refine((obj) => Object.keys(obj).length > 0, 'At least one field required');
+
 // ─── Type exports for inference ─────────────────────────────
 export type CreateWorkoutBody = z.infer<typeof createWorkoutSchema>;
 export type UpdateWorkoutBody = z.infer<typeof updateWorkoutSchema>;
@@ -214,3 +238,6 @@ export type CreateCycleEntryBody = z.infer<typeof createCycleEntrySchema>;
 export type UpdateCycleEntryBody = z.infer<typeof updateCycleEntrySchema>;
 export type CreateFoodEntriesBatchBody = z.infer<typeof createFoodEntriesBatchSchema>;
 export type DuplicateDayBody = z.infer<typeof duplicateDaySchema>;
+export type ExerciseListQuery = z.infer<typeof exerciseListQuerySchema>;
+export type CreateExerciseBody = z.infer<typeof createExerciseSchema>;
+export type UpdateExerciseBody = z.infer<typeof updateExerciseSchema>;

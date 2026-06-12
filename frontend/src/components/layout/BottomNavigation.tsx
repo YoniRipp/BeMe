@@ -41,8 +41,7 @@ export function BottomNavigation({ items, currentPath, onCenterPress }: BottomNa
 
   return (
     <nav
-      className="fixed bottom-0 left-0 right-0 z-30 lg:hidden pointer-events-none"
-      style={{ paddingBottom: 'env(safe-area-inset-bottom, 14px)' }}
+      className="fixed bottom-0 left-0 right-0 z-30 lg:hidden pointer-events-none pb-safe"
       aria-label="Main navigation"
     >
       <div className="absolute inset-x-0 bottom-0 h-32 bg-gradient-to-t from-background via-background/90 to-transparent pointer-events-none" />
@@ -53,8 +52,7 @@ export function BottomNavigation({ items, currentPath, onCenterPress }: BottomNa
         <button
           type="button"
           onClick={onCenterPress}
-          className="absolute top-[-22px] left-1/2 -translate-x-1/2 w-[60px] h-[60px] rounded-full bg-primary text-primary-foreground flex items-center justify-center ring-[3px] ring-background press"
-          style={{ boxShadow: '0 0 24px hsl(var(--primary) / 0.35), 0 8px 20px rgba(0,0,0,0.4)' }}
+          className="absolute top-[-22px] left-1/2 -translate-x-1/2 w-[60px] h-[60px] rounded-full bg-primary text-primary-foreground flex items-center justify-center ring-[3px] ring-background press shadow-fab"
           aria-label="Open voice"
         >
           <Mic className="w-6 h-6 text-primary-foreground" strokeWidth={2.2} />

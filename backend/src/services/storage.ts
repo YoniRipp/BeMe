@@ -11,6 +11,7 @@ import { S3Client, PutObjectCommand, DeleteObjectCommand } from '@aws-sdk/client
 import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
 import crypto from 'crypto';
 import { config } from '../config/index.js';
+import { ValidationError } from '../errors.js';
 
 const PRESIGNED_URL_EXPIRES_SECONDS = 300; // 5 minutes
 
@@ -41,7 +42,7 @@ const ALLOWED_MIME_TYPES = new Set([
  */
 export async function createPresignedUploadUrl(userId: string, mimeType: string, context: string = 'avatar') {
   if (!ALLOWED_MIME_TYPES.has(mimeType)) {
-    throw new Error(`Unsupported file type: ${mimeType}. Allowed: JPEG, PNG, WebP, GIF`);
+    throw new ValidationError(`Unsupported file type: ${mimeType}. Allowed: JPEG, PNG, WebP, GIF, MP4, QuickTime, WebM`);
   }
 
   const ext = mimeType.split('/')[1].replace('jpeg', 'jpg');

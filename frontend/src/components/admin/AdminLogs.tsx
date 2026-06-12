@@ -27,7 +27,7 @@ import {
 } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
 import { adminApi, type AppLogEntry, type UserActivityEvent } from '@/core/api/admin';
-import { toast } from 'sonner';
+import { toast } from '@/components/shared/ToastProvider';
 import { cn } from '@/lib/utils';
 
 type LogTab = 'action' | 'error' | 'activity';

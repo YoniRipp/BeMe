@@ -5,7 +5,7 @@ import { storage, STORAGE_KEYS } from '@/lib/storage';
 import { queryKeys } from '@/lib/queryClient';
 import { exportAllData, downloadFile } from '@/lib/export';
 import { DEFAULT_SETTINGS } from '@/types/settings';
-import { toast } from 'sonner';
+import { toast } from '@/components/shared/ToastProvider';
 import { SettingsSection } from './SettingsSection';
 
 interface DataManagementSectionProps {

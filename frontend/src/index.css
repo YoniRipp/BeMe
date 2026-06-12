@@ -214,6 +214,8 @@
   .shadow-card { box-shadow: var(--shadow-sm); }
   .shadow-card-md { box-shadow: var(--shadow-md); }
   .shadow-card-lg { box-shadow: var(--shadow-lg); }
+  /* Floating action button: primary glow + drop shadow */
+  .shadow-fab { box-shadow: 0 0 24px hsl(var(--primary) / 0.35), 0 8px 20px rgba(0, 0, 0, 0.4); }
 
   /* Safe-area insets for mobile */
   .pb-safe { padding-bottom: env(safe-area-inset-bottom, 0px); }

@@ -5,7 +5,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useProfile } from '@/hooks/useProfile';
-import { toast } from 'sonner';
+import { toast } from '@/components/shared/ToastProvider';
 import { User, Scale, Ruler, Activity, Heart } from 'lucide-react';
 
 const STEPS = ['Welcome', 'Basic Info', 'Body Stats', 'Activity', 'Complete'];

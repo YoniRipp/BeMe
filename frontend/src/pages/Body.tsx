@@ -9,7 +9,7 @@ import { SearchBar } from '@/components/shared/SearchBar';
 import { EmptyStateCard } from '@/components/shared/EmptyStateCard';
 import { AddAnotherCard } from '@/components/shared/AddAnotherCard';
 import { Check } from 'lucide-react';
-import { toast } from 'sonner';
+import { toast } from '@/components/shared/ToastProvider';
 import { format, isToday, isYesterday, parseISO, isWithinInterval, subWeeks } from 'date-fns';
 import { getPeriodRange } from '@/lib/dateRanges';
 import { PulseCard, PulseHeader, PulsePage } from '@/components/pulse/PulseUI';
