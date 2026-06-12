@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/button';
 import { useCycle } from '@/hooks/useCycle';
 import { useProfile } from '@/hooks/useProfile';
 import { Heart } from 'lucide-react';
-import { toast } from 'sonner';
+import { toast } from '@/components/shared/ToastProvider';
 
 export function CycleTracker() {
   const { currentCycleDay, addCycleEntry } = useCycle();

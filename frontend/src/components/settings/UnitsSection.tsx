@@ -8,7 +8,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { toast } from 'sonner';
+import { toast } from '@/components/shared/ToastProvider';
 import { SettingsSection } from './SettingsSection';
 
 export function UnitsSection() {

@@ -13,7 +13,7 @@ import { exportAllData, importAllData, exportToCSV, downloadFile } from '@/lib/e
 import { queryKeys } from '@/lib/queryClient';
 import { useSettings } from '@/hooks/useSettings';
 import { Download, Upload, FileJson, FileSpreadsheet, AlertCircle } from 'lucide-react';
-import { toast } from 'sonner';
+import { toast } from '@/components/shared/ToastProvider';
 
 interface DataExportModalProps {
   open: boolean;

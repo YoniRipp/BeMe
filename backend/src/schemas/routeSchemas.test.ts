@@ -1,5 +1,38 @@
 import { describe, it, expect } from 'vitest';
-import { createWorkoutSchema, updateWorkoutSchema } from './routeSchemas.js';
+import {
+  createWorkoutSchema,
+  updateWorkoutSchema,
+  createExerciseSchema,
+  updateExerciseSchema,
+  exerciseListQuerySchema,
+} from './routeSchemas.js';
+
+describe('exercise catalog schemas', () => {
+  it('createExerciseSchema trims the name and requires it', () => {
+    expect(createExerciseSchema.parse({ name: '  Bench Press  ' }).name).toBe('Bench Press');
+    expect(() => createExerciseSchema.parse({})).toThrow();
+    expect(() => createExerciseSchema.parse({ name: '' })).toThrow();
+  });
+
+  it('createExerciseSchema accepts optional nullable fields', () => {
+    const parsed = createExerciseSchema.parse({ name: 'Squat', muscleGroup: null, imageUrl: 'x' });
+    expect(parsed.muscleGroup).toBeNull();
+    expect(parsed.imageUrl).toBe('x');
+  });
+
+  it('updateExerciseSchema requires at least one field and rejects unknown keys', () => {
+    expect(() => updateExerciseSchema.parse({})).toThrow(/At least one field required/);
+    expect(() => updateExerciseSchema.parse({ bogus: 1 })).toThrow();
+    expect(updateExerciseSchema.parse({ videoUrl: '' }).videoUrl).toBe('');
+  });
+
+  it('exerciseListQuerySchema applies defaults and caps the limit at 1000', () => {
+    expect(exerciseListQuerySchema.parse({})).toEqual({ limit: 500, offset: 0 });
+    expect(exerciseListQuerySchema.parse({ limit: '1000', offset: '5' })).toEqual({ limit: 1000, offset: 5 });
+    expect(() => exerciseListQuerySchema.parse({ limit: '1001' })).toThrow();
+    expect(() => exerciseListQuerySchema.parse({ offset: '-1' })).toThrow();
+  });
+});
 
 describe('workout route schemas — per-set fields', () => {
   const exercise = {

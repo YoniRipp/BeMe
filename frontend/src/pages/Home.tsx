@@ -25,7 +25,7 @@ import { FoodEntry } from '@/types/energy';
 import { Workout } from '@/types/workout';
 import { Apple, ChevronRight, Dumbbell, Moon, Pencil, Scale, UtensilsCrossed, User } from 'lucide-react';
 import { isSameDay, format } from 'date-fns';
-import { toast } from 'sonner';
+import { toast } from '@/components/shared/ToastProvider';
 import { cn } from '@/lib/utils';
 import {
   PulseCard,

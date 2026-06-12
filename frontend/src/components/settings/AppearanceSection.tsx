@@ -12,7 +12,7 @@ import {
 import {
   BALANCE_DISPLAY_COLORS,
 } from '@/types/settings';
-import { toast } from 'sonner';
+import { toast } from '@/components/shared/ToastProvider';
 import { SettingsSection } from './SettingsSection';
 
 export function AppearanceSection() {

@@ -13,7 +13,7 @@ import {
   DialogFooter,
 } from '@/components/ui/dialog';
 import { UtensilsCrossed, Check, Pencil, Trash2, ChevronLeft, ChevronRight, Sparkles } from 'lucide-react';
-import { toast } from 'sonner';
+import { toast } from '@/components/shared/ToastProvider';
 
 type StatusFilter = 'all' | 'unverified' | 'verified';
 const PAGE_SIZE = 50;

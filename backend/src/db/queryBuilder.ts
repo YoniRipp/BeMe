@@ -18,15 +18,21 @@ export interface UpdateBuilder<TInput> {
   columns: { [K in keyof TInput]?: ColumnMapping<TInput[K]> };
 }
 
+/**
+ * Build a dynamic UPDATE. Pass ownerColumn/ownerId as null for global
+ * (non-user-scoped) tables; extraSetClauses appends raw, parameter-free
+ * assignments such as 'updated_at = now()'.
+ */
 export function buildUpdateQuery<TInput>(
   table: string,
   idColumn: string,
-  ownerColumn: string,
+  ownerColumn: string | null,
   returning: string,
   spec: UpdateBuilder<TInput>,
   updates: Partial<TInput>,
   id: string,
-  ownerId: string,
+  ownerId: string | null,
+  extraSetClauses: string[] = [],
 ): { sql: string; params: QueryParam[] } | null {
   const setClauses: string[] = [];
   const params: QueryParam[] = [];
@@ -48,9 +54,14 @@ export function buildUpdateQuery<TInput>(
   }
 
   if (setClauses.length === 0) return null;
+  setClauses.push(...extraSetClauses);
 
-  params.push(id as QueryParam, ownerId as QueryParam);
-  const sql = `UPDATE ${table} SET ${setClauses.join(', ')} WHERE ${idColumn} = $${paramIdx} AND ${ownerColumn} = $${paramIdx + 1} RETURNING ${returning}`;
+  params.push(id as QueryParam);
+  let where = `${idColumn} = $${paramIdx}`;
+  if (ownerColumn != null) {
+    params.push(ownerId as QueryParam);
+    where += ` AND ${ownerColumn} = $${paramIdx + 1}`;
+  }
 
-  return { sql, params };
+  return { sql: `UPDATE ${table} SET ${setClauses.join(', ')} WHERE ${where} RETURNING ${returning}`, params };
 }

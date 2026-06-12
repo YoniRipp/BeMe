@@ -2,7 +2,7 @@ import { Button } from '@/components/ui/button';
 import { useWater } from '@/hooks/useWater';
 import { useProfile } from '@/hooks/useProfile';
 import { Droplets, Plus, Minus } from 'lucide-react';
-import { toast } from 'sonner';
+import { toast } from '@/components/shared/ToastProvider';
 import { useNavigate } from 'react-router-dom';
 import { PulseCard } from '@/components/pulse/PulseUI';
 

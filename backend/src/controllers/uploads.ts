@@ -10,10 +10,8 @@
 import { Request, Response } from 'express';
 import { asyncHandler } from '../middleware/errorHandler.js';
 import { sendJson, sendError } from '../utils/response.js';
-import { createPresignedUploadUrl } from '../services/storage.js';
+import { createPresignedUploadUrl, CONTEXT_MIME_TYPES } from '../services/storage.js';
 import { config } from '../config/index.js';
-
-const VALID_CONTEXTS = ['avatar', 'workout', 'food', 'exercise-video'];
 
 export const presignedUrl = asyncHandler(async (req: Request, res: Response) => {
   if (!config.awsRegion || !config.awsS3Bucket) {
@@ -26,8 +24,13 @@ export const presignedUrl = asyncHandler(async (req: Request, res: Response) => 
     return sendError(res, 400, 'mimeType is required');
   }
 
-  if (!VALID_CONTEXTS.includes(context)) {
-    return sendError(res, 400, `context must be one of: ${VALID_CONTEXTS.join(', ')}`);
+  const allowedMimeTypes = CONTEXT_MIME_TYPES[context];
+  if (!allowedMimeTypes) {
+    return sendError(res, 400, `context must be one of: ${Object.keys(CONTEXT_MIME_TYPES).join(', ')}`);
+  }
+
+  if (!allowedMimeTypes.includes(mimeType)) {
+    return sendError(res, 400, `Unsupported file type for ${context}: ${mimeType}. Allowed: ${allowedMimeTypes.join(', ')}`, { code: 'VALIDATION_ERROR' });
   }
 
   const { uploadUrl, fileUrl, key } = await createPresignedUploadUrl(req.user!.id, mimeType, context);

@@ -10,7 +10,7 @@ import {
 } from '@/components/ui/select';
 import { DATE_FORMATS } from '@/types/settings';
 import { formatDate as formatDateUtil } from '@/lib/utils';
-import { toast } from 'sonner';
+import { toast } from '@/components/shared/ToastProvider';
 import { SettingsSection } from './SettingsSection';
 
 export function DateFormatSection() {

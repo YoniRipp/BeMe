@@ -5,7 +5,7 @@ import { Input } from '@/components/ui/input';
 import { Loader2, UserCheck, UserPlus } from 'lucide-react';
 import { usePendingTrainerInvitations, useAcceptInvitation, useMyTrainer } from '@/hooks/useTrainer';
 import { PulseCard } from '@/components/pulse/PulseUI';
-import { toast } from 'sonner';
+import { toast } from '@/components/shared/ToastProvider';
 
 export function PendingInvitations() {
   const { data: invitations = [], isLoading: loadingInvitations } = usePendingTrainerInvitations();

@@ -50,7 +50,7 @@ import { Badge } from '@/components/ui/badge';
 import { ContentWithLoading } from '@/components/shared/ContentWithLoading';
 import { ConfirmationDialog } from '@/components/shared/ConfirmationDialog';
 import { cn } from '@/lib/utils';
-import { toast } from 'sonner';
+import { toast } from '@/components/shared/ToastProvider';
 import type {
   TrainerAnalytics,
   TrainerAnalyticsRange,

@@ -1,7 +1,7 @@
 import { useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Droplets, Minus, Plus } from 'lucide-react';
-import { toast } from 'sonner';
+import { toast } from '@/components/shared/ToastProvider';
 import { useWater } from '@/hooks/useWater';
 import { useProfile } from '@/hooks/useProfile';
 import { PulseBackButton, PulseCard, PulseHeader, PulsePage, PulseRing } from '@/components/pulse/PulseUI';

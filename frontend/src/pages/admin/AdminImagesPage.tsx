@@ -6,7 +6,8 @@ import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { ImagePlaceholder } from '@/components/shared/ImagePlaceholder';
 import { Upload, Trash2, Image as ImageIcon, Video, Link as LinkIcon, Play } from 'lucide-react';
-import { toast } from 'sonner';
+import { toast } from '@/components/shared/ToastProvider';
+import { EXERCISE_CATALOG_LIMIT } from '@/lib/constants';
 import {
   Select,
   SelectContent,
@@ -69,7 +70,7 @@ function ExerciseCatalogTab() {
 
   const { data: exercises = [], isLoading } = useQuery({
     queryKey: ['admin', 'exercises'],
-    queryFn: (): Promise<ExerciseRow[]> => request('/api/admin/exercises'),
+    queryFn: (): Promise<ExerciseRow[]> => request(`/api/admin/exercises?limit=${EXERCISE_CATALOG_LIMIT}`),
   });
 
   const deleteMutation = useMutation({

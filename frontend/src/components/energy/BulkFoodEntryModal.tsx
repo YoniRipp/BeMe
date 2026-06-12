@@ -11,7 +11,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Loader2, Mic, MicOff, Upload, Check, AlertCircle, X, Type } from 'lucide-react';
-import { toast } from 'sonner';
+import { toast } from '@/components/shared/ToastProvider';
 import { parseFoodItems, getMealStartTime, type MealType, type ParsedFoodItem } from '@/features/energy/parseFoodText';
 import { parseCsvFile, type CsvParsedItem } from '@/features/energy/parseCsv';
 import { searchFoods, lookupOrCreateFood } from '@/features/energy/api';

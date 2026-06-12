@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useMemo } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useLocation } from 'react-router-dom';
 import {
   Sheet,
@@ -8,11 +8,9 @@ import {
 } from '@/components/ui/sheet';
 import { Mic, Square, Loader2 } from 'lucide-react';
 import { useQueryClient } from '@tanstack/react-query';
-import { useEnergy } from '@/hooks/useEnergy';
-import { useWorkouts } from '@/hooks/useWorkouts';
-import { useGoals } from '@/hooks/useGoals';
 import { useSpeechRecognition } from '@/hooks/useSpeechRecognition';
-import { executeVoiceAction, type VoiceExecutorContext } from '@/lib/voiceActionExecutor';
+import { useVoiceActions } from '@/hooks/useVoiceActions';
+import { executeVoiceAction } from '@/lib/voiceActionExecutor';
 import { queryKeys } from '@/lib/queryClient';
 import { toast } from '@/components/shared/ToastProvider';
 import { LocalErrorBoundary } from '@/components/shared/LocalErrorBoundary';
@@ -27,9 +25,7 @@ export function VoiceAgentPanel({ open, onOpenChange }: VoiceAgentPanelProps) {
   const queryClient = useQueryClient();
   const { pathname } = useLocation();
   const isTrainerPage = pathname.startsWith('/trainer');
-  const { foodEntries, addFoodEntry, updateFoodEntry, deleteFoodEntry, updateCheckIn, addCheckIn, deleteCheckIn, getCheckInByDate } = useEnergy();
-  const { workouts, addWorkout, updateWorkout, deleteWorkout } = useWorkouts();
-  const { goals, addGoal, updateGoal, deleteGoal } = useGoals();
+  const { voiceContext } = useVoiceActions();
 
   const [error, setError] = useState<string | null>(null);
   const [transcript, setTranscript] = useState('');
@@ -48,30 +44,6 @@ export function VoiceAgentPanel({ open, onOpenChange }: VoiceAgentPanelProps) {
     language: navigator.language || 'en-US',
     onPartialResult: setTranscript,
   });
-
-  const voiceContext = useMemo(() => ({
-    foodEntries,
-    addFoodEntry,
-    updateFoodEntry,
-    deleteFoodEntry,
-    addCheckIn,
-    updateCheckIn,
-    deleteCheckIn,
-    getCheckInByDate,
-    workouts,
-    addWorkout,
-    updateWorkout,
-    deleteWorkout,
-    goals,
-    addGoal,
-    updateGoal,
-    deleteGoal,
-  } as VoiceExecutorContext), [
-    foodEntries, addFoodEntry, updateFoodEntry, deleteFoodEntry,
-    addCheckIn, updateCheckIn, deleteCheckIn, getCheckInByDate,
-    workouts, addWorkout, updateWorkout, deleteWorkout,
-    goals, addGoal, updateGoal, deleteGoal,
-  ]);
 
   const handleStartRecording = useCallback(async () => {
     setError(null);

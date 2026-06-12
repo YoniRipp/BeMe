@@ -1,4 +1,5 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
+import { z } from 'zod';
 import {
   normTime,
   normTimeRequired,
@@ -7,8 +8,31 @@ import {
   validateNonNegative,
   requireNonEmptyString,
   requirePositiveNumber,
+  parseQuery,
 } from './validation.js';
 import { ValidationError } from '../errors.js';
+
+describe('parseQuery', () => {
+  const schema = z.object({
+    limit: z.coerce.number().int().min(1).max(1000).default(500),
+    q: z.string().optional(),
+  });
+
+  it('returns parsed data with defaults applied', () => {
+    expect(parseQuery(schema, {})).toEqual({ limit: 500 });
+    expect(parseQuery(schema, { limit: '25', q: 'bench' })).toEqual({ limit: 25, q: 'bench' });
+  });
+
+  it('applies defaults when query is undefined', () => {
+    expect(parseQuery(schema, undefined)).toEqual({ limit: 500 });
+  });
+
+  it('throws ValidationError (not ZodError) with the field path in the message', () => {
+    expect(() => parseQuery(schema, { limit: '5000' })).toThrow(ValidationError);
+    expect(() => parseQuery(schema, { limit: 'abc' })).toThrow(/limit: /);
+  });
+});
+
 
 describe('validation', () => {
   describe('normTime', () => {

@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useSettings } from '@/hooks/useSettings';
-import { toast } from 'sonner';
+import { toast } from '@/components/shared/ToastProvider';
 import { ConfirmationDialog } from '@/components/shared/ConfirmationDialog';
 import { DEFAULT_SETTINGS } from '@/types/settings';
 import { AccountSection } from '@/components/settings/AccountSection';

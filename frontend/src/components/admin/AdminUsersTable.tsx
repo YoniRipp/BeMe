@@ -20,7 +20,7 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { usersApi, type ApiUserListItem, type UserRole } from '@/lib/api';
-import { toast } from 'sonner';
+import { toast } from '@/components/shared/ToastProvider';
 import { ConfirmationDialog } from '@/components/shared/ConfirmationDialog';
 import { Badge } from '@/components/ui/badge';
 import { Card } from '@/components/ui/card';

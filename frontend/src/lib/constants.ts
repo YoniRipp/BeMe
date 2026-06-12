@@ -15,3 +15,6 @@ export const LIMITS = {
   MAX_EXERCISE_REPS: 1000,
   MAX_EXERCISE_WEIGHT: 1000, // lbs/kg
 } as const;
+
+// Rows fetched per exercise-catalog request (matches the server's max limit)
+export const EXERCISE_CATALOG_LIMIT = 1000;

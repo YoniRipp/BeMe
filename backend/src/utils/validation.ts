@@ -1,6 +1,25 @@
 /**
  * Validation and normalization helpers.
  */
+import type { z } from 'zod';
+
+/** Format the first issue of a ZodError as "path: message" — shared by body and query validation. */
+export function firstZodErrorMessage(error: z.ZodError, fallback = 'Validation failed'): string {
+  const first = error.errors[0];
+  return first ? `${first.path.length ? first.path.join('.') + ': ' : ''}${first.message}` : fallback;
+}
+
+/**
+ * Parse query params against a Zod schema, throwing ValidationError (→ 400)
+ * instead of a raw ZodError (→ 500) on failure.
+ */
+export function parseQuery<S extends z.ZodTypeAny>(schema: S, query: unknown): z.infer<S> {
+  const result = schema.safeParse(query ?? {});
+  if (!result.success) {
+    throw new ValidationError(firstZodErrorMessage(result.error, 'Invalid query parameters'));
+  }
+  return result.data;
+}
 
 /**
  * Normalize time string to HH:MM 24h format.
