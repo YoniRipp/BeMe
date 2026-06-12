@@ -4,7 +4,9 @@
       "Bash(xargs wc -l)",
       "Bash(wc -l /d/Downloads/Git/BMe/frontend/src/pages/*.tsx)",
       "Bash(npx tsc *)",
-      "Bash(npx vitest *)"
+      "Bash(npx vitest *)",
+      "Bash(npm ci *)",
+      "Bash(xargs sed -i \"s|import { toast } from 'sonner';|import { toast } from '@/components/shared/ToastProvider';|\")"
     ]
   }
 }
