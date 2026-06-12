@@ -9,7 +9,8 @@ export function register(server, api) {
       muscleGroup: z.string().optional().describe('Filter by muscle group (e.g. chest, back, legs)'),
     }),
     async ({ q, muscleGroup }) => {
-      const params = new URLSearchParams();
+      // Request the server's max limit — the catalog endpoint defaults to 500 otherwise.
+      const params = new URLSearchParams({ limit: '1000' });
       if (q) params.set('q', q);
       if (muscleGroup) params.set('muscleGroup', muscleGroup);
       const qs = params.toString();

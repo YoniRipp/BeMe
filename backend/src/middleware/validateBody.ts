@@ -4,6 +4,7 @@
  */
 import { Request, Response, NextFunction, RequestHandler } from 'express';
 import { ZodSchema } from 'zod';
+import { firstZodErrorMessage } from '../utils/validation.js';
 
 export function validateBody(schema: ZodSchema): RequestHandler {
   return (req: Request, res: Response, next: NextFunction) => {
@@ -14,9 +15,7 @@ export function validateBody(schema: ZodSchema): RequestHandler {
       return;
     }
     const err = result.error;
-    const first = err.errors[0];
-    const message = first ? `${first.path.length ? first.path.join('.') + ': ' : ''}${first.message}` : 'Validation failed';
-    const response: Record<string, unknown> = { error: message };
+    const response: Record<string, unknown> = { error: firstZodErrorMessage(err) };
     if (process.env.NODE_ENV !== 'production') {
       response.details = err.flatten();
     }

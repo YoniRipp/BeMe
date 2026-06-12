@@ -3,6 +3,7 @@
  */
 import pg from 'pg';
 import { getPool } from '../db/pool.js';
+import { buildUpdateQuery, type UpdateBuilder } from '../db/queryBuilder.js';
 import { escapeLike } from '../utils/escapeLike.js';
 
 const RETURNING = 'id, name, muscle_group, category, image_url, video_url, created_at, updated_at';
@@ -120,34 +121,24 @@ export async function upsert(input: CreateExerciseInput, client?: pg.Pool | pg.P
   return rowToAdminExercise(result.rows[0]);
 }
 
-const UPDATE_COLUMNS: Record<keyof UpdateExerciseInput, string> = {
-  name: 'name',
-  muscleGroup: 'muscle_group',
-  category: 'category',
-  imageUrl: 'image_url',
-  videoUrl: 'video_url',
+/** Empty strings clear optional fields (stored as NULL); name is required and never cleared. */
+const clearable = (v: string) => v || null;
+
+const UPDATE_SPEC: UpdateBuilder<UpdateExerciseInput> = {
+  columns: {
+    name: { column: 'name' },
+    muscleGroup: { column: 'muscle_group', transform: clearable },
+    category: { column: 'category', transform: clearable },
+    imageUrl: { column: 'image_url', transform: clearable },
+    videoUrl: { column: 'video_url', transform: clearable },
+  },
 };
 
 export async function update(id: string, updates: UpdateExerciseInput, client?: pg.Pool | pg.PoolClient): Promise<AdminCatalogExercise | null> {
   const db = client ?? getPool();
-  const sets: string[] = [];
-  const params: unknown[] = [];
-
-  for (const [key, column] of Object.entries(UPDATE_COLUMNS) as [keyof UpdateExerciseInput, string][]) {
-    const value = updates[key];
-    if (value === undefined) continue;
-    // Empty strings clear optional fields (stored as NULL); name is required and never cleared.
-    params.push(key === 'name' ? value : value || null);
-    sets.push(`${column} = $${params.length}`);
-  }
-  if (sets.length === 0) return null;
-
-  sets.push('updated_at = now()');
-  params.push(id);
-  const result = await db.query(
-    `UPDATE exercises SET ${sets.join(', ')} WHERE id = $${params.length} RETURNING ${RETURNING}`,
-    params,
-  );
+  const query = buildUpdateQuery('exercises', 'id', null, RETURNING, UPDATE_SPEC, updates, id, null, ['updated_at = now()']);
+  if (!query) return null;
+  const result = await db.query(query.sql, query.params);
   return result.rows[0] ? rowToAdminExercise(result.rows[0]) : null;
 }
 

@@ -197,6 +197,8 @@ export const updateCycleEntrySchema = z.object({
 }).strict().refine((obj) => Object.keys(obj).length > 0, 'At least one field required');
 
 // ─── Exercise catalog schemas ─────────────────────────────────
+// The catalog is a small, admin-curated global list that pickers consume whole,
+// so its limit ceiling is deliberately higher than paginationSchema's 200.
 export const exerciseListQuerySchema = z.object({
   q: z.string().max(200).optional(),
   muscleGroup: z.string().max(100).optional(),

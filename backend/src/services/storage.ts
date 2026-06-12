@@ -22,16 +22,18 @@ function getS3Client() {
   return new S3Client({ region: config.awsRegion });
 }
 
-/** Allowed MIME types for uploads */
-const ALLOWED_MIME_TYPES = new Set([
-  'image/jpeg',
-  'image/png',
-  'image/webp',
-  'image/gif',
-  'video/mp4',
-  'video/quicktime',
-  'video/webm',
-]);
+const IMAGE_MIME_TYPES = ['image/jpeg', 'image/png', 'image/webp', 'image/gif'];
+const VIDEO_MIME_TYPES = ['video/mp4', 'video/quicktime', 'video/webm'];
+
+/** Upload contexts and the MIME types each accepts — single source of upload policy. */
+export const CONTEXT_MIME_TYPES: Record<string, readonly string[]> = {
+  avatar: IMAGE_MIME_TYPES,
+  workout: IMAGE_MIME_TYPES,
+  food: IMAGE_MIME_TYPES,
+  'exercise-video': VIDEO_MIME_TYPES,
+};
+
+const ALLOWED_MIME_TYPES = new Set(Object.values(CONTEXT_MIME_TYPES).flat());
 
 /**
  * Generate a pre-signed S3 PUT URL for a user file upload.

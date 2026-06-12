@@ -9,15 +9,21 @@ vi.mock('../middleware/auth.js', () => ({
   },
 }));
 
-const mockConfig = { awsRegion: 'us-east-1', awsS3Bucket: 'test-bucket' };
+// vi.mock factories are hoisted above const declarations — vi.hoisted keeps
+// this initialized before the config factory dereferences it.
+const mockConfig = vi.hoisted(() => ({ awsRegion: 'us-east-1', awsS3Bucket: 'test-bucket' }));
 vi.mock('../config/index.js', () => ({
   config: mockConfig,
 }));
 
 const mockCreatePresignedUploadUrl = vi.fn();
-vi.mock('../services/storage.js', () => ({
-  createPresignedUploadUrl: (...args) => mockCreatePresignedUploadUrl(...args),
-}));
+vi.mock('../services/storage.js', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('../services/storage.js')>();
+  return {
+    ...actual,
+    createPresignedUploadUrl: (...args) => mockCreatePresignedUploadUrl(...args),
+  };
+});
 
 import uploadsRouter from '../routes/uploads.js';
 

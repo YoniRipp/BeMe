@@ -1,5 +1,6 @@
 import { useQuery } from '@tanstack/react-query';
 import { request } from '@/core/api/client';
+import { EXERCISE_CATALOG_LIMIT } from '@/lib/constants';
 
 export interface CatalogExercise {
   id: string;
@@ -13,7 +14,7 @@ export interface CatalogExercise {
 export function useExercises() {
   const { data } = useQuery({
     queryKey: ['exercises'],
-    queryFn: (): Promise<CatalogExercise[]> => request('/api/exercises?limit=1000'),
+    queryFn: (): Promise<CatalogExercise[]> => request(`/api/exercises?limit=${EXERCISE_CATALOG_LIMIT}`),
     staleTime: 10 * 60 * 1000,
   });
 

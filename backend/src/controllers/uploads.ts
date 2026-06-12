@@ -10,19 +10,8 @@
 import { Request, Response } from 'express';
 import { asyncHandler } from '../middleware/errorHandler.js';
 import { sendJson, sendError } from '../utils/response.js';
-import { createPresignedUploadUrl } from '../services/storage.js';
+import { createPresignedUploadUrl, CONTEXT_MIME_TYPES } from '../services/storage.js';
 import { config } from '../config/index.js';
-
-const IMAGE_MIME_TYPES = ['image/jpeg', 'image/png', 'image/webp', 'image/gif'];
-const VIDEO_MIME_TYPES = ['video/mp4', 'video/quicktime', 'video/webm'];
-
-/** Per-context MIME allowlists — images everywhere, videos only for exercise videos. */
-const CONTEXT_MIME_TYPES: Record<string, string[]> = {
-  avatar: IMAGE_MIME_TYPES,
-  workout: IMAGE_MIME_TYPES,
-  food: IMAGE_MIME_TYPES,
-  'exercise-video': VIDEO_MIME_TYPES,
-};
 
 export const presignedUrl = asyncHandler(async (req: Request, res: Response) => {
   if (!config.awsRegion || !config.awsS3Bucket) {
