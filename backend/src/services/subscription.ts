@@ -127,7 +127,7 @@ export async function updateSubscriptionStatus(
   plan: 'monthly' | 'yearly' | null = null,
 ) {
   const pool = getPool();
-  await pool.query(
+  const result = await pool.query(
     `UPDATE users
      SET subscription_status = $1,
          subscription_id = $2,
@@ -136,6 +136,43 @@ export async function updateSubscriptionStatus(
      WHERE lemon_squeezy_customer_id = $5`,
     [status, subscriptionId, periodEnd, plan, lemonSqueezyCustomerId],
   );
+  return result.rowCount ?? 0;
+}
+
+/**
+ * Apply a status change and fail loudly if it matched no user.
+ *
+ * The UPDATE keys on lemon_squeezy_customer_id, which is only ever written by
+ * the subscription_created branch. If that event was missed, arrived late, or
+ * carried no user_id, every later event silently updates zero rows — the
+ * customer is charged and never receives Pro. Throwing surfaces it and makes
+ * Lemon Squeezy retry the delivery.
+ */
+async function applySubscriptionStatus(
+  eventName: string,
+  lemonSqueezyCustomerId: string,
+  status: string,
+  subscriptionId: string | null,
+  periodEnd: Date | null,
+  plan: 'monthly' | 'yearly' | null = null,
+) {
+  const rowCount = await updateSubscriptionStatus(
+    lemonSqueezyCustomerId,
+    status,
+    subscriptionId,
+    periodEnd,
+    plan,
+  );
+  if (rowCount === 0) {
+    logger.error(
+      { eventName, customerId: lemonSqueezyCustomerId, status, subscriptionId },
+      'Subscription webhook matched no user — entitlement NOT applied',
+    );
+    throw new Error(
+      `No user linked to Lemon Squeezy customer ${lemonSqueezyCustomerId} for ${eventName}`,
+    );
+  }
+  return rowCount;
 }
 
 function getPlanFromVariantId(variantId: unknown): 'monthly' | 'yearly' | null {
@@ -198,7 +235,8 @@ export async function handleWebhookEvent(payload: LemonSqueezyWebhookPayload) {
         'UPDATE users SET lemon_squeezy_customer_id = $1 WHERE id = $2',
         [customerId, userId],
       );
-      await updateSubscriptionStatus(
+      await applySubscriptionStatus(
+        eventName,
         customerId,
         'pro',
         String(payload.data.id),
@@ -217,7 +255,8 @@ export async function handleWebhookEvent(payload: LemonSqueezyWebhookPayload) {
         : lsStatus === 'paused' ? 'paused'
         : lsStatus === 'expired' ? 'expired'
         : 'free';
-      await updateSubscriptionStatus(
+      await applySubscriptionStatus(
+        eventName,
         customerId,
         mappedStatus,
         String(payload.data.id),
@@ -229,7 +268,8 @@ export async function handleWebhookEvent(payload: LemonSqueezyWebhookPayload) {
       break;
     }
     case 'subscription_payment_failed': {
-      await updateSubscriptionStatus(
+      await applySubscriptionStatus(
+        eventName,
         customerId,
         'past_due',
         String(payload.data.id),
@@ -240,7 +280,8 @@ export async function handleWebhookEvent(payload: LemonSqueezyWebhookPayload) {
       break;
     }
     case 'subscription_payment_success': {
-      await updateSubscriptionStatus(
+      await applySubscriptionStatus(
+        eventName,
         customerId,
         'pro',
         String(payload.data.id),

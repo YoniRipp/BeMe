@@ -52,7 +52,7 @@ describe('subscription service', () => {
     });
 
     it('returns null when user not found', async () => {
-      mockQuery.mockResolvedValue({ rows: [] });
+      mockQuery.mockResolvedValue({ rows: [], rowCount: 1 });
 
       const result = await getUserSubscription('nonexistent');
 
@@ -72,7 +72,7 @@ describe('subscription service', () => {
 
   describe('updateSubscriptionStatus', () => {
     it('updates DB with new status using lemon_squeezy_customer_id', async () => {
-      mockQuery.mockResolvedValue({ rows: [] });
+      mockQuery.mockResolvedValue({ rows: [], rowCount: 1 });
 
       await updateSubscriptionStatus('ls_cus_123', 'pro', 'sub_123', new Date('2026-04-01'));
 
@@ -84,8 +84,31 @@ describe('subscription service', () => {
   });
 
   describe('handleWebhookEvent', () => {
+    // The entitlement UPDATE keys on lemon_squeezy_customer_id, which only the
+    // subscription_created branch ever writes. If that event was missed, every
+    // later event used to update zero rows in silence — the customer is charged
+    // and never receives Pro. It must throw so Lemon Squeezy retries.
+    it('throws when the entitlement update matches no user', async () => {
+      mockQuery.mockResolvedValue({ rows: [], rowCount: 0 });
+
+      await expect(
+        handleWebhookEvent({
+          meta: { event_name: 'subscription_payment_success' },
+          data: {
+            id: 'sub_456',
+            type: 'subscriptions',
+            attributes: {
+              customer_id: 789,
+              status: 'active',
+              renews_at: '2026-04-01T00:00:00Z',
+            },
+          },
+        }),
+      ).rejects.toThrow(/no user linked/i);
+    });
+
     it('activates subscription on subscription_created', async () => {
-      mockQuery.mockResolvedValue({ rows: [] });
+      mockQuery.mockResolvedValue({ rows: [], rowCount: 1 });
 
       await handleWebhookEvent({
         meta: {
@@ -116,7 +139,7 @@ describe('subscription service', () => {
     });
 
     it('updates status on subscription_updated', async () => {
-      mockQuery.mockResolvedValue({ rows: [] });
+      mockQuery.mockResolvedValue({ rows: [], rowCount: 1 });
 
       await handleWebhookEvent({
         meta: {
@@ -140,7 +163,7 @@ describe('subscription service', () => {
     });
 
     it('sets past_due on subscription_payment_failed', async () => {
-      mockQuery.mockResolvedValue({ rows: [] });
+      mockQuery.mockResolvedValue({ rows: [], rowCount: 1 });
 
       await handleWebhookEvent({
         meta: {
@@ -162,7 +185,7 @@ describe('subscription service', () => {
     });
 
     it('sets pro on subscription_payment_success', async () => {
-      mockQuery.mockResolvedValue({ rows: [] });
+      mockQuery.mockResolvedValue({ rows: [], rowCount: 1 });
 
       await handleWebhookEvent({
         meta: {

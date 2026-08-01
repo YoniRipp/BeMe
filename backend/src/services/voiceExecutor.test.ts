@@ -27,8 +27,13 @@ vi.mock('../models/profile.js', () => ({
   upsert: vi.fn(),
 }));
 
+const mockIsClientOfTrainer = vi.fn();
+const mockFindClientsByTrainerId = vi.fn();
+
 vi.mock('../models/trainerClient.js', () => ({
   findByTrainerId: vi.fn(),
+  isClientOfTrainer: (...args: unknown[]) => mockIsClientOfTrainer(...args),
+  findClientsByTrainerId: (...args: unknown[]) => mockFindClientsByTrainerId(...args),
 }));
 
 vi.mock('../lib/voiceContext.js', () => ({
@@ -327,6 +332,40 @@ describe('voiceExecutor', () => {
       expect(results).toEqual([
         { intent: 'add_workout', success: false, message: 'DB connection failed' },
       ]);
+    });
+  });
+
+  describe('trainer client authorization', () => {
+    // clientId is filled in by the LLM from user-controlled speech, so it is
+    // untrusted: without an ownership check any caller could name another
+    // user's id and write to their account.
+    it('refuses a clientId the trainer does not own', async () => {
+      mockIsClientOfTrainer.mockResolvedValue(false);
+
+      const results = await executeActions(
+        [{ intent: 'add_client_workout', clientId: 'someone-elses-user-id', title: 'Run' }],
+        userId
+      );
+
+      expect(mockIsClientOfTrainer).toHaveBeenCalledWith(userId, 'someone-elses-user-id');
+      expect(results[0].success).toBe(false);
+      expect(mockWorkoutCreate).not.toHaveBeenCalled();
+    });
+
+    it('allows a clientId the trainer does own', async () => {
+      mockIsClientOfTrainer.mockResolvedValue(true);
+      mockWorkoutCreate.mockResolvedValue({ id: 'w1' });
+
+      const results = await executeActions(
+        [{ intent: 'add_client_workout', clientId: 'real-client-id', title: 'Run' }],
+        userId
+      );
+
+      expect(results[0].success).toBe(true);
+      expect(mockWorkoutCreate).toHaveBeenCalledWith(
+        'real-client-id',
+        expect.objectContaining({ title: 'Run' })
+      );
     });
   });
 });

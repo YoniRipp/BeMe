@@ -80,6 +80,14 @@ export function createWebhookRouter() {
       return res.status(400).json({ error: 'Missing signature' });
     }
 
+    // express.raw() only populates req.body for matching content types; anything
+    // else leaves it as {}. Hashing a non-Buffer throws, and because this handler
+    // is async that surfaces as an unhandled rejection, which index.ts turns into
+    // process.exit(1) — an unauthenticated remote kill. Reject early instead.
+    if (!Buffer.isBuffer(req.body)) {
+      return res.status(400).json({ error: 'Invalid body' });
+    }
+
     const rawBody = req.body as Buffer;
     const hmac = crypto.createHmac('sha256', config.lemonSqueezyWebhookSecret);
     const digest = hmac.update(rawBody).digest('hex');

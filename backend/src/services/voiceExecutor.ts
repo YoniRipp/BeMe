@@ -172,7 +172,14 @@ type ClientResolveResult =
   | { kind: 'not_found' };
 
 async function resolveClientId(trainerId: string, action: VoiceAction): Promise<ClientResolveResult> {
-  if (action.clientId) return { kind: 'found', clientId: action.clientId as string };
+  // clientId is filled in by the LLM from user-controlled speech/text, so it is
+  // untrusted input. Confirm the caller actually owns this client before using
+  // it — the name/number branches below are already scoped by trainerId.
+  if (action.clientId) {
+    const clientId = String(action.clientId);
+    const owned = await trainerClientModel.isClientOfTrainer(trainerId, clientId);
+    return owned ? { kind: 'found', clientId } : { kind: 'not_found' };
+  }
 
   const clients = await trainerClientModel.findClientsByTrainerId(trainerId);
 

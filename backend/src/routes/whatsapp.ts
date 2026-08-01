@@ -3,6 +3,7 @@
  * GET  /api/whatsapp/webhook — Meta verification challenge
  * POST /api/whatsapp/webhook — Incoming messages from WhatsApp
  */
+import crypto from 'crypto';
 import { Router } from 'express';
 import { config } from '../config/index.js';
 import { asyncHandler } from '../middleware/errorHandler.js';
@@ -38,7 +39,47 @@ router.get('/api/whatsapp/webhook', (req: Request, res: Response) => {
  * Must always return 200 quickly to acknowledge receipt.
  */
 router.post('/api/whatsapp/webhook', asyncHandler(async (req: Request, res: Response) => {
-  const payload = req.body as WhatsAppWebhookPayload;
+  // Fail closed: without an app secret we cannot tell Meta apart from anyone
+  // else on the internet, and this endpoint reaches an LLM executor that can
+  // write and delete user health data.
+  if (!config.whatsappAppSecret) {
+    logger.error('WHATSAPP_APP_SECRET is not set — refusing to process WhatsApp webhook');
+    return sendError(res, 503, 'WhatsApp webhooks not configured');
+  }
+
+  // Mounted with express.raw() in app.ts so the HMAC is computed over the exact
+  // bytes Meta signed. Anything that is not a Buffer never reached that parser.
+  if (!Buffer.isBuffer(req.body)) {
+    return sendError(res, 400, 'Invalid body');
+  }
+  const rawBody = req.body as Buffer;
+
+  const header = req.headers['x-hub-signature-256'];
+  if (typeof header !== 'string' || !header.startsWith('sha256=')) {
+    return sendError(res, 401, 'Missing signature');
+  }
+
+  const digest = crypto
+    .createHmac('sha256', config.whatsappAppSecret)
+    .update(rawBody)
+    .digest('hex');
+  const provided = header.slice('sha256='.length);
+
+  // Length check first: timingSafeEqual throws on unequal-length buffers.
+  if (
+    provided.length !== digest.length ||
+    !crypto.timingSafeEqual(Buffer.from(provided), Buffer.from(digest))
+  ) {
+    logger.warn('WhatsApp webhook signature verification failed');
+    return sendError(res, 401, 'Invalid signature');
+  }
+
+  let payload: WhatsAppWebhookPayload;
+  try {
+    payload = JSON.parse(rawBody.toString('utf8')) as WhatsAppWebhookPayload;
+  } catch {
+    return sendError(res, 400, 'Invalid JSON body');
+  }
 
   // Always respond 200 immediately to Meta (they retry on non-200)
   res.status(200).send('OK');

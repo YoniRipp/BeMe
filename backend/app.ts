@@ -82,9 +82,16 @@ export async function createApp() {
 
   // Lemon Squeezy webhook needs raw body for HMAC signature verification — mount BEFORE express.json()
   if (config.lemonSqueezyApiKey) {
-    app.use('/api/webhooks/lemonsqueezy', express.raw({ type: 'application/json' }));
+    // type: () => true so the body is always a Buffer regardless of the content
+    // type Lemon Squeezy sends; the handler verifies the HMAC either way.
+    app.use('/api/webhooks/lemonsqueezy', express.raw({ type: () => true }));
     app.use(createWebhookRouter());
   }
+
+  // WhatsApp verifies Meta's X-Hub-Signature-256 over the raw body, so it also
+  // needs the raw parser mounted before express.json(). The route itself fails
+  // closed when WHATSAPP_APP_SECRET is unset.
+  app.use('/api/whatsapp/webhook', express.raw({ type: () => true }));
 
   app.use(express.json({ limit: '10mb' }));
   app.use(requestIdMiddleware);

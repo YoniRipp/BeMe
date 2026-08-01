@@ -71,6 +71,7 @@ const configSchema = z.object({
   whatsappAccessToken: z.string().optional(),
   whatsappPhoneNumberId: z.string().optional(),
   whatsappVerifyToken: z.string().optional(),
+  whatsappAppSecret: z.string().optional(),
   whatsappBusinessAccountId: z.string().optional(),
 });
 
@@ -146,6 +147,7 @@ const rawConfig = {
   whatsappAccessToken: process.env.WHATSAPP_ACCESS_TOKEN,
   whatsappPhoneNumberId: process.env.WHATSAPP_PHONE_NUMBER_ID,
   whatsappVerifyToken: process.env.WHATSAPP_VERIFY_TOKEN || 'trackvibe-whatsapp-verify',
+  whatsappAppSecret: process.env.WHATSAPP_APP_SECRET,
   whatsappBusinessAccountId: process.env.WHATSAPP_BUSINESS_ACCOUNT_ID,
 };
 
