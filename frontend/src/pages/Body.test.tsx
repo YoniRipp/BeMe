@@ -137,12 +137,35 @@ describe('Body Page', () => {
       expect(await screen.findByRole('dialog')).toBeInTheDocument();
     });
 
-    it('finds them by search', async () => {
+    // The reported shape: a mixed history where recent workouts show with an empty box,
+    // and searching for an older one has to surface it rather than emptying the page.
+    it('finds them by search alongside recent ones', async () => {
+      const user = userEvent.setup();
+      mockUseWorkouts.mockReturnValue({
+        ...defaultHookReturn,
+        workouts: [
+          olderWorkout({ id: 'r-1', title: 'Today Push', date: new Date() }),
+          olderWorkout({ id: 'r-2', title: 'Recent Pull', date: subWeeks(new Date(), 1) }),
+          olderWorkout(),
+        ],
+      });
+
+      render(<Body />, { wrapper });
+      expect(await screen.findByText('Today Push')).toBeInTheDocument();
+
+      await user.type(screen.getByPlaceholderText(/search workouts/i), 'Ancient');
+
+      expect(await screen.findByText('Ancient Leg Day')).toBeInTheDocument();
+      await waitFor(() => expect(screen.queryByText('Today Push')).not.toBeInTheDocument());
+      expect(screen.queryByText(/no workouts match/i)).not.toBeInTheDocument();
+    });
+
+    it('finds them by exercise name, not just title', async () => {
       const user = userEvent.setup();
       mockUseWorkouts.mockReturnValue({ ...defaultHookReturn, workouts: [olderWorkout()] });
 
       render(<Body />, { wrapper });
-      await user.type(screen.getByPlaceholderText(/search workouts/i), 'Ancient');
+      await user.type(screen.getByPlaceholderText(/search workouts/i), 'squat');
 
       expect(await screen.findByText('Ancient Leg Day')).toBeInTheDocument();
     });
