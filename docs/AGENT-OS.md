@@ -85,4 +85,6 @@ npm run sync:agents -- --check # verify (CI runs this)
 
 ## Upstream
 
-Agent OS v3 deliberately dropped its orchestration and implementation phases; modern models handle those without scripting. What remains is standards + spec shaping, deferring to native plan mode. That's why `/shape-spec` is preferred over the `team-lead` agent profile for new work.
+Agent OS v3 deliberately dropped its orchestration and implementation phases; modern models handle those without scripting. What remains is standards + spec shaping, deferring to native plan mode.
+
+Following that, the `team-lead` agent profile was retired — it scripted a plan → delegate-to-coder → delegate-to-tester loop that plan mode now covers. The remaining profiles (`coder`, `tester`, `reviewer`, `devops`, `product-manager`) are focused single-purpose agents, not orchestrators. Start work with `/shape-spec` in plan mode.

@@ -65,9 +65,9 @@ First-time setup on a new machine — see `docs/AGENT-OS.md`.
 
 ## Claude-specific tooling
 
-Agent profiles in `.claude/agents/`: `coder`, `tester`, `reviewer`, `devops`, `product-manager`, `team-lead`.
+Agent profiles in `.claude/agents/`: `coder`, `tester`, `reviewer`, `devops`, `product-manager`.
 
-> Note: Agent OS v3 retired its own orchestration phases — modern models plan and delegate well without a scripted lead. Prefer `/shape-spec` in plan mode over the `team-lead` profile for new work.
+> There is deliberately no orchestrator profile. Agent OS v3 retired its own orchestration phases — modern models plan and delegate well without a scripted lead. Plan with `/shape-spec` in plan mode instead.
 
 Settings and hooks: `.claude/settings.json`. A PostToolUse hook typechecks the package you edited after every Write/Edit; a PreToolUse hook blocks force-pushes.
 
