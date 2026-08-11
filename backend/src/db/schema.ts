@@ -325,6 +325,37 @@ export async function initSchema() {
       );
     `);
 
+    // Rolling summary that replaces compacted chat turns (services/compaction.ts)
+    await client.query(`
+      CREATE TABLE IF NOT EXISTS chat_summaries (
+        id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+        user_id uuid NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+        covers_from timestamptz,
+        covers_to timestamptz,
+        message_count int NOT NULL DEFAULT 0,
+        summary text NOT NULL,
+        created_at timestamptz DEFAULT now(),
+        updated_at timestamptz DEFAULT now(),
+        UNIQUE (user_id)
+      );
+    `);
+
+    // Measured per-user footprint driving age/size compaction
+    await client.query(`
+      CREATE TABLE IF NOT EXISTS user_storage_stats (
+        user_id uuid PRIMARY KEY REFERENCES users(id) ON DELETE CASCADE,
+        total_bytes bigint NOT NULL DEFAULT 0,
+        embedding_bytes bigint NOT NULL DEFAULT 0,
+        chat_bytes bigint NOT NULL DEFAULT 0,
+        activity_bytes bigint NOT NULL DEFAULT 0,
+        insight_bytes bigint NOT NULL DEFAULT 0,
+        embedding_rows int NOT NULL DEFAULT 0,
+        measured_at timestamptz DEFAULT now(),
+        last_compacted_at timestamptz,
+        last_cutoff date
+      );
+    `);
+
     // Indexes
     await client.query('CREATE INDEX IF NOT EXISTS idx_goals_user ON goals(user_id)');
     await client.query('CREATE INDEX IF NOT EXISTS idx_workouts_user_date ON workouts(user_id, date DESC)');
@@ -355,6 +386,7 @@ export async function initSchema() {
     await client.query('CREATE INDEX IF NOT EXISTS idx_ai_insights_user_created ON ai_insights(user_id, created_at DESC)');
     await client.query('CREATE INDEX IF NOT EXISTS idx_user_activity_log_user_created ON user_activity_log(user_id, created_at DESC)');
     await client.query('CREATE INDEX IF NOT EXISTS idx_user_activity_log_event_type_created ON user_activity_log(event_type, created_at DESC)');
+    await client.query('CREATE INDEX IF NOT EXISTS idx_user_storage_stats_measured ON user_storage_stats (measured_at NULLS FIRST)');
 
     // pgvector (optional, non-fatal)
     try {
@@ -367,12 +399,21 @@ export async function initSchema() {
           record_id text NOT NULL,
           content_text text NOT NULL,
           embedding vector(768),
+          bucket_start date,
+          source_count int,
           created_at timestamptz DEFAULT now(),
           updated_at timestamptz DEFAULT now(),
           UNIQUE (record_id, record_type)
         );
       `);
+      // Rollup columns for pre-existing tables created before compaction landed
+      await client.query('ALTER TABLE user_embeddings ADD COLUMN IF NOT EXISTS bucket_start date');
+      await client.query('ALTER TABLE user_embeddings ADD COLUMN IF NOT EXISTS source_count int');
       await client.query('CREATE INDEX IF NOT EXISTS idx_user_embeddings_user_type ON user_embeddings (user_id, record_type)');
+      // Needed to find compactable rows cheaply
+      await client.query('CREATE INDEX IF NOT EXISTS idx_user_embeddings_user_created ON user_embeddings (user_id, created_at)');
+      // Without this, semanticSearch degrades to a sequential scan
+      await client.query('CREATE INDEX IF NOT EXISTS idx_user_embeddings_hnsw ON user_embeddings USING hnsw (embedding vector_cosine_ops)');
     } catch {
       logger.warn('pgvector not available -- skipping user_embeddings table');
     }

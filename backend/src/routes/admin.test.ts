@@ -55,6 +55,24 @@ vi.mock('../services/goal.js', () => ({
   remove: vi.fn().mockResolvedValue(undefined),
 }));
 
+const mockCompactUser = vi.fn();
+const mockRunCompactionSweep = vi.fn();
+vi.mock('../services/compaction.js', () => ({
+  compactUser: (...args) => mockCompactUser(...args),
+  runCompactionSweep: (...args) => mockRunCompactionSweep(...args),
+}));
+
+// config validates env at import time and throws without PORT, so it must be
+// mocked for any route whose import graph reaches it.
+vi.mock('../config/index.js', () => ({
+  config: {
+    compactionEnabled: true,
+    compactionAgeMonths: 3,
+    compactionMaxBytesPerUser: 10 * 1024 * 1024,
+    compactionSweepUsers: 50,
+  },
+}));
+
 vi.mock('../schemas/routeSchemas.js', () => {
   const { z } = require('zod');
   const passthrough = z.object({}).passthrough();

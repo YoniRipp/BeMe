@@ -10,6 +10,7 @@ import { closeQueue } from './src/queue/index.js';
 import { Worker } from 'bullmq';
 import { WebSocketServer } from 'ws';
 import { startVoiceWorker } from './src/workers/voice.js';
+import { startCompactionScheduler, closeCompactionQueue } from './src/workers/compaction.js';
 import { subscribe, startEventsWorker, closeEventsBus } from './src/events/bus.js';
 import { registerAllEventConsumers } from './src/events/consumers/register.js';
 import { setupVoiceStreamingWs } from './src/ws/voiceStreaming.js';
@@ -72,6 +73,16 @@ async function start() {
     }
   }
 
+  // Daily per-user data compaction. No-op without Redis — those deployments
+  // run `npm run compact` from an external scheduler instead.
+  let compactionWorker: Worker | null = null;
+  if (!config.separateWorkers) {
+    compactionWorker = await startCompactionScheduler().catch((e) => {
+      logger.error({ err: e }, 'Failed to start compaction scheduler');
+      return null;
+    });
+  }
+
   async function shutdown() {
     let exitCode = 0;
 
@@ -90,6 +101,17 @@ async function start() {
         logger.info('Voice worker closed');
       } catch (e) {
         logger.error({ err: e }, 'Failed to close voice worker');
+        exitCode = 1;
+      }
+    }
+
+    if (compactionWorker) {
+      try {
+        await compactionWorker.close();
+        await closeCompactionQueue();
+        logger.info('Compaction scheduler closed');
+      } catch (e) {
+        logger.error({ err: e }, 'Failed to close compaction scheduler');
         exitCode = 1;
       }
     }

@@ -72,6 +72,12 @@ const configSchema = z.object({
   whatsappPhoneNumberId: z.string().optional(),
   whatsappVerifyToken: z.string().optional(),
   whatsappBusinessAccountId: z.string().optional(),
+  // Per-user data compaction (see services/compaction.ts)
+  compactionEnabled: z.boolean(),
+  compactionAgeMonths: z.coerce.number().int().min(1).max(120).default(3),
+  compactionMaxBytesPerUser: z.coerce.number().int().min(1024 * 1024).default(10 * 1024 * 1024),
+  compactionChatKeepLast: z.coerce.number().int().min(1).max(500).default(50),
+  compactionSweepUsers: z.coerce.number().int().min(1).max(1000).default(50),
 });
 
 const PORT = process.env.PORT;
@@ -147,6 +153,11 @@ const rawConfig = {
   whatsappPhoneNumberId: process.env.WHATSAPP_PHONE_NUMBER_ID,
   whatsappVerifyToken: process.env.WHATSAPP_VERIFY_TOKEN || 'trackvibe-whatsapp-verify',
   whatsappBusinessAccountId: process.env.WHATSAPP_BUSINESS_ACCOUNT_ID,
+  compactionEnabled: process.env.COMPACTION_ENABLED !== 'false' && process.env.COMPACTION_ENABLED !== '0',
+  compactionAgeMonths: process.env.COMPACTION_AGE_MONTHS ?? 3,
+  compactionMaxBytesPerUser: process.env.COMPACTION_MAX_BYTES_PER_USER ?? 10 * 1024 * 1024,
+  compactionChatKeepLast: process.env.COMPACTION_CHAT_KEEP_LAST ?? 50,
+  compactionSweepUsers: process.env.COMPACTION_SWEEP_USERS ?? 50,
 };
 
 const parsed = configSchema.safeParse(rawConfig);

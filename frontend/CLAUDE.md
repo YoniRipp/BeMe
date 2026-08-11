@@ -1,6 +1,7 @@
 # Frontend
 
 React 18 SPA built with Vite, TypeScript, React Query, Tailwind CSS, and shadcn/ui.
+Ships as a web app, a PWA (`src/sw.ts`), and a Capacitor native shell.
 
 ## Commands
 - Dev server: `npm run dev`
@@ -11,17 +12,37 @@ React 18 SPA built with Vite, TypeScript, React Query, Tailwind CSS, and shadcn/
 - Capacitor (mobile): `npm run cap:sync`, `npm run cap:ios`, `npm run cap:android`
 
 ## Architecture
-- `src/pages/` -- Top-level page components (Home, Body, Energy, Goals, Insights)
-- `src/hooks/` -- Data-fetching hooks (wrap React Query: useGoals, useWorkouts, useEnergy, etc.)
-- `src/features/` -- Feature-specific logic (goals)
-- `src/components/` -- Reusable UI components organized by domain (layout/, goals/, home/, energy/)
-- `src/context/` -- React contexts (GoalsContext, WorkoutContext, EnergyContext)
-- `src/lib/` -- Utilities (date ranges, API client)
+- `src/routes.tsx` — route table; `src/App.tsx` and `src/Providers.tsx` wrap the tree
+- `src/pages/` — page components. App pages: `Home`, `Body` (workouts), `Energy`
+  (food/journal), `Water`, `Goals`, `Insights`, `Settings`, `Trainer`,
+  `TrainerClientView`, `Admin` (+ `pages/admin/`). Auth: `Login`, `Signup`,
+  `ForgotPassword`, `AuthCallback`. Marketing: `Landing`, `Pricing`, `About`,
+  `Contact`, `Privacy`, `Terms`, `NotFound`.
+- `src/components/` — UI organized by domain: `layout/`, `home/`, `body/`, `energy/`,
+  `goals/`, `insights/`, `chat/`, `voice/`, `trainer/`, `admin/`, `onboarding/`,
+  `subscription/`, `marketing/`, `settings/`, `pwa/`, `pulse/`, `shared/`, `ui/`
+  (shadcn primitives), `auth/`
+- `src/hooks/` — React Query data hooks (`useWorkouts`, `useGoals`, `useEnergy`,
+  `useWater`, `useWeight`, `useCycle`, `useStreaks`, `useTrainer`, `useSubscription`, …)
+  plus device hooks (`useSpeechRecognition`, `useNativeSpeech`, `useIsMobile`, …)
+- `src/context/` — `AppContext`, `AuthContext`, `NotificationContext`
+- `src/features/` — feature-scoped logic: `auth/`, `body/`, `energy/`, `goals/`,
+  `settings/`
+- `src/core/api/` — typed API clients per domain (`workouts`, `food`, `goals`, `chat`,
+  `aiInsights`, `trainer`, `admin`, `subscription`, `push`, `health`, `users`, `auth`)
+- `src/lib/` — utilities: date ranges, storage, offline sync queue, analytics, feature
+  flags, push subscription, voice helpers, theme palette
+- `src/schemas/` — Zod schemas shared by forms and API payloads
 
 ## Patterns
 - Path alias: `@/` maps to `src/`
-- Data fetching: React Query hooks in `src/hooks/`, keys follow `[domain, ...params]` pattern
-- UI: Tailwind CSS utility classes + shadcn/ui components
+- Data fetching: React Query hooks in `src/hooks/`; keys follow `[domain, ...params]`
+- API calls go through `src/core/api/` — don't call `fetch` from components
+- UI: Tailwind utility classes + shadcn/ui components
 - Routing: React Router with lazy-loaded pages
 - State: React Query for server state, React Context for shared client state
+- Navigation: tab set defined in `components/layout/Base44Layout.tsx`, rendered by
+  `components/layout/BottomNavigation.tsx` (role-dependent, with a center mic button)
+- Missing images render `components/shared/ImagePlaceholder.tsx` — there are no
+  placeholder image assets
 - Tests: Vitest + React Testing Library for unit tests, Playwright for E2E

@@ -17,29 +17,34 @@ import { logger } from '../lib/logger.js';
 
 const MAX_TOOL_ROUNDS = 5;
 
+/**
+ * How much history a single agent read tool may pull. These are LIMITs pushed
+ * into SQL, not slices applied after loading everything — the agent runs on
+ * every chat turn, so an unbounded read here scans the user's entire history.
+ */
+const MAX_WORKOUTS_PER_READ = 20;
+const MAX_FOOD_ENTRIES_PER_READ = 30;
+
 // ─── Read tool execution ─────────────────────────────────────────────────────
 
-async function executeReadTool(name: string, args: Record<string, unknown>, userId: string): Promise<unknown> {
+/** Exported for tests — the read limits here are load-bearing, not cosmetic. */
+export async function executeReadTool(name: string, args: Record<string, unknown>, userId: string): Promise<unknown> {
   const todayStr = new Date().toISOString().slice(0, 10);
 
   switch (name) {
     case 'get_workouts': {
-      const result = await workoutService.list(userId);
-      const workouts = result.data;
       if (args.date) {
-        const dateStr = String(args.date);
-        return workouts.filter((w: { date: string | Date }) => String(w.date).startsWith(dateStr));
+        return workoutService.listByDate(userId, String(args.date));
       }
-      return workouts.slice(0, 20);
+      const result = await workoutService.list(userId, { limit: MAX_WORKOUTS_PER_READ, offset: 0 });
+      return result.data;
     }
     case 'get_food_entries': {
-      const result = await foodEntryService.list(userId);
-      const entries = result.data;
       if (args.date) {
-        const dateStr = String(args.date);
-        return entries.filter((e: { date: string | Date }) => String(e.date).startsWith(dateStr));
+        return foodEntryService.listByDate(userId, String(args.date));
       }
-      return entries.slice(0, 30);
+      const result = await foodEntryService.list(userId, { limit: MAX_FOOD_ENTRIES_PER_READ, offset: 0 });
+      return result.data;
     }
     case 'get_goals': {
       const result = await goalService.list(userId);
@@ -58,38 +63,26 @@ async function executeReadTool(name: string, args: Record<string, unknown>, user
     case 'copy_food_entries': {
       const fromDate = String(args.fromDate);
       const toDates = args.toDates as string[];
-      const result = await foodEntryService.list(userId);
-      const sourceEntries = result.data.filter((e: { date: string | Date }) => String(e.date).startsWith(fromDate));
+      const sourceEntries = await foodEntryService.listByDate(userId, fromDate);
       if (sourceEntries.length === 0) {
         return { copied: 0, error: `No food entries found for ${fromDate}` };
       }
       let totalCopied = 0;
       for (const toDate of toDates) {
-        for (const entry of sourceEntries) {
-          await foodEntryService.create(userId, {
-            date: toDate,
-            name: entry.name,
-            calories: entry.calories,
-            protein: entry.protein,
-            carbs: entry.carbs,
-            fats: entry.fats,
-            portionAmount: entry.portionAmount,
-            portionUnit: entry.portionUnit,
-          });
-          totalCopied++;
-        }
+        // duplicateDay batches the inserts and carries every field across
+        // (serving type, times, meal type) — copying by hand dropped them.
+        const created = await foodEntryService.duplicateDay(userId, fromDate, toDate);
+        totalCopied += created.length;
       }
       return { copied: totalCopied, fromDate, toDates, entriesPerDay: sourceEntries.length };
     }
     case 'copy_workout': {
       const fromDate = String(args.fromDate);
       const toDate = String(args.toDate);
-      const result = await workoutService.list(userId);
-      const sourceWorkouts = result.data.filter((w: { date: string | Date; title: string }) => {
-        const matches = String(w.date).startsWith(fromDate);
-        if (args.workoutTitle) return matches && w.title.toLowerCase().includes(String(args.workoutTitle).toLowerCase());
-        return matches;
-      });
+      const dayWorkouts = await workoutService.listByDate(userId, fromDate);
+      const sourceWorkouts = args.workoutTitle
+        ? dayWorkouts.filter((w) => w.title.toLowerCase().includes(String(args.workoutTitle).toLowerCase()))
+        : dayWorkouts;
       if (sourceWorkouts.length === 0) {
         return { copied: 0, error: `No workouts found for ${fromDate}` };
       }

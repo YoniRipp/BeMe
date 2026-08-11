@@ -53,6 +53,18 @@ export async function findByUserId(userId: string, pagination?: PaginationParams
   return { data: result.rows.map(rowToWorkout), total };
 }
 
+export async function findByUserIdAndDate(userId: string, date: string, client?: pg.Pool | pg.PoolClient): Promise<Workout[]> {
+  const db = client ?? getPool('body');
+  const result = await db.query(
+    `SELECT ${RETURNING}
+     FROM workouts
+     WHERE user_id = $1 AND date = $2::date
+     ORDER BY created_at ASC`,
+    [userId, date],
+  );
+  return result.rows.map(rowToWorkout);
+}
+
 /**
  * Find a single workout by id, or the most recent workout whose title matches
  * (case-insensitive substring). Targeted query — avoids loading the whole table.

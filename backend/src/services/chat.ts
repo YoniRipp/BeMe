@@ -49,6 +49,25 @@ export async function saveChatMessage(userId: string, role: 'user' | 'assistant'
 export async function clearChatHistory(userId: string): Promise<void> {
   const pool = getPool();
   await pool.query(`DELETE FROM chat_messages WHERE user_id = $1`, [userId]);
+  // The rolling summary is history too — clearing must clear all of it.
+  await pool
+    .query(`DELETE FROM chat_summaries WHERE user_id = $1`, [userId])
+    .catch(() => { /* table may predate the compaction migration */ });
+}
+
+/**
+ * Durable notes distilled from chat turns that compaction has since removed
+ * (services/compaction.ts). Keeps long-term memory available at a fraction of
+ * the token cost of replaying the raw conversation.
+ */
+async function getChatSummary(userId: string): Promise<string | null> {
+  const pool = getPool();
+  try {
+    const result = await pool.query(`SELECT summary FROM chat_summaries WHERE user_id = $1`, [userId]);
+    return result.rows[0]?.summary ?? null;
+  } catch {
+    return null; // table may predate the compaction migration
+  }
 }
 
 // ─── Context builder ───────────────────────────────────────────────────────────
@@ -95,9 +114,10 @@ async function buildDetailedFood(userId: string): Promise<string> {
 
 export async function buildChatSystemPrompt(userId: string): Promise<string> {
   const ctx = await fetchUserContext(userId, 30);
-  const [detailedWorkouts, detailedFood] = await Promise.all([
+  const [detailedWorkouts, detailedFood, chatSummary] = await Promise.all([
     buildDetailedWorkouts(userId),
     buildDetailedFood(userId),
+    getChatSummary(userId),
   ]);
 
   // Profile block
@@ -199,7 +219,7 @@ ${goalLines.length ? goalLines.join('\n') : 'No goals set'}
 ${detailedWorkouts}
 
 ${detailedFood}
-
+${chatSummary ? `\n═══ WHAT YOU ALREADY KNOW ABOUT THIS USER ═══\n${chatSummary}\n` : ''}
 ═══ RULES ═══
 - ALWAYS reference the user's actual data and numbers in your responses.
 - Be specific: "You averaged 1800 kcal/day but need ~2200 for your goal" NOT "try eating more".

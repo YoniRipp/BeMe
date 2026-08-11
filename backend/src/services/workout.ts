@@ -13,6 +13,11 @@ export async function list(userId: string, pagination?: PaginationParams) {
   return workoutModel.findByUserId(userId, pagination);
 }
 
+/** Workouts logged on a single date. Targeted query — avoids scanning history. */
+export async function listByDate(userId: string, date: string) {
+  return workoutModel.findByUserIdAndDate(userId, date);
+}
+
 /** Resolve a single workout for voice edit/delete (by id, else latest by title). */
 export async function findForVoice(userId: string, opts: { workoutId?: string; workoutTitle?: string }) {
   return workoutModel.findOne(userId, { workoutId: opts.workoutId, title: opts.workoutTitle });

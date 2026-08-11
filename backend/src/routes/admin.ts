@@ -7,6 +7,8 @@ import { getPool } from '../db/index.js';
 import * as appLog from '../services/appLog.js';
 import * as userActivityLog from '../models/userActivityLog.js';
 import * as adminStatsService from '../services/adminStats.js';
+import * as compactionService from '../services/compaction.js';
+import { config } from '../config/index.js';
 import * as workoutService from '../services/workout.js';
 import * as foodEntryService from '../services/foodEntry.js';
 import * as dailyCheckInService from '../services/dailyCheckIn.js';
@@ -337,5 +339,50 @@ userDataRouter.delete('/goals/:id', asyncHandler(async (req, res) => {
 }));
 
 router.use('/api/admin/users/:userId', userDataRouter);
+
+// ─── Data compaction ─────────────────────────────────────────────────────────
+
+/** Current per-user footprint, largest first, plus the configured budget. */
+router.get('/api/admin/compaction/stats', requireAuth, requireAdmin, asyncHandler(async (req, res) => {
+  const limit = Math.min(Number(req.query.limit) || 50, 200);
+  const result = await getPool().query(
+    `SELECT s.user_id AS "userId", u.email,
+            s.total_bytes AS "totalBytes", s.embedding_bytes AS "embeddingBytes",
+            s.chat_bytes AS "chatBytes", s.activity_bytes AS "activityBytes",
+            s.insight_bytes AS "insightBytes", s.embedding_rows AS "embeddingRows",
+            s.measured_at AS "measuredAt", s.last_compacted_at AS "lastCompactedAt",
+            s.last_cutoff AS "lastCutoff"
+     FROM user_storage_stats s
+     JOIN users u ON u.id = s.user_id
+     ORDER BY s.total_bytes DESC
+     LIMIT $1`,
+    [limit],
+  );
+  sendJson(res, {
+    budgetBytes: config.compactionMaxBytesPerUser,
+    ageMonths: config.compactionAgeMonths,
+    enabled: config.compactionEnabled,
+    overBudget: result.rows.filter((r) => Number(r.totalBytes) > config.compactionMaxBytesPerUser).length,
+    users: result.rows,
+  });
+}));
+
+/**
+ * Run a compaction sweep on demand. Pass { userId } to compact a single user,
+ * or { limit } to sweep the least-recently-measured N users.
+ */
+router.post('/api/admin/compaction/run', requireAuth, requireAdmin, asyncHandler(async (req, res) => {
+  if (!config.compactionEnabled) {
+    return sendError(res, 409, 'Compaction is disabled (COMPACTION_ENABLED=false)');
+  }
+  const { userId, limit } = req.body ?? {};
+  if (userId) {
+    if (typeof userId !== 'string') return sendError(res, 400, 'userId must be a string');
+    return sendJson(res, { reports: [await compactionService.compactUser(userId)] });
+  }
+  const sweepLimit = Math.min(Number(limit) || config.compactionSweepUsers, 500);
+  const reports = await compactionService.runCompactionSweep({ limit: sweepLimit });
+  return sendJson(res, { reports });
+}));
 
 export default router;
