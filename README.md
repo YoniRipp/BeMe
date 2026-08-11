@@ -961,6 +961,8 @@ TrackVibe/
 - **TypeScript**: All new backend files must be `.ts`
 - **Nutrition values**: Stored per 100g/100ml in `foods` table, scaled to portion for `food_entries`
 
+Full engineering standards (API layering, data access, events, frontend data fetching, design tokens, mobile UI) live in [`agent-os/standards/`](agent-os/standards/) — see [docs/AGENT-OS.md](docs/AGENT-OS.md).
+
 ---
 
 ## Documentation
@@ -970,6 +972,7 @@ TrackVibe/
 | [docs/README.md](docs/README.md) | Documentation index |
 | [docs/RUNNING.md](docs/RUNNING.md) | Running locally, Railway, AWS |
 | [docs/WORKFLOW.md](docs/WORKFLOW.md) | Git workflow (branches, tags, promotion) |
+| [docs/AGENT-OS.md](docs/AGENT-OS.md) | Agent OS: standards, specs, and AI agent workflow |
 | [docs/bounded-contexts.md](docs/bounded-contexts.md) | Domain contexts and event types |
 | [docs/event-schema.md](docs/event-schema.md) | Event envelope and consumer contract |
 | [docs/architecture-principles.md](docs/architecture-principles.md) | Event-driven architecture rules |
@@ -994,6 +997,7 @@ TrackVibe/
 | `npm run test:all` | All tests |
 | `npm run start:backend` | Start backend |
 | `npm run dev:backend` | Backend with watch mode |
+| `npm run sync:agents` | Regenerate `AGENTS.md` from `CLAUDE.md` |
 
 ---
 

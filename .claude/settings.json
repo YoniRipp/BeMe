@@ -28,13 +28,23 @@
     "PostToolUse": [
       {
         "matcher": "Write|Edit",
-        "command": "npx tsc --noEmit --pretty 2>&1 | head -20"
+        "hooks": [
+          {
+            "type": "command",
+            "command": "\"$CLAUDE_PROJECT_DIR\"/scripts/hooks/typecheck-edited-package.sh"
+          }
+        ]
       }
     ],
     "PreToolUse": [
       {
         "matcher": "Bash",
-        "command": "echo $CLAUDE_TOOL_INPUT | grep -q 'push.*--force' && echo 'BLOCK: No force pushing' && exit 1 || exit 0"
+        "hooks": [
+          {
+            "type": "command",
+            "command": "\"$CLAUDE_PROJECT_DIR\"/scripts/hooks/block-force-push.sh"
+          }
+        ]
       }
     ]
   }
