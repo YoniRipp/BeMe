@@ -7,7 +7,7 @@ Components are grouped by domain under `src/components/` (`body/`, `energy/`, `g
 Canonical reusable pieces — extend these rather than re-inventing:
 
 ```
-FoodCard · WorkoutCard · ExerciseItem · BottomNavigation · ImagePlaceholder
+FoodCard · WorkoutCard · ExerciseList · BottomNavigation · ImagePlaceholder
 ```
 
 - **Reach for `components/ui/` first.** A new styled `<div>` that duplicates `card.tsx` or `button.tsx` is a bug.

@@ -28,13 +28,19 @@ Anything pinned above the bottom nav offsets from it:
 ```
 FoodCard          [image] · name · portion · calories      e.g. Chicken Breast / 200g / 330 kcal
 WorkoutCard       name · exercise list · sets × reps       e.g. Push Day / Bench Press / 4 × 8
-ExerciseItem      name · sets · reps · optional image      e.g. Bench Press / 4 sets × 8 reps
+ExerciseList      per row: [image] · name · sets · reps    e.g. Bench Press / 4 sets × 8 reps
 ```
 
 Food and workout names are the largest text in a card; calories and sets×reps are secondary but readable. Calories get visual emphasis. Exercises within a workout are clearly separated and scannable.
+
+## Images
+
+Use `<ImagePlaceholder type="food" | "exercise" size="sm" | "md" | "lg" imageUrl={...} />`. It renders the image when `imageUrl` resolves and a tinted lucide icon when it doesn't.
+
+There are no placeholder image files — the fallback is a rendered component, so never point an `<img src>` at a placeholder asset. Passing an undefined `imageUrl` is the correct way to get the fallback.
 
 ## Common UI bugs to fix on sight
 
 Broken alignment · text overflow · inconsistent spacing · elements touching screen edges · touch targets under 44px · layouts that don't reflow on small screens.
 
-Images are square with rounded corners and a consistent size. Missing images fall back to `food-placeholder.png` / `exercise-placeholder.png` — never render a broken image or empty box.
+Images are square with rounded corners and a consistent size — see the Images section above for the fallback. Never render a broken image or an empty box.

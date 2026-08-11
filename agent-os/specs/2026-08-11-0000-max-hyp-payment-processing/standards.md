@@ -24,7 +24,7 @@ The Hyp XML client is service-layer code. Controllers stay thin: read `getEffect
 
 @agent-os/standards/backend/errors.md
 
-Gateway failures throw typed errors: a rejected card or bad MAC is `ValidationError`, an unreachable gateway is an `AppError` with `SERVICE_UNAVAILABLE`. Never surface a raw Hyp status code to the client.
+Gateway failures throw typed errors: a rejected card or bad MAC is `ValidationError`, an unreachable gateway is `ServiceUnavailableError`. Never surface a raw Hyp status code to the client.
 
 ---
 

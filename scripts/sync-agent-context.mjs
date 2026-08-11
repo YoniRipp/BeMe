@@ -28,7 +28,17 @@ if (start === -1 || end === -1) {
   process.exit(1);
 }
 
+if (end <= start) {
+  console.error(`sync-agent-context: ${END} appears before ${START} in CLAUDE.md`);
+  process.exit(1);
+}
+
 const shared = source.slice(start + START.length, end).trim();
+
+if (!shared) {
+  console.error('sync-agent-context: the shared section in CLAUDE.md is empty; refusing to write an empty AGENTS.md');
+  process.exit(1);
+}
 
 const generated = `<!-- GENERATED FILE — do not edit directly.
      Source: CLAUDE.md (between the AGENT-CONTEXT markers).
@@ -40,7 +50,7 @@ ${shared}
 
 Agent profiles, slash commands, hooks, and permissions live in \`.claude/\` — that is where the files are on disk regardless of which agent reads them. The Agent OS standards in \`agent-os/\` are plain markdown and are readable by any agent.
 
-If your tool has no slash-command support, read the relevant \`agent-os/standards/\` files directly instead of running \`/inject-standards\`. \`agent-os/standards/index.yml\` lists what exists.
+If your tool has no slash-command support, read the relevant \`agent-os/standards/\` files directly instead of running \`/agent-os:inject-standards\`. \`agent-os/standards/index.yml\` lists what exists.
 `;
 
 const isCheck = process.argv.includes('--check');

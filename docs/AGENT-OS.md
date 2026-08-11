@@ -26,7 +26,7 @@ agent-os/
 
 ## First-time setup
 
-The commands are already in the repo, so **you can use `/inject-standards` and `/shape-spec` with no setup at all.**
+The commands are already in the repo, so **you can use `/agent-os:inject-standards` and `/agent-os:shape-spec` with no setup at all.**
 
 You only need the base installation to *re-run the installer* (to pull upstream command updates):
 
@@ -47,30 +47,40 @@ bash ~/.agent-os/scripts/project-install.sh --commands-only
 
 | Command | When |
 |---|---|
-| `/inject-standards` | Before implementing. Pulls the relevant standards into context. |
-| `/shape-spec` | Starting significant work. **Must be run in plan mode.** Writes a spec folder. |
-| `/discover-standards` | You spot a convention in the code that isn't written down. |
-| `/index-standards` | After hand-adding a standards file, to rebuild `index.yml`. |
-| `/plan-product` | Mission, roadmap, or stack changed. |
+| `/agent-os:inject-standards` | Before implementing. Pulls the relevant standards into context. |
+| `/agent-os:shape-spec` | Starting significant work. **Must be run in plan mode.** Writes a spec folder. |
+| `/agent-os:discover-standards` | You spot a convention in the code that isn't written down. |
+| `/agent-os:index-standards` | After hand-adding a standards file, to rebuild `index.yml`. |
+| `/agent-os:plan-product` | Mission, roadmap, or stack changed. |
 
 Typical feature flow:
 
-1. Enter plan mode → `/shape-spec` → answer the shaping questions
+1. Enter plan mode → `/agent-os:shape-spec` → answer the shaping questions
 2. Approve the plan; Task 1 saves the spec to `agent-os/specs/`
 3. Implement, with the standards already in context
 
-Quick fix flow: `/inject-standards frontend/mobile-ui` → make the change.
+Quick fix flow: `/agent-os:inject-standards frontend/mobile-ui` → make the change.
 
 ## Adding a standard
 
 Standards are read by agents on every relevant task, so **length is a cost**. Lead with the rule, show code, skip anything the code already makes obvious.
 
-1. Write `agent-os/standards/<folder>/<name>.md`
+1. Write `agent-os/standards/<folder>/<name>.md` — folders are `backend/`, `frontend/`, `global/`
 2. Add it to `index.yml` — the description is what agents match against, so make it specific
 3. Add a row to the table in `CLAUDE.md`
 4. `npm run sync:agents`
 
-Prefer `/discover-standards`, which does all four and asks about the *why* behind the pattern.
+`/agent-os:discover-standards` handles steps 1 and 2 and asks about the *why* behind the pattern, which is worth using. **It does not do steps 3 and 4** — do those yourself, or the standard never appears in the always-loaded `CLAUDE.md` table and agents won't know it exists.
+
+### The commands are upstream, their examples are generic
+
+The five files in `.claude/commands/agent-os/` are vendored from upstream unmodified, so `--commands-only` can update them cleanly. That means their worked examples describe a generic project, not this one:
+
+- They suggest folders we don't use (`api/`, `database/`, `javascript/`, `css/`). **Use `backend/`, `frontend/`, `global/`** — a new `api/response-format.md` would sit alongside the existing `backend/response-format.md` and break the `CLAUDE.md` paths.
+- They reference standards that don't exist here (`api/error-handling`, `database/migrations`, `global/naming`). `agent-os/standards/index.yml` is the real list.
+- `/agent-os:inject-standards` has a "Creating a Skill" branch keyed on `.claude/skills/`, which this repo doesn't have. Our equivalent is `.claude/commands/`.
+
+Treat the command files as procedure, and this repo's `index.yml` as truth.
 
 ## CLAUDE.md and AGENTS.md
 
@@ -87,4 +97,4 @@ npm run sync:agents -- --check # verify (CI runs this)
 
 Agent OS v3 deliberately dropped its orchestration and implementation phases; modern models handle those without scripting. What remains is standards + spec shaping, deferring to native plan mode.
 
-Following that, the `team-lead` agent profile was retired — it scripted a plan → delegate-to-coder → delegate-to-tester loop that plan mode now covers. The remaining profiles (`coder`, `tester`, `reviewer`, `devops`, `product-manager`) are focused single-purpose agents, not orchestrators. Start work with `/shape-spec` in plan mode.
+Following that, the `team-lead` agent profile was retired — it scripted a plan → delegate-to-coder → delegate-to-tester loop that plan mode now covers. The remaining profiles (`coder`, `tester`, `reviewer`, `devops`, `product-manager`) are focused single-purpose agents, not orchestrators. Start work with `/agent-os:shape-spec` in plan mode.

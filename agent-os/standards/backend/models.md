@@ -23,6 +23,7 @@ export async function findByUserId(
 - **`rowToX` mapper** — DB rows are snake_case, domain types are camelCase. Convert in the mapper, never leak a raw row upward.
 - **Optional `client` param last** — lets callers compose queries in a transaction. Default to `getPool(context)`.
 - **`getPool('<context>')`** — pass the bounded context name so the pool can be split per service later. Not `getPool()`.
-- **Every query filters by `user_id`.** Ownership is enforced in the WHERE clause, not in the service.
+- **Queries on user-owned tables filter by `user_id`** (goals, workouts, food_entries, …). Ownership is enforced in the WHERE clause, not in the service.
+- **Shared catalog tables have no owner** — `exercises` and `foods` are global reference data with no `user_id` column. Don't add one to the WHERE clause; gate write access at the route with an admin check instead.
 - Partial updates use `buildUpdateQuery` with an `UPDATE_SPEC`, not hand-built SET clauses.
 - Parameterize everything (`$1`, `$2`). For LIKE, use `escapeLike.ts`.

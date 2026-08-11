@@ -16,7 +16,9 @@ Monorepo: `backend/` (Node/Express/TS) · `frontend/` (React/Vite/TS) · `mobile
 
 ## Standards
 
-Detailed conventions live in `agent-os/standards/` and are injected on demand rather than loaded on every turn. **Read the ones relevant to your task before writing code** — or run `/inject-standards`.
+Detailed conventions live in `agent-os/standards/` and are injected on demand rather than loaded on every turn. **Read the ones relevant to your task before writing code** — or run `/agent-os:inject-standards`.
+
+Standards folders are `backend/`, `frontend/`, and `global/`. Put new ones in those.
 
 | Standard | Read it when |
 |---|---|
@@ -40,13 +42,15 @@ Product context — mission, roadmap, tech stack — is in `agent-os/product/`. 
 
 ## Agent OS workflow
 
+These live in `.claude/commands/agent-os/`, so they are namespaced — the `agent-os:` prefix is required.
+
 | Command | Use |
 |---|---|
-| `/shape-spec` | Starting significant work. **Run inside plan mode.** Saves a spec to `agent-os/specs/`. |
-| `/inject-standards` | Pull relevant standards into context before implementing |
-| `/discover-standards` | A convention exists in the code but isn't written down yet |
-| `/index-standards` | Rebuild `agent-os/standards/index.yml` after adding standards |
-| `/plan-product` | Update mission/roadmap/tech-stack |
+| `/agent-os:shape-spec` | Starting significant work. **Run inside plan mode.** Saves a spec to `agent-os/specs/`. |
+| `/agent-os:inject-standards` | Pull relevant standards into context before implementing |
+| `/agent-os:discover-standards` | A convention exists in the code but isn't written down yet |
+| `/agent-os:index-standards` | Rebuild `agent-os/standards/index.yml` after adding standards |
+| `/agent-os:plan-product` | Update mission/roadmap/tech-stack |
 
 First-time setup on a new machine — see `docs/AGENT-OS.md`.
 
@@ -67,7 +71,7 @@ First-time setup on a new machine — see `docs/AGENT-OS.md`.
 
 Agent profiles in `.claude/agents/`: `coder`, `tester`, `reviewer`, `devops`, `product-manager`.
 
-> There is deliberately no orchestrator profile. Agent OS v3 retired its own orchestration phases — modern models plan and delegate well without a scripted lead. Plan with `/shape-spec` in plan mode instead.
+> There is deliberately no orchestrator profile. Agent OS v3 retired its own orchestration phases — modern models plan and delegate well without a scripted lead. Plan with `/agent-os:shape-spec` in plan mode instead.
 
 Settings and hooks: `.claude/settings.json`. A PostToolUse hook typechecks the package you edited after every Write/Edit; a PreToolUse hook blocks force-pushes.
 
