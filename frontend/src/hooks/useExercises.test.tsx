@@ -16,6 +16,8 @@ const catalog = [
   { id: '4', name: 'Standing Cable Chest Press', muscleGroup: 'chest', equipment: 'cable' },
   // Older rows predate the `equipment` column and only carry the equipment-valued `category`.
   { id: '5', name: 'Lat Pulldown', muscleGroup: 'back', category: 'cable' },
+  { id: '6', name: 'Push-up', muscleGroup: 'chest', equipment: 'bodyweight', imageUrl: 'pushup.jpg' },
+  { id: '7', name: 'Calf Raise', muscleGroup: 'legs', equipment: 'machine', imageUrl: 'calf.jpg' },
 ];
 
 function createWrapper() {
@@ -50,6 +52,26 @@ describe('useExercises', () => {
     expect(result.current.getImageUrl('  bench press ')).toBe('bench.jpg');
     expect(result.current.getVideoUrl('BENCH PRESS')).toBe('bench.mp4');
     expect(result.current.getImageUrl('unknown')).toBeUndefined();
+  });
+
+  // Names on saved workouts were typed or dictated before the picker existed, so they
+  // rarely match the catalog spelling exactly.
+  it('resolves plural and punctuation variants of a catalog name', async () => {
+    const result = await renderReady();
+
+    expect(result.current.getImageUrl('Push-ups')).toBe('pushup.jpg');
+    expect(result.current.getImageUrl('Push ups')).toBe('pushup.jpg');
+    expect(result.current.getImageUrl('Calf Raises')).toBe('calf.jpg');
+    // -es plural on a stem ending in -ss, which the -ss guard must not strand.
+    expect(result.current.getVideoUrl('bench presses')).toBe('bench.mp4');
+  });
+
+  it('does not resolve a name that is merely similar to a different exercise', async () => {
+    const result = await renderReady();
+
+    expect(result.current.getImageUrl('Shoulder Press')).toBeUndefined();
+    expect(result.current.getImageUrl('Bench')).toBeUndefined();
+    expect(result.current.getImageUrl('')).toBeUndefined();
   });
 
   it('searchExercises filters by substring and returns all for empty query', async () => {
