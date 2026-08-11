@@ -14,6 +14,11 @@ export async function list(userId: string, pagination?: PaginationParams) {
   return foodEntryModel.findByUserId(userId, pagination);
 }
 
+/** Entries logged on a single date. Targeted query — avoids scanning history. */
+export async function listByDate(userId: string, date: string) {
+  return foodEntryModel.findByUserIdAndDate(userId, date);
+}
+
 /** Resolve a single entry for voice edit/delete (by id, else latest by name). */
 export async function findForVoice(userId: string, opts: { entryId?: string; foodName?: string }) {
   return foodEntryModel.findOne(userId, { entryId: opts.entryId, name: opts.foodName });

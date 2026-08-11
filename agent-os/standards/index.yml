@@ -3,6 +3,8 @@
 backend:
   api-layers:
     description: Route/controller/service/model layering, asyncHandler, getEffectiveUserId
+  data-lifecycle:
+    description: Bounded reads, per-user table requirements, embedding/chat/activity compaction
   errors:
     description: Typed domain error classes, error codes, status mapping
   events:

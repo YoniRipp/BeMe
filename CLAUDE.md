@@ -6,13 +6,16 @@ A mobile-first fitness tracking PWA: food and calories, workouts, exercises, sle
 
 Monorepo: `backend/` (Node/Express/TS) · `frontend/` (React/Vite/TS) · `mobile/` (Expo) · `twa/` (Android wrapper).
 
+`frontend/` is **the** client — it ships as the web app, as a PWA, and as a native shell via Capacitor. `mobile/` is **dormant**: the Expo app has been untouched since May 2026 and ships to nobody. Don't spend effort there unless asked.
+
 ## Critical rules
 
 1. **Never break existing functionality.**
 2. **Never remove working features.**
 3. **Don't rewrite backend logic** unless the task genuinely requires it.
-4. **Don't change API shapes** unless required — mobile and TWA consume the same endpoints and ship separately.
+4. **Don't change API shapes** unless required — the web client and the MCP server both consume them, and the MCP server ships separately. (The dormant Expo app is not a consumer to keep in sync.)
 5. Default focus is UI, UX, and bug fixing. This project evolves gradually.
+6. **Per-user data must stay bounded.** New per-user tables need `user_id ... ON DELETE CASCADE` and a compaction story. Never read a user's whole history in a request path — pass `{ limit, offset }` or filter by date in SQL. See `backend/data-lifecycle`.
 
 ## Standards
 
@@ -28,6 +31,7 @@ Standards folders are `backend/`, `frontend/`, and `global/`. Put new ones in th
 | `backend/models` | Writing SQL or data access |
 | `backend/events` | Mutating domain state |
 | `backend/routes` | Adding or changing a route |
+| `backend/data-lifecycle` | Adding a per-user table, embeddings, or anything the AI reads |
 | `frontend/data-fetching` | Any server state in React |
 | `frontend/api-client` | Calling the API from the frontend |
 | `frontend/components` | Creating or restructuring components |
@@ -75,4 +79,4 @@ Agent profiles in `.claude/agents/`: `coder`, `tester`, `reviewer`, `devops`, `p
 
 Settings and hooks: `.claude/settings.json`. A PostToolUse hook typechecks the package you edited after every Write/Edit; a PreToolUse hook blocks force-pushes.
 
-MCP server at `backend/mcp-server/` (configured in `.mcp.json`) exposes `list_goals`, `add_goal`, and a `trackvibe://goals` resource.
+MCP server at `backend/mcp-server/` (configured in `.mcp.json`) exposes **45 tools** across 12 modules in `backend/mcp-server/tools/` — goals, workouts, food entries, food search, exercises, weight, water, check-ins, profile, streaks, an `ops_*` group, and a `test-mode` group — plus **4 resources**: `trackvibe://goals`, `trackvibe://profile`, `trackvibe://water-today`, `trackvibe://streaks`.
