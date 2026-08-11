@@ -115,7 +115,11 @@ jobs:
     continue-on-error: true
     strategy:
       matrix:
-        project: [backend, frontend, mobile]
+        # mobile/ is omitted deliberately: the Expo app is dormant and ships to
+        # nobody (see CLAUDE.md), so its dependency CVEs were permanent red noise
+        # on every PR. The `mobile` build job above still covers it. Add `mobile`
+        # back here if that app is ever revived.
+        project: [backend, frontend]
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
