@@ -237,16 +237,12 @@ export function Landing() {
           Just speak and TrackVibe takes care of the rest.
         </p>
         <div className="mt-8 flex flex-col items-center gap-4 sm:flex-row sm:justify-center">
-          <Link to="/signup">
-            <Button size="lg" className="gap-2">
-              Start Free <ArrowRight className="h-4 w-4" />
-            </Button>
-          </Link>
-          <a href="#pricing">
-            <Button size="lg" variant="outline">
-              View Pricing
-            </Button>
-          </a>
+          <Button asChild size="lg" className="gap-2">
+            <Link to="/signup">Start Free <ArrowRight className="h-4 w-4" /></Link>
+          </Button>
+          <Button asChild size="lg" variant="outline">
+            <a href="#pricing">View Pricing</a>
+          </Button>
         </div>
       </section>
 
@@ -433,9 +429,9 @@ export function Landing() {
                   </li>
                 ))}
               </ul>
-              <Link to="/signup" className="block">
-                <Button variant="outline" className="w-full">Get Started</Button>
-              </Link>
+              <Button asChild variant="outline" className="w-full">
+                <Link to="/signup">Get Started</Link>
+              </Button>
             </CardContent>
           </Card>
 
@@ -457,9 +453,9 @@ export function Landing() {
                   </li>
                 ))}
               </ul>
-              <Link to="/signup?plan=monthly" className="block">
-                <Button className="w-full">Start Free Trial</Button>
-              </Link>
+              <Button asChild className="w-full">
+                <Link to="/signup?plan=monthly">Start Free Trial</Link>
+              </Button>
               <p className="text-center text-xs text-muted-foreground">7-day free trial, cancel anytime</p>
             </CardContent>
           </Card>
@@ -492,9 +488,9 @@ export function Landing() {
                   </li>
                 ))}
               </ul>
-              <Link to="/signup?plan=yearly" className="block">
-                <Button className="w-full">Start Free Trial</Button>
-              </Link>
+              <Button asChild className="w-full">
+                <Link to="/signup?plan=yearly">Start Free Trial</Link>
+              </Button>
               <p className="text-center text-xs text-muted-foreground">7-day free trial, cancel anytime</p>
             </CardContent>
           </Card>
