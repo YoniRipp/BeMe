@@ -81,9 +81,23 @@ export function Body() {
     ),
     [filteredWorkouts, lastWeekStart, lastWeekEnd]
   );
+  // Anything older than last week still has to be reachable — without this bucket
+  // those workouts render in no section at all and search can never surface them.
+  const workoutsEarlier = useMemo(
+    () => filteredWorkouts.filter((w) => new Date(w.date) < lastWeekStart),
+    [filteredWorkouts, lastWeekStart]
+  );
   const groupedUpcoming = useMemo(() => groupWorkoutsByDate(workoutsUpcoming, true), [workoutsUpcoming]);
   const groupedThisWeek = useMemo(() => groupWorkoutsByDate(workoutsThisWeek), [workoutsThisWeek]);
   const groupedLastWeek = useMemo(() => groupWorkoutsByDate(workoutsLastWeek), [workoutsLastWeek]);
+  const groupedEarlier = useMemo(() => groupWorkoutsByDate(workoutsEarlier), [workoutsEarlier]);
+
+  const hasResults =
+    groupedUpcoming.length > 0 ||
+    groupedThisWeek.length > 0 ||
+    groupedLastWeek.length > 0 ||
+    groupedEarlier.length > 0;
+  const isNarrowed = searchQuery.trim() !== '' || filter !== 'All';
   const weeklyGoal = 4;
   const weekDays = ['M', 'T', 'W', 'T', 'F', 'S', 'S'];
   const hasWorkoutByDay = useMemo(() => {
@@ -207,7 +221,27 @@ export function Body() {
                 </button>
               ))}
             </div>
-            {groupedUpcoming.length === 0 && groupedThisWeek.length === 0 && groupedLastWeek.length === 0 ? (
+            {!hasResults && isNarrowed ? (
+              /* Distinct from the first-run empty state: the user *has* workouts,
+                 the search or type filter just excluded them all. */
+              <PulseCard className="p-8 text-center">
+                <p className="text-base font-extrabold tracking-tight">No workouts match</p>
+                <p className="mt-1.5 text-sm text-muted-foreground">
+                  {searchQuery.trim() !== '' ? (
+                    <>Nothing found for &ldquo;{searchQuery}&rdquo;{filter !== 'All' ? ` in ${filter}` : ''}.</>
+                  ) : (
+                    <>You have no {filter.toLowerCase()} workouts yet.</>
+                  )}
+                </p>
+                <button
+                  type="button"
+                  onClick={() => { setSearchQuery(''); setFilter('All'); }}
+                  className="mt-4 inline-flex h-11 items-center justify-center rounded-full border border-border bg-card px-4 text-sm font-bold text-foreground hover:border-primary/40 press"
+                >
+                  Clear filters
+                </button>
+              </PulseCard>
+            ) : !hasResults ? (
               <EmptyStateCard
                 onClick={handleAddNew}
                 title="Add your first workout"
@@ -218,6 +252,7 @@ export function Body() {
                 {groupedUpcoming.length > 0 && renderSection('Upcoming', groupedUpcoming)}
                 {groupedThisWeek.length > 0 && renderSection('This week', groupedThisWeek)}
                 {groupedLastWeek.length > 0 && renderSection('Last week', groupedLastWeek)}
+                {groupedEarlier.length > 0 && renderSection('Earlier', groupedEarlier)}
                 <AddAnotherCard onClick={handleAddNew} label="Add another workout" />
               </>
             )}

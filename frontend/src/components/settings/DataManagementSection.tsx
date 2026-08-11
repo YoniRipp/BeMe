@@ -37,7 +37,7 @@ export function DataManagementSection({ onResetClick, onClearClick }: DataManage
   };
 
   return (
-    <SettingsSection icon={Database} title="Data Management" iconColor="text-red-600">
+    <SettingsSection icon={Database} title="Data Management" iconColor="text-destructive">
       <div className="space-y-3">
         <Button onClick={handleExportData} variant="outline" className="w-full">
           <Download className="w-4 h-4 mr-2" />
