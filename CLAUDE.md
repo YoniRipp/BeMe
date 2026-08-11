@@ -14,8 +14,8 @@ console, a trainer portal, and a billing integration. Changes should preserve st
 | Path | What it is |
 |---|---|
 | `backend/` | Express + TypeScript API, PostgreSQL (+pgvector), optional Redis |
-| `frontend/` | React 18 + Vite SPA, the primary client (also shipped via Capacitor + PWA) |
-| `mobile/` | Expo / React Native client |
+| `frontend/` | React 18 + Vite SPA — **the client**. Also ships as a PWA and as a native shell via Capacitor (iOS + Android). |
+| `mobile/` | Expo / React Native client. **Dormant — not in use.** Untouched since May 2026; the mobile experience is delivered by `frontend/` through Capacitor. Don't spend effort here unless asked. |
 | `backend/mcp-server/` | MCP server exposing the app's domain to AI agents |
 | `langchain-prototype/` | Exploratory ops-agent prototype, not part of the deployed app |
 | `docs/` | Architecture notes — see `architecture-principles.md`, `bounded-contexts.md` |
@@ -28,8 +28,9 @@ console, a trainer portal, and a billing integration. Changes should preserve st
 # Critical Development Rules
 
 1. Never break existing functionality, and never remove working features.
-2. Prefer additive change. Existing API shapes are consumed by three clients (web, Expo,
-   MCP) — changing one means updating all of them.
+2. Prefer additive change. Existing API shapes are consumed by the web client and the MCP
+   server — changing one means updating both. (The Expo app under `mobile/` is dormant and
+   is not a consumer to keep in sync.)
 3. Any new per-user table must have `user_id ... ON DELETE CASCADE` and be considered for
    the compaction policy below. Unbounded per-user growth is a defect.
 4. Never read a user's full history in a request path. Pass `{ limit, offset }` or filter
