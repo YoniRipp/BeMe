@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect, type ReactNode } from 'react';
 import { useWorkouts } from '@/hooks/useWorkouts';
 import { Workout } from '@/types/workout';
 import { WorkoutCard } from '@/components/body/WorkoutCard';
@@ -13,6 +13,9 @@ import { toast } from '@/components/shared/ToastProvider';
 import { format, isToday, isYesterday, parseISO, isWithinInterval, subWeeks } from 'date-fns';
 import { getPeriodRange } from '@/lib/dateRanges';
 import { PulseCard, PulseHeader, PulsePage } from '@/components/pulse/PulseUI';
+
+/** How many "Earlier" workouts to reveal per tap. Histories run to hundreds of cards. */
+const EARLIER_PAGE_SIZE = 10;
 
 function groupWorkoutsByDate(workouts: Workout[], ascending = false): { date: string; label: string; workouts: Workout[] }[] {
   const byDate = new Map<string, Workout[]>();
@@ -43,6 +46,12 @@ export function Body() {
   const [searchQuery, setSearchQuery] = useState('');
   const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null);
   const [filter, setFilter] = useState<'All' | 'Strength' | 'Cardio' | 'Flexibility'>('All');
+  const [earlierVisible, setEarlierVisible] = useState(EARLIER_PAGE_SIZE);
+
+  // A new search or filter is a fresh list, so start it back at the first page.
+  useEffect(() => {
+    setEarlierVisible(EARLIER_PAGE_SIZE);
+  }, [searchQuery, filter]);
 
   const filteredWorkouts = useMemo(() => {
     let filtered = workouts;
@@ -81,8 +90,9 @@ export function Body() {
     ),
     [filteredWorkouts, lastWeekStart, lastWeekEnd]
   );
-  // Anything older than last week still has to be reachable — without this bucket
-  // those workouts render in no section at all and search can never surface them.
+  // Everything before last week. Without this bucket the four windows would not cover the
+  // whole timeline and older workouts would be unreachable — invisible, and so uneditable,
+  // since editing is a tap on the card.
   const workoutsEarlier = useMemo(
     () => filteredWorkouts.filter((w) => new Date(w.date) < lastWeekStart),
     [filteredWorkouts, lastWeekStart]
@@ -90,14 +100,10 @@ export function Body() {
   const groupedUpcoming = useMemo(() => groupWorkoutsByDate(workoutsUpcoming, true), [workoutsUpcoming]);
   const groupedThisWeek = useMemo(() => groupWorkoutsByDate(workoutsThisWeek), [workoutsThisWeek]);
   const groupedLastWeek = useMemo(() => groupWorkoutsByDate(workoutsLastWeek), [workoutsLastWeek]);
-  const groupedEarlier = useMemo(() => groupWorkoutsByDate(workoutsEarlier), [workoutsEarlier]);
-
-  const hasResults =
-    groupedUpcoming.length > 0 ||
-    groupedThisWeek.length > 0 ||
-    groupedLastWeek.length > 0 ||
-    groupedEarlier.length > 0;
-  const isNarrowed = searchQuery.trim() !== '' || filter !== 'All';
+  const groupedEarlier = useMemo(
+    () => groupWorkoutsByDate(workoutsEarlier.slice(0, earlierVisible)),
+    [workoutsEarlier, earlierVisible]
+  );
   const weeklyGoal = 4;
   const weekDays = ['M', 'T', 'W', 'T', 'F', 'S', 'S'];
   const hasWorkoutByDay = useMemo(() => {
@@ -139,7 +145,11 @@ export function Body() {
     setModalOpen(true);
   };
 
-  const renderSection = (label: string, groups: ReturnType<typeof groupWorkoutsByDate>) => (
+  const renderSection = (
+    label: string,
+    groups: ReturnType<typeof groupWorkoutsByDate>,
+    footer?: ReactNode
+  ) => (
     <section>
       <h3 className="text-[11px] font-semibold uppercase tracking-[0.15em] text-muted-foreground mb-3">{label}</h3>
       <div className="space-y-4">
@@ -162,6 +172,7 @@ export function Body() {
           </div>
         ))}
       </div>
+      {footer}
     </section>
   );
 
@@ -221,38 +232,44 @@ export function Body() {
                 </button>
               ))}
             </div>
-            {!hasResults && isNarrowed ? (
-              /* Distinct from the first-run empty state: the user *has* workouts,
-                 the search or type filter just excluded them all. */
-              <PulseCard className="p-8 text-center">
-                <p className="text-base font-extrabold tracking-tight">No workouts match</p>
-                <p className="mt-1.5 text-sm text-muted-foreground">
-                  {searchQuery.trim() !== '' ? (
-                    <>Nothing found for &ldquo;{searchQuery}&rdquo;{filter !== 'All' ? ` in ${filter}` : ''}.</>
-                  ) : (
-                    <>You have no {filter.toLowerCase()} workouts yet.</>
-                  )}
-                </p>
-                <button
-                  type="button"
-                  onClick={() => { setSearchQuery(''); setFilter('All'); }}
-                  className="mt-4 inline-flex h-11 items-center justify-center rounded-full border border-border bg-card px-4 text-sm font-bold text-foreground hover:border-primary/40 press"
-                >
-                  Clear filters
-                </button>
-              </PulseCard>
-            ) : !hasResults ? (
-              <EmptyStateCard
-                onClick={handleAddNew}
-                title="Add your first workout"
-                description="Tap to start tracking your fitness"
-              />
+            {filteredWorkouts.length === 0 ? (
+              workouts.length === 0 ? (
+                <EmptyStateCard
+                  onClick={handleAddNew}
+                  title="Add your first workout"
+                  description="Tap to start tracking your fitness"
+                />
+              ) : (
+                <PulseCard className="p-8 text-center">
+                  <p className="text-sm font-bold text-foreground">No workouts match</p>
+                  <p className="mt-1.5 text-sm text-muted-foreground">
+                    Try a different search or filter.
+                  </p>
+                  <button
+                    type="button"
+                    onClick={() => { setSearchQuery(''); setFilter('All'); }}
+                    className="mt-4 min-h-11 px-4 rounded-xl border border-dashed border-border text-xs font-bold uppercase tracking-wide text-muted-foreground transition-colors hover:border-primary hover:text-primary"
+                  >
+                    Clear filters
+                  </button>
+                </PulseCard>
+              )
             ) : (
               <>
                 {groupedUpcoming.length > 0 && renderSection('Upcoming', groupedUpcoming)}
                 {groupedThisWeek.length > 0 && renderSection('This week', groupedThisWeek)}
                 {groupedLastWeek.length > 0 && renderSection('Last week', groupedLastWeek)}
-                {groupedEarlier.length > 0 && renderSection('Earlier', groupedEarlier)}
+                {groupedEarlier.length > 0 && renderSection('Earlier', groupedEarlier,
+                  workoutsEarlier.length > earlierVisible ? (
+                    <button
+                      type="button"
+                      onClick={() => setEarlierVisible((n) => n + EARLIER_PAGE_SIZE)}
+                      className="mt-3 min-h-11 w-full rounded-xl border border-dashed border-border text-xs font-bold uppercase tracking-wide text-muted-foreground transition-colors hover:border-primary hover:text-primary"
+                    >
+                      Show {Math.min(EARLIER_PAGE_SIZE, workoutsEarlier.length - earlierVisible)} more
+                    </button>
+                  ) : undefined
+                )}
                 <AddAnotherCard onClick={handleAddNew} label="Add another workout" />
               </>
             )}

@@ -72,6 +72,40 @@ export const EQUIPMENT_LABELS: Record<string, string> = {
 
 const normalizeName = (name: string) => name.toLowerCase().trim();
 
+/**
+ * Fallback lookup key: punctuation folded to spaces and trailing plurals dropped, so
+ * "Push-ups" and "Push ups" both reach the catalog's "Push-up", and "Squats" reaches
+ * "Squat". Word boundaries are preserved, so a run-together "Pushups" only resolves if the
+ * catalog carries that spelling too (it does).
+ *
+ * Saved workouts predate the exercise picker, so their names were typed or dictated and
+ * rarely match the catalog spelling — which is why they render the icon placeholder
+ * instead of a photo. Only consulted when the exact-name lookup misses, and the folding is
+ * narrow enough that across the whole catalog it never maps one exercise onto a different
+ * one — the only names that collide are duplicate spellings of the same movement
+ * ("Hammer Curl" / "Hammer Curls").
+ */
+const singularize = (word: string) => {
+  // "presses" -> "press", "crunches" -> "crunch": an -es plural on a stem that already
+  // ends in a sibilant. Checked first so the -ss guard below doesn't strand them. The
+  // stem must end in a *double* s, or "raises" would fold to "rais" and stop matching
+  // "Raise".
+  if (word.endsWith('es') && /(?:ss|x|z|ch|sh)$/.test(word.slice(0, -2))) return word.slice(0, -2);
+  // "press", "cross" — a stem, not a plural.
+  if (word.endsWith('ss')) return word;
+  if (word.length >= 3 && word.endsWith('s')) return word.slice(0, -1);
+  return word;
+};
+
+const looseNameKey = (name: string) =>
+  name
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, ' ')
+    .trim()
+    .split(' ')
+    .map(singularize)
+    .join(' ');
+
 export interface ExerciseFilters {
   query?: string;
   equipment?: string;
@@ -89,14 +123,28 @@ export function useExercises() {
 
   // Index by normalized name once per fetch. The catalog is ~900 entries and the
   // lookups below run per exercise per render, so a linear scan each time is wasteful.
-  const byName = useMemo(() => {
-    const map = new Map<string, CatalogExercise>();
-    for (const ex of exercises) map.set(normalizeName(ex.name), ex);
-    return map;
+  const { byName, byLooseName } = useMemo(() => {
+    const exact = new Map<string, CatalogExercise>();
+    const loose = new Map<string, CatalogExercise>();
+    for (const ex of exercises) {
+      exact.set(normalizeName(ex.name), ex);
+      // On a loose collision keep the first entry, but let one that actually has a photo
+      // displace one that doesn't — the point of this map is to resolve an image.
+      const key = looseNameKey(ex.name);
+      const held = loose.get(key);
+      if (!held || (!held.imageUrl && ex.imageUrl)) loose.set(key, ex);
+    }
+    return { byName: exact, byLooseName: loose };
   }, [data]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  const getExercise = (exerciseName: string): CatalogExercise | undefined =>
-    byName.get(normalizeName(exerciseName));
+  const getExercise = (exerciseName: string): CatalogExercise | undefined => {
+    const exact = byName.get(normalizeName(exerciseName));
+    if (exact) return exact;
+    // A name of pure punctuation folds to '', which must not match a catalog row that
+    // folded the same way.
+    const loose = looseNameKey(exerciseName);
+    return loose ? byLooseName.get(loose) : undefined;
+  };
 
   const getImageUrl = (exerciseName: string): string | undefined => getExercise(exerciseName)?.imageUrl;
 
