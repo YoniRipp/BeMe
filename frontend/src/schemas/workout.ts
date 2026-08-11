@@ -21,6 +21,13 @@ const exerciseFormSchema = z
       (v) => (v === '' || v === null || v === undefined ? undefined : Number(v)),
       z.number().min(0).max(LIMITS.MAX_EXERCISE_WEIGHT).optional()
     ),
+    // Set in the logger view's per-exercise menu. Without it here the form would strip
+    // the note on save, silently discarding it.
+    notes: z.string().max(500, 'Note cannot exceed 500 characters').optional(),
+    // Carried through the editor (never edited there) so that ticking sets off in the
+    // logger isn't wiped out by a later save from the full editor. Length is reconciled
+    // against `sets` on submit rather than here, since the editor can change set counts.
+    completedPerSet: z.array(z.boolean()).optional(),
   })
   .refine((data) => !data.repsPerSet || data.repsPerSet.length === data.sets, {
     message: 'Reps per set must have one value per set',

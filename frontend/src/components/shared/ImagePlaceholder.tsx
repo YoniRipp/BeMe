@@ -1,3 +1,4 @@
+import { useState, useEffect } from 'react';
 import { UtensilsCrossed, Dumbbell } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
@@ -32,14 +33,22 @@ interface ImagePlaceholderProps {
 export function ImagePlaceholder({ type, size = 'md', imageUrl, className }: ImagePlaceholderProps) {
   const { icon: Icon, bg, text, ring } = CONFIG[type];
   const { container, icon } = SIZES[size];
+  // Catalog images are hosted remotely, so a dead URL must degrade to the icon rather
+  // than render a broken image.
+  const [failed, setFailed] = useState(false);
 
-  if (imageUrl) {
+  useEffect(() => {
+    setFailed(false);
+  }, [imageUrl]);
+
+  if (imageUrl && !failed) {
     return (
       <img
         src={imageUrl}
         alt=""
         className={cn('rounded-xl object-cover shrink-0 ring-2', ring, container, className)}
         loading="lazy"
+        onError={() => setFailed(true)}
       />
     );
   }
