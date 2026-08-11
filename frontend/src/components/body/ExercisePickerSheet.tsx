@@ -46,7 +46,8 @@ function FilterChip({
       onClick={onClick}
       aria-pressed={active}
       className={cn(
-        'shrink-0 rounded-full border px-3.5 py-1.5 text-xs font-bold transition-colors',
+        // min-h-11 keeps the chip on the 44px touch-target floor for gym use.
+        'flex min-h-11 shrink-0 items-center rounded-full border px-4 text-xs font-bold transition-colors',
         active
           ? 'border-primary bg-primary text-primary-foreground'
           : 'border-border bg-card text-muted-foreground hover:border-primary/50 hover:text-foreground',
@@ -124,7 +125,7 @@ export function ExercisePickerSheet({
             <button
               type="button"
               onClick={() => onOpenChange(false)}
-              className="-mr-1 flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+              className="-mr-2 flex h-11 w-11 shrink-0 items-center justify-center rounded-full text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
               aria-label="Close exercise picker"
             >
               <X className="h-5 w-5" />
@@ -171,7 +172,7 @@ export function ExercisePickerSheet({
         <div
           ref={listRef}
           onScroll={handleScroll}
-          className="min-h-0 flex-1 overflow-y-auto px-4 py-3"
+          className="min-h-0 flex-1 overflow-y-auto px-4 pt-3 pb-[calc(0.75rem+env(safe-area-inset-bottom,0px))]"
         >
           {isLoading ? (
             <p className="py-10 text-center text-sm text-muted-foreground">Loading exercises…</p>
@@ -184,7 +185,7 @@ export function ExercisePickerSheet({
                 <button
                   type="button"
                   onClick={clearFilters}
-                  className="mt-4 rounded-full border border-border px-4 py-2 text-xs font-bold text-primary transition-colors hover:bg-primary/5"
+                  className="mt-4 inline-flex min-h-11 items-center rounded-full border border-border px-5 text-xs font-bold text-primary transition-colors hover:bg-primary/5"
                 >
                   Clear filters
                 </button>
@@ -236,7 +237,7 @@ export function ExercisePickerSheet({
                 <button
                   type="button"
                   onClick={() => setVisibleCount((c) => c + PAGE_SIZE)}
-                  className="mt-3 w-full rounded-xl border border-dashed border-border py-2.5 text-xs font-bold uppercase tracking-wide text-muted-foreground transition-colors hover:border-primary hover:text-primary"
+                  className="mt-3 min-h-11 w-full rounded-xl border border-dashed border-border text-xs font-bold uppercase tracking-wide text-muted-foreground transition-colors hover:border-primary hover:text-primary"
                 >
                   Show more
                 </button>

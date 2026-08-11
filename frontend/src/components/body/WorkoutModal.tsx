@@ -573,7 +573,7 @@ function WorkoutDetailView({
                       type="button"
                       variant="ghost"
                       size="icon"
-                      className="h-9 w-9 shrink-0 rounded-full text-muted-foreground hover:text-foreground"
+                      className="-mr-1 h-11 w-11 shrink-0 rounded-full text-muted-foreground hover:text-foreground"
                       aria-label={`Options for ${ex.name}`}
                     >
                       <MoreVertical className="h-4 w-4" />
@@ -653,7 +653,7 @@ function WorkoutDetailView({
                 </div>
                 <button
                   type="button"
-                  className="mt-2 flex w-full items-center justify-center gap-1.5 rounded-lg border border-dashed border-primary/45 bg-primary/5 py-2 text-xs font-bold uppercase tracking-wide text-primary transition-colors hover:border-primary hover:bg-primary/10 disabled:cursor-not-allowed disabled:opacity-50"
+                  className="mt-2 flex min-h-11 w-full items-center justify-center gap-1.5 rounded-lg border border-dashed border-primary/45 bg-primary/5 text-xs font-bold uppercase tracking-wide text-primary transition-colors hover:border-primary hover:bg-primary/10 disabled:cursor-not-allowed disabled:opacity-50"
                   onClick={() => addSet(idx)}
                   disabled={ex.sets >= MAX_SETS}
                 >
@@ -1319,7 +1319,7 @@ export function WorkoutModal({ open, onOpenChange, onSave, workout }: WorkoutMod
                             </div>
                             <button
                               type="button"
-                              className="mt-2 flex w-full items-center justify-center gap-1.5 rounded-lg border border-dashed border-primary/45 bg-primary/5 py-2 text-xs font-bold uppercase tracking-wide text-primary transition-colors hover:border-primary hover:bg-primary/10 disabled:cursor-not-allowed disabled:opacity-50"
+                              className="mt-2 flex min-h-11 w-full items-center justify-center gap-1.5 rounded-lg border border-dashed border-primary/45 bg-primary/5 text-xs font-bold uppercase tracking-wide text-primary transition-colors hover:border-primary hover:bg-primary/10 disabled:cursor-not-allowed disabled:opacity-50"
                               onClick={() => addSet(idx)}
                               disabled={setsCount >= 20}
                             >
