@@ -118,6 +118,23 @@ export async function pollForVoiceResult(
   throw new Error('Voice processing timed out');
 }
 
+/**
+ * Transcribe a recording to plain text (no action parsing) — used by the mic
+ * button in the AI coach chat when the device has no on-device recognition.
+ */
+export async function transcribeAudio(
+  audio: string,
+  mimeType: string,
+  options?: { timeoutMs?: number }
+): Promise<string> {
+  const data = await request<{ transcript?: string }>('/api/voice/transcribe', {
+    method: 'POST',
+    body: { audio, mimeType },
+    timeoutMs: options?.timeoutMs ?? 45000,
+  });
+  return (data.transcript ?? '').trim();
+}
+
 /** Convert Blob to base64 string (without data URL prefix). */
 export function blobToBase64(blob: Blob): Promise<string> {
   return new Promise((resolve, reject) => {

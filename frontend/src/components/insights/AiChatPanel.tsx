@@ -1,12 +1,14 @@
 /**
  * AI Chat Panel — slide-up panel for conversational AI agent coaching.
  * Loads chat history from DB, sends messages, displays responses.
+ * Messages can be typed or spoken — the mic records and drops the transcript
+ * into the composer so it can be reviewed before sending.
  * The agent can take actions (log food, workouts, etc.) and the UI
  * refreshes affected data automatically.
  */
-import { useState, useRef, useEffect, type FormEvent } from 'react';
+import { useState, useRef, useEffect, useCallback, type FormEvent } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { Send, Trash2, Loader2, MessageCircle } from 'lucide-react';
+import { Send, Trash2, Loader2, MessageCircle, Mic } from 'lucide-react';
 import {
   Sheet,
   SheetContent,
@@ -14,6 +16,9 @@ import {
   SheetTitle,
 } from '@/components/ui/sheet';
 import { Button } from '@/components/ui/button';
+import { VoiceRecorderBar } from '@/components/chat/VoiceRecorderBar';
+import { toast } from '@/components/shared/ToastProvider';
+import { useVoiceDictation } from '@/hooks/useVoiceDictation';
 import { chatApi, type ChatMessage, type ChatResponse } from '@/core/api/chat';
 import { cn } from '@/lib/utils';
 
@@ -102,6 +107,40 @@ export function AiChatPanel({ open, onOpenChange }: AiChatPanelProps) {
     }
   };
 
+  // ─── Voice input ──────────────────────────────────────────────────────────
+
+  const dictation = useVoiceDictation();
+  const { isRecording, cancel: cancelDictation } = dictation;
+
+  // Never keep the mic open once the panel is dismissed.
+  useEffect(() => {
+    if (!open && isRecording) cancelDictation();
+  }, [open, isRecording, cancelDictation]);
+
+  const handleStartRecording = useCallback(async () => {
+    try {
+      await dictation.start();
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : 'Could not start recording.');
+    }
+  }, [dictation]);
+
+  const handleFinishRecording = useCallback(async () => {
+    let transcript = '';
+    try {
+      transcript = await dictation.stop();
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : 'Could not transcribe the recording.');
+      return;
+    }
+    if (!transcript) {
+      toast.error('Nothing was recorded. Try again.');
+      return;
+    }
+    setInput((prev) => (prev.trim() ? `${prev.trim()} ${transcript}` : transcript));
+    inputRef.current?.focus();
+  }, [dictation]);
+
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
       <SheetContent
@@ -145,6 +184,12 @@ export function AiChatPanel({ open, onOpenChange }: AiChatPanelProps) {
               <p className="text-xs text-muted-foreground max-w-[280px]">
                 I can coach you, answer questions about your data, AND take actions — log food, workouts, sleep, and manage goals, all through chat.
               </p>
+              {dictation.isSupported && (
+                <p className="mt-2 flex items-center gap-1.5 text-xs text-muted-foreground">
+                  <Mic className="w-3.5 h-3.5" />
+                  Type, or tap the mic to talk
+                </p>
+              )}
               <div className="mt-4 space-y-2 w-full max-w-[280px]">
                 {[
                   'Log 3 eggs and toast for breakfast',
@@ -199,39 +244,67 @@ export function AiChatPanel({ open, onOpenChange }: AiChatPanelProps) {
           <div ref={messagesEndRef} />
         </div>
 
-        {/* Input */}
+        {/* Input — type or record */}
         <form
           onSubmit={handleSubmit}
-          className="border-t px-4 py-3 flex gap-2 items-end shrink-0 bg-background"
+          className="border-t px-4 py-3 shrink-0 bg-background"
         >
-          <textarea
-            ref={inputRef}
-            value={input}
-            onChange={(e) => setInput(e.target.value)}
-            onKeyDown={handleKeyDown}
-            placeholder="Ask your coach..."
-            rows={1}
-            className={cn(
-              'flex-1 resize-none rounded-xl border px-3 py-2 text-sm',
-              'focus:outline-none focus:ring-2 focus:ring-violet-500/50',
-              'max-h-[120px] min-h-[40px]',
-              'bg-background'
-            )}
-            style={{ height: 'auto' }}
-            onInput={(e) => {
-              const target = e.target as HTMLTextAreaElement;
-              target.style.height = 'auto';
-              target.style.height = Math.min(target.scrollHeight, 120) + 'px';
-            }}
-          />
-          <Button
-            type="submit"
-            size="sm"
-            disabled={!input.trim() || sendMutation.isPending}
-            className="bg-violet-600 hover:bg-violet-700 text-white h-10 w-10 p-0 rounded-xl shrink-0"
-          >
-            <Send className="w-4 h-4" />
-          </Button>
+          {dictation.isRecording || dictation.isTranscribing ? (
+            <VoiceRecorderBar
+              durationMs={dictation.durationMs}
+              level={dictation.level}
+              transcript={dictation.partialTranscript}
+              isTranscribing={dictation.isTranscribing}
+              error={dictation.error}
+              onCancel={dictation.cancel}
+              onConfirm={handleFinishRecording}
+            />
+          ) : (
+            <div className="flex gap-2 items-end">
+              <textarea
+                ref={inputRef}
+                value={input}
+                onChange={(e) => setInput(e.target.value)}
+                onKeyDown={handleKeyDown}
+                placeholder="Ask your coach..."
+                rows={1}
+                className={cn(
+                  'flex-1 resize-none rounded-xl border px-3 py-2 text-sm',
+                  'focus:outline-none focus:ring-2 focus:ring-violet-500/50',
+                  'max-h-[120px] min-h-[40px]',
+                  'bg-background'
+                )}
+                style={{ height: 'auto' }}
+                onInput={(e) => {
+                  const target = e.target as HTMLTextAreaElement;
+                  target.style.height = 'auto';
+                  target.style.height = Math.min(target.scrollHeight, 120) + 'px';
+                }}
+              />
+              {dictation.isSupported && (
+                <Button
+                  type="button"
+                  size="sm"
+                  variant="ghost"
+                  onClick={handleStartRecording}
+                  disabled={sendMutation.isPending}
+                  className="h-10 w-10 p-0 rounded-xl shrink-0 text-muted-foreground hover:text-foreground"
+                  aria-label="Record a message"
+                >
+                  <Mic className="w-[18px] h-[18px]" />
+                </Button>
+              )}
+              <Button
+                type="submit"
+                size="sm"
+                disabled={!input.trim() || sendMutation.isPending}
+                className="bg-violet-600 hover:bg-violet-700 text-white h-10 w-10 p-0 rounded-xl shrink-0"
+                aria-label="Send message"
+              >
+                <Send className="w-4 h-4" />
+              </Button>
+            </div>
+          )}
         </form>
       </SheetContent>
     </Sheet>

@@ -6,15 +6,35 @@ import { getPool } from '../db/pool.js';
 import { buildUpdateQuery, type UpdateBuilder } from '../db/queryBuilder.js';
 import { escapeLike } from '../utils/escapeLike.js';
 
-const RETURNING = 'id, name, muscle_group, category, image_url, video_url, created_at, updated_at';
+/**
+ * Columns for browse/autocomplete. Deliberately excludes `instructions` — with ~900
+ * exercises those step-by-step arrays dominate the payload, and only the detail view
+ * needs them (see `findById`).
+ */
+const LIST_COLUMNS = `id, name, muscle_group, category, equipment, discipline, level,
+  mechanic, force, primary_muscles, secondary_muscles, image_url, image_url_2, video_url`;
+
+const DETAIL_COLUMNS = `${LIST_COLUMNS}, instructions`;
+
+const RETURNING = `${DETAIL_COLUMNS}, created_at, updated_at`;
 
 export interface CatalogExercise {
   id: string;
   name: string;
   muscleGroup: string | null;
   category: string | null;
+  equipment?: string | null;
+  discipline?: string | null;
+  level?: string | null;
+  mechanic?: string | null;
+  force?: string | null;
+  primaryMuscles?: string[] | null;
+  secondaryMuscles?: string[] | null;
   imageUrl: string | null;
+  imageUrl2?: string | null;
   videoUrl: string | null;
+  /** Only populated by `findById` — omitted from list responses to keep them small. */
+  instructions?: string[] | null;
 }
 
 export interface AdminCatalogExercise extends CatalogExercise {
@@ -42,19 +62,35 @@ export interface UpdateExerciseInput {
 export interface ExerciseListFilters {
   q?: string;
   muscleGroup?: string;
+  equipment?: string;
+  level?: string;
+  discipline?: string;
   limit: number;
   offset: number;
 }
 
 function rowToExercise(row: Record<string, unknown>): CatalogExercise {
-  return {
+  const exercise: CatalogExercise = {
     id: row.id as string,
     name: row.name as string,
     muscleGroup: (row.muscle_group as string) ?? null,
     category: (row.category as string) ?? null,
+    equipment: (row.equipment as string) ?? null,
+    discipline: (row.discipline as string) ?? null,
+    level: (row.level as string) ?? null,
+    mechanic: (row.mechanic as string) ?? null,
+    force: (row.force as string) ?? null,
+    primaryMuscles: (row.primary_muscles as string[]) ?? null,
+    secondaryMuscles: (row.secondary_muscles as string[]) ?? null,
     imageUrl: (row.image_url as string) ?? null,
+    imageUrl2: (row.image_url_2 as string) ?? null,
     videoUrl: (row.video_url as string) ?? null,
   };
+  // Only present on detail/admin queries; keep it off list payloads entirely.
+  if (row.instructions !== undefined) {
+    exercise.instructions = (row.instructions as string[]) ?? null;
+  }
+  return exercise;
 }
 
 function rowToAdminExercise(row: Record<string, unknown>): AdminCatalogExercise {
@@ -78,11 +114,23 @@ export async function list(filters: ExerciseListFilters, client?: pg.Pool | pg.P
     params.push(filters.muscleGroup);
     conditions.push(`muscle_group = $${params.length}`);
   }
+  if (filters.equipment) {
+    params.push(filters.equipment);
+    conditions.push(`equipment = $${params.length}`);
+  }
+  if (filters.level) {
+    params.push(filters.level);
+    conditions.push(`level = $${params.length}`);
+  }
+  if (filters.discipline) {
+    params.push(filters.discipline);
+    conditions.push(`discipline = $${params.length}`);
+  }
 
   const where = conditions.length > 0 ? ` WHERE ${conditions.join(' AND ')}` : '';
   params.push(filters.limit, filters.offset);
   const result = await db.query(
-    `SELECT ${RETURNING} FROM exercises${where} ORDER BY name ASC LIMIT $${params.length - 1} OFFSET $${params.length}`,
+    `SELECT ${LIST_COLUMNS} FROM exercises${where} ORDER BY name ASC LIMIT $${params.length - 1} OFFSET $${params.length}`,
     params,
   );
   return result.rows.map(rowToExercise);
@@ -90,7 +138,7 @@ export async function list(filters: ExerciseListFilters, client?: pg.Pool | pg.P
 
 export async function findById(id: string, client?: pg.Pool | pg.PoolClient): Promise<CatalogExercise | null> {
   const db = client ?? getPool();
-  const result = await db.query(`SELECT ${RETURNING} FROM exercises WHERE id = $1`, [id]);
+  const result = await db.query(`SELECT ${DETAIL_COLUMNS} FROM exercises WHERE id = $1`, [id]);
   return result.rows[0] ? rowToExercise(result.rows[0]) : null;
 }
 

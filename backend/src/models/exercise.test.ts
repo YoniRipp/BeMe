@@ -12,10 +12,35 @@ const row = {
   name: 'Bench Press',
   muscle_group: 'chest',
   category: 'barbell',
+  equipment: 'barbell',
+  discipline: 'strength',
+  level: 'beginner',
+  mechanic: 'compound',
+  force: 'push',
+  primary_muscles: ['chest'],
+  secondary_muscles: ['triceps', 'shoulders'],
   image_url: 'https://img.example/bench.jpg',
+  image_url_2: 'https://img.example/bench-2.jpg',
   video_url: null,
   created_at: '2025-01-01T00:00:00.000Z',
   updated_at: '2025-01-02T00:00:00.000Z',
+};
+
+const mappedRow = {
+  id: 'ex-1',
+  name: 'Bench Press',
+  muscleGroup: 'chest',
+  category: 'barbell',
+  equipment: 'barbell',
+  discipline: 'strength',
+  level: 'beginner',
+  mechanic: 'compound',
+  force: 'push',
+  primaryMuscles: ['chest'],
+  secondaryMuscles: ['triceps', 'shoulders'],
+  imageUrl: 'https://img.example/bench.jpg',
+  imageUrl2: 'https://img.example/bench-2.jpg',
+  videoUrl: null,
 };
 
 describe('exercise model', () => {
@@ -33,14 +58,16 @@ describe('exercise model', () => {
       expect(sql).toContain('LIMIT $1 OFFSET $2');
       expect(sql).not.toContain('WHERE');
       expect(params).toEqual([500, 0]);
-      expect(result).toEqual([{
-        id: 'ex-1',
-        name: 'Bench Press',
-        muscleGroup: 'chest',
-        category: 'barbell',
-        imageUrl: 'https://img.example/bench.jpg',
-        videoUrl: null,
-      }]);
+      expect(result).toEqual([mappedRow]);
+    });
+
+    it('omits instructions from list responses to keep the ~900-row payload small', async () => {
+      mockQuery.mockResolvedValueOnce({ rows: [row] });
+
+      const result = await exerciseModel.list({ limit: 500, offset: 0 });
+
+      expect(mockQuery.mock.calls[0][0]).not.toContain('instructions');
+      expect(result[0]).not.toHaveProperty('instructions');
     });
 
     it('filters by q (LIKE-escaped) and muscleGroup', async () => {
@@ -54,6 +81,37 @@ describe('exercise model', () => {
       expect(sql).toContain('LIMIT $3 OFFSET $4');
       expect(params).toEqual(['%a\\%b%', 'chest', 10, 20]);
     });
+
+    it('filters by equipment', async () => {
+      mockQuery.mockResolvedValueOnce({ rows: [] });
+
+      await exerciseModel.list({ equipment: 'cable', limit: 50, offset: 0 });
+
+      const [sql, params] = mockQuery.mock.calls[0];
+      expect(sql).toContain('equipment = $1');
+      expect(params).toEqual(['cable', 50, 0]);
+    });
+
+    it('combines equipment, level and discipline filters with correct placeholders', async () => {
+      mockQuery.mockResolvedValueOnce({ rows: [] });
+
+      await exerciseModel.list({
+        muscleGroup: 'back',
+        equipment: 'barbell',
+        level: 'beginner',
+        discipline: 'strength',
+        limit: 25,
+        offset: 5,
+      });
+
+      const [sql, params] = mockQuery.mock.calls[0];
+      expect(sql).toContain('muscle_group = $1');
+      expect(sql).toContain('equipment = $2');
+      expect(sql).toContain('level = $3');
+      expect(sql).toContain('discipline = $4');
+      expect(sql).toContain('LIMIT $5 OFFSET $6');
+      expect(params).toEqual(['back', 'barbell', 'beginner', 'strength', 25, 5]);
+    });
   });
 
   describe('findById', () => {
@@ -62,6 +120,15 @@ describe('exercise model', () => {
       const result = await exerciseModel.findById('ex-1');
       expect(mockQuery.mock.calls[0][1]).toEqual(['ex-1']);
       expect(result?.name).toBe('Bench Press');
+    });
+
+    it('selects instructions for the detail view', async () => {
+      mockQuery.mockResolvedValueOnce({ rows: [{ ...row, instructions: ['Lie on the bench.', 'Press up.'] }] });
+
+      const result = await exerciseModel.findById('ex-1');
+
+      expect(mockQuery.mock.calls[0][0]).toContain('instructions');
+      expect(result?.instructions).toEqual(['Lie on the bench.', 'Press up.']);
     });
 
     it('returns null when not found', async () => {

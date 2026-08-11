@@ -7,6 +7,16 @@ on:
     branches: [main, master]
 
 jobs:
+  agent-context:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      - name: Check AGENTS.md is in sync with CLAUDE.md
+        run: npm run sync:agents -- --check
+
   backend:
     runs-on: ubuntu-latest
     steps:
@@ -115,11 +125,7 @@ jobs:
     continue-on-error: true
     strategy:
       matrix:
-        # mobile/ is omitted deliberately: the Expo app is dormant and ships to
-        # nobody (see CLAUDE.md), so its dependency CVEs were permanent red noise
-        # on every PR. The `mobile` build job above still covers it. Add `mobile`
-        # back here if that app is ever revived.
-        project: [backend, frontend]
+        project: [backend, frontend, mobile]
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
