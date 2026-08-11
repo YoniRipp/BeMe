@@ -1,0 +1,38 @@
+# Agent OS Standards Index
+
+backend:
+  api-layers:
+    description: Route/controller/service/model layering, asyncHandler, getEffectiveUserId
+  errors:
+    description: Typed domain error classes, error codes, status mapping
+  events:
+    description: Domain event naming, publish envelope, cross-context rules
+  models:
+    description: Raw SQL data access, rowToX mappers, RETURNING const, pool per context
+  response-format:
+    description: Bare success responses, error envelope, pagination shape
+  routes:
+    description: Route wiring, middleware order, validateBody, service-extraction flags
+
+frontend:
+  api-client:
+    description: request() wrapper, auth, timeouts, offline mutation queue, error unwrapping
+  components:
+    description: Component grouping, reusable cards, pages compose, performance rules
+  data-fetching:
+    description: TanStack Query keys, staleTime, mappers, setQueryData mutations
+  design-tokens:
+    description: Color/typography tokens, shadow and radius scale, no hardcoded colors
+  mobile-ui:
+    description: Mobile-first layout, spacing scale, safe areas, bottom nav, touch targets
+
+global:
+  critical-rules:
+    description: Do-not-break rules, product quality bar, process for large UI changes
+  domain-conventions:
+    description: Dates, week start, kg, per-100g nutrition, meal types, voice-first
+  tech-stack:
+    description: Frontend, backend, database, and tooling choices
+  testing:
+    description: Co-located Vitest tests, Playwright E2E, lint as typecheck, CI
+
