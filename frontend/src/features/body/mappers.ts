@@ -24,12 +24,17 @@ export function apiWorkoutToWorkout(a: {
 }): Workout {
   return {
     id: a.id,
-    date: parseLocalDateString(a.date),
+    // A missing date yields an Invalid Date rather than throwing here; the page groups
+    // those under "Undated" so the workout stays visible and editable.
+    date: parseLocalDateString(a.date ?? ''),
     title: a.title,
     type: a.type as Workout['type'],
     durationMinutes: a.durationMinutes,
     exercises: (a.exercises ?? []).map((e) => ({
-      name: e.name,
+      // `exercises` is a JSONB blob; rows written before the name became a validated
+      // field can lack one, and an undefined name throws in every .toLowerCase() that
+      // touches it — search, image lookup, the card itself.
+      name: typeof e.name === 'string' ? e.name : '',
       sets: e.sets,
       reps: e.reps,
       ...(e.repsPerSet && e.repsPerSet.length === e.sets ? { repsPerSet: e.repsPerSet } : undefined),

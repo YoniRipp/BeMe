@@ -196,4 +196,61 @@ describe('Body Page', () => {
       expect(screen.queryByText(/add your first workout/i)).not.toBeInTheDocument();
     });
   });
+
+  // `exercises` is a stored JSON blob and `date` predates validation, so the page has to
+  // survive rows that don't match the type. A workout that can't be bucketed used to
+  // vanish with no empty state to explain it, and a nameless exercise threw in the first
+  // .toLowerCase() that touched it — blanking the page behind the error boundary.
+  describe('malformed stored data', () => {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const stored = (over: any) => ({
+      id: 'x1',
+      date: subWeeks(new Date(), 6),
+      title: 'Leg Day',
+      type: 'strength',
+      durationMinutes: 45,
+      exercises: [{ name: 'Squat', sets: 3, reps: 10 }],
+      completed: false,
+      ...over,
+    });
+
+    it('still shows a workout whose date will not parse, under an Undated heading', async () => {
+      mockUseWorkouts.mockReturnValue({
+        ...defaultHookReturn,
+        workouts: [stored({ date: new Date('nonsense') })],
+      });
+
+      render(<Body />, { wrapper });
+
+      expect(await screen.findByText('Leg Day')).toBeInTheDocument();
+      expect(screen.getByText('Undated')).toBeInTheDocument();
+    });
+
+    it('finds an undated workout by search', async () => {
+      const user = userEvent.setup();
+      mockUseWorkouts.mockReturnValue({
+        ...defaultHookReturn,
+        workouts: [stored({ date: new Date('nonsense') }), stored({ id: 'x2', title: 'Chest Day' })],
+      });
+
+      render(<Body />, { wrapper });
+      await user.type(screen.getByPlaceholderText(/search workouts/i), 'Leg');
+
+      await waitFor(() => expect(screen.queryByText('Chest Day')).not.toBeInTheDocument());
+      expect(screen.getByText('Leg Day')).toBeInTheDocument();
+    });
+
+    it('does not blank the page when an exercise has no name', async () => {
+      const user = userEvent.setup();
+      mockUseWorkouts.mockReturnValue({
+        ...defaultHookReturn,
+        workouts: [stored({ exercises: [{ sets: 3, reps: 10 }, { name: null, sets: 2, reps: 8 }] })],
+      });
+
+      render(<Body />, { wrapper });
+      await user.type(screen.getByPlaceholderText(/search workouts/i), 'Leg');
+
+      expect(await screen.findByText('Leg Day')).toBeInTheDocument();
+    });
+  });
 });

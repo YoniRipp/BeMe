@@ -10,25 +10,38 @@ import { EmptyStateCard } from '@/components/shared/EmptyStateCard';
 import { AddAnotherCard } from '@/components/shared/AddAnotherCard';
 import { Check } from 'lucide-react';
 import { toast } from '@/components/shared/ToastProvider';
-import { format, isToday, isYesterday, parseISO, isWithinInterval, subWeeks } from 'date-fns';
+import { format, isToday, isYesterday, parseISO, subWeeks } from 'date-fns';
 import { getPeriodRange } from '@/lib/dateRanges';
 import { PulseCard, PulseHeader, PulsePage } from '@/components/pulse/PulseUI';
 
 /** How many "Earlier" workouts to reveal per tap. Histories run to hundreds of cards. */
 const EARLIER_PAGE_SIZE = 10;
 
+/** Sorts last, and never collides with a yyyy-MM-dd key. */
+const UNDATED_KEY = 'undated';
+
+const workoutTime = (w: Workout) => new Date(w.date).getTime();
+const isDated = (w: Workout) => Number.isFinite(workoutTime(w));
+
 function groupWorkoutsByDate(workouts: Workout[], ascending = false): { date: string; label: string; workouts: Workout[] }[] {
   const byDate = new Map<string, Workout[]>();
   for (const w of workouts) {
-    const d = format(new Date(w.date), 'yyyy-MM-dd');
+    // A date that will not parse must not throw in format() — group it rather than
+    // taking the page down or dropping the workout.
+    const d = isDated(w) ? format(new Date(w.date), 'yyyy-MM-dd') : UNDATED_KEY;
     if (!byDate.has(d)) byDate.set(d, []);
     byDate.get(d)!.push(w);
   }
-  const sortedDates = Array.from(byDate.keys()).sort((a, b) =>
-    ascending ? a.localeCompare(b) : b.localeCompare(a)
-  );
+  const sortedDates = Array.from(byDate.keys()).sort((a, b) => {
+    if (a === UNDATED_KEY) return 1;
+    if (b === UNDATED_KEY) return -1;
+    return ascending ? a.localeCompare(b) : b.localeCompare(a);
+  });
   const currentYear = new Date().getFullYear();
   return sortedDates.map((dateStr) => {
+    if (dateStr === UNDATED_KEY) {
+      return { date: dateStr, label: 'Undated', workouts: byDate.get(dateStr)! };
+    }
     const d = parseISO(dateStr);
     let label: string;
     if (isToday(d)) label = 'Today';
@@ -57,46 +70,57 @@ export function Body() {
     let filtered = workouts;
     if (searchQuery) {
       const query = searchQuery.toLowerCase();
+      // Every field here is optional-in-practice: these come from stored JSON, and one
+      // null would otherwise throw and blank the page the moment the user types.
       filtered = filtered.filter(w =>
-        w.title.toLowerCase().includes(query) ||
-        w.type.toLowerCase().includes(query) ||
+        w.title?.toLowerCase().includes(query) ||
+        w.type?.toLowerCase().includes(query) ||
         w.notes?.toLowerCase().includes(query) ||
-        w.exercises.some(e => e.name.toLowerCase().includes(query))
+        (w.exercises ?? []).some(e => e.name?.toLowerCase().includes(query))
       );
     }
     if (filter !== 'All') {
-      filtered = filtered.filter((w) => w.type.toLowerCase() === filter.toLowerCase());
+      filtered = filtered.filter((w) => w.type?.toLowerCase() === filter.toLowerCase());
     }
-    return filtered.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+    // Undated workouts sort last rather than scrambling the order with NaN comparisons.
+    return filtered.slice().sort((a, b) => {
+      const at = workoutTime(a);
+      const bt = workoutTime(b);
+      if (!Number.isFinite(at)) return Number.isFinite(bt) ? 1 : 0;
+      if (!Number.isFinite(bt)) return -1;
+      return bt - at;
+    });
   }, [workouts, searchQuery, filter]);
 
   const { start: weekStart, end: weekEnd } = useMemo(() => getPeriodRange('weekly', new Date()), []);
   const lastWeekStart = useMemo(() => subWeeks(weekStart, 1), [weekStart]);
-  const lastWeekEnd = useMemo(() => subWeeks(weekEnd, 1), [weekEnd]);
-  const workoutsThisWeek = useMemo(
-    () =>
-      filteredWorkouts.filter((w) => isWithinInterval(new Date(w.date), { start: weekStart, end: weekEnd })),
-    [filteredWorkouts, weekStart, weekEnd]
-  );
-  const workoutsUpcoming = useMemo(
-    () => filteredWorkouts
-      .filter((w) => new Date(w.date) > weekEnd)
-      .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime()),
-    [filteredWorkouts, weekEnd]
-  );
-  const workoutsLastWeek = useMemo(
-    () => filteredWorkouts.filter((w) =>
-      isWithinInterval(new Date(w.date), { start: lastWeekStart, end: lastWeekEnd })
-    ),
-    [filteredWorkouts, lastWeekStart, lastWeekEnd]
-  );
-  // Everything before last week. Without this bucket the four windows would not cover the
-  // whole timeline and older workouts would be unreachable — invisible, and so uneditable,
-  // since editing is a tap on the card.
-  const workoutsEarlier = useMemo(
-    () => filteredWorkouts.filter((w) => new Date(w.date) < lastWeekStart),
-    [filteredWorkouts, lastWeekStart]
-  );
+
+  // One pass that assigns every workout to exactly one bucket. Independent range filters
+  // let a workout match none of them and vanish from the page with no empty state to
+  // explain it — which is what happened to anything older than last week, and still
+  // happened to any workout whose date would not parse.
+  const { workoutsUpcoming, workoutsThisWeek, workoutsLastWeek, workoutsEarlier } = useMemo(() => {
+    const upcoming: Workout[] = [];
+    const thisWeek: Workout[] = [];
+    const lastWeek: Workout[] = [];
+    const earlier: Workout[] = [];
+    for (const w of filteredWorkouts) {
+      const time = workoutTime(w);
+      if (!Number.isFinite(time)) earlier.push(w);
+      else if (time > weekEnd.getTime()) upcoming.push(w);
+      else if (time >= weekStart.getTime()) thisWeek.push(w);
+      else if (time >= lastWeekStart.getTime()) lastWeek.push(w);
+      else earlier.push(w);
+    }
+    upcoming.sort((a, b) => workoutTime(a) - workoutTime(b));
+    return {
+      workoutsUpcoming: upcoming,
+      workoutsThisWeek: thisWeek,
+      workoutsLastWeek: lastWeek,
+      workoutsEarlier: earlier,
+    };
+  }, [filteredWorkouts, weekStart, weekEnd, lastWeekStart]);
+
   const groupedUpcoming = useMemo(() => groupWorkoutsByDate(workoutsUpcoming, true), [workoutsUpcoming]);
   const groupedThisWeek = useMemo(() => groupWorkoutsByDate(workoutsThisWeek), [workoutsThisWeek]);
   const groupedLastWeek = useMemo(() => groupWorkoutsByDate(workoutsLastWeek), [workoutsLastWeek]);

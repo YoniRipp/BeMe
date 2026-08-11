@@ -145,3 +145,33 @@ describe('apiWorkoutToWorkout', () => {
     expect(result.date.getDate()).toBe(20);
   });
 });
+
+describe('apiWorkoutToWorkout — imperfect stored rows', () => {
+  const row = {
+    id: '1',
+    date: '2026-06-01',
+    title: 'Leg Day',
+    type: 'strength',
+    durationMinutes: 45,
+    exercises: [],
+  };
+
+  it('coerces a missing exercise name to a string', () => {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const result = apiWorkoutToWorkout({ ...row, exercises: [{ sets: 3, reps: 10 } as any] });
+    expect(result.exercises[0].name).toBe('');
+  });
+
+  it('coerces a null exercise name to a string', () => {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const result = apiWorkoutToWorkout({ ...row, exercises: [{ name: null, sets: 3, reps: 10 } as any] });
+    expect(result.exercises[0].name).toBe('');
+  });
+
+  it('yields an invalid date rather than throwing when date is missing', () => {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    expect(() => apiWorkoutToWorkout({ ...row, date: null as any })).not.toThrow();
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    expect(Number.isNaN(apiWorkoutToWorkout({ ...row, date: null as any }).date.getTime())).toBe(true);
+  });
+});

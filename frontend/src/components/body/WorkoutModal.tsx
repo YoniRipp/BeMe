@@ -720,8 +720,10 @@ export function WorkoutModal({ open, onOpenChange, onSave, workout }: WorkoutMod
       .filter((w) => w.id !== workout?.id)
       .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
       .forEach((w) => {
-        w.exercises.forEach((ex) => {
-          const key = ex.name.trim().toLowerCase();
+        // Stored exercises can lack a name; this runs over the user's whole history, so
+        // one bad row must not throw and take the page with it.
+        (w.exercises ?? []).forEach((ex) => {
+          const key = ex.name?.trim().toLowerCase();
           if (key && !map.has(key)) map.set(key, { date: new Date(w.date), exercise: ex });
         });
       });

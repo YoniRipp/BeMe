@@ -137,7 +137,10 @@ export function useExercises() {
     return { byName: exact, byLooseName: loose };
   }, [data]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  const getExercise = (exerciseName: string): CatalogExercise | undefined => {
+  // Callers pass names straight from stored workouts and from in-progress form rows, so a
+  // missing one is normal traffic, not a caller bug — it must not throw.
+  const getExercise = (exerciseName: string | null | undefined): CatalogExercise | undefined => {
+    if (typeof exerciseName !== 'string') return undefined;
     const exact = byName.get(normalizeName(exerciseName));
     if (exact) return exact;
     // A name of pure punctuation folds to '', which must not match a catalog row that
@@ -146,9 +149,11 @@ export function useExercises() {
     return loose ? byLooseName.get(loose) : undefined;
   };
 
-  const getImageUrl = (exerciseName: string): string | undefined => getExercise(exerciseName)?.imageUrl;
+  const getImageUrl = (exerciseName: string | null | undefined): string | undefined =>
+    getExercise(exerciseName)?.imageUrl;
 
-  const getVideoUrl = (exerciseName: string): string | undefined => getExercise(exerciseName)?.videoUrl;
+  const getVideoUrl = (exerciseName: string | null | undefined): string | undefined =>
+    getExercise(exerciseName)?.videoUrl;
 
   const searchExercises = (query: string): CatalogExercise[] => {
     if (!query.trim()) return exercises;

@@ -30,6 +30,14 @@ describe('formatDate', () => {
     const formatted = formatDate(dateStr);
     expect(formatted).toMatch(/^\d{2}\/\d{2}\/\d{4}$/);
   });
+
+  // date-fns throws on an invalid date; a display helper must degrade instead, or one bad
+  // stored value takes down every card on the page.
+  it('returns a placeholder instead of throwing on an unparseable date', () => {
+    expect(() => formatDate(new Date('nonsense'))).not.toThrow();
+    expect(formatDate(new Date('nonsense'))).toBe('—');
+    expect(formatDate('not a date')).toBe('—');
+  });
 });
 
 describe('formatTime', () => {

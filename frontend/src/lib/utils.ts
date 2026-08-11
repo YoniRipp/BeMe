@@ -33,6 +33,9 @@ export function formatDate(date: Date | string, dateFormat: string = 'DD/MM/YYYY
   };
   
   const dateFnsFormat = formatMap[dateFormat] || 'dd/MM/yyyy';
+  // date-fns throws on an invalid date. A display helper must not be able to take the
+  // page down over one bad stored value.
+  if (!(d instanceof Date) || Number.isNaN(d.getTime())) return '—';
   return format(d, dateFnsFormat);
 }
 
