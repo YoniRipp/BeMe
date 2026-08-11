@@ -202,6 +202,9 @@ export const updateCycleEntrySchema = z.object({
 export const exerciseListQuerySchema = z.object({
   q: z.string().max(200).optional(),
   muscleGroup: z.string().max(100).optional(),
+  equipment: z.string().max(100).optional(),
+  level: z.string().max(50).optional(),
+  discipline: z.string().max(50).optional(),
   limit: z.coerce.number().int().min(1).max(1000).default(500),
   offset: z.coerce.number().int().min(0).default(0),
 });

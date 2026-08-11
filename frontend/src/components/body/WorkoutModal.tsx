@@ -21,7 +21,17 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { Plus, Minus, Trash2, Copy, Save, X, Pencil, Check, Dumbbell, Timer } from 'lucide-react';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
+import {
+  Plus, Minus, Trash2, Copy, Save, X, Check, Dumbbell, Timer,
+  MoreVertical, ArrowUp, ArrowDown, Repeat, StickyNote, Settings2, Search,
+} from 'lucide-react';
 import { STORAGE_KEYS, storage } from '@/lib/storage';
 import { toLocalDateString, parseLocalDateString } from '@/lib/dateRanges';
 import { toast } from '@/components/shared/ToastProvider';
@@ -32,6 +42,8 @@ import { useWorkouts } from '@/hooks/useWorkouts';
 import { ImagePlaceholder } from '@/components/shared/ImagePlaceholder';
 import { ImageLightbox } from '@/components/shared/ImageLightbox';
 import { SetRow, EditableSetValueInput } from './SetRow';
+import { ExercisePickerSheet } from './ExercisePickerSheet';
+import { STARTER_TEMPLATES, type StarterTemplate } from '@/lib/workoutTemplates';
 import { LIMITS } from '@/lib/constants';
 
 export type WorkoutTemplate = Omit<Workout, 'id' | 'date'>;
@@ -321,6 +333,10 @@ function WorkoutDetailView({
   const [exercises, setExercises] = useState<Exercise[]>(() =>
     workout.exercises.map((ex) => normalizeExerciseForLogging(ex, workout.completed)),
   );
+  /** null = closed; index present = replacing that exercise, otherwise appending. */
+  const [picker, setPicker] = useState<{ index?: number } | null>(null);
+  /** Index of the exercise whose note field is expanded. */
+  const [noteFor, setNoteFor] = useState<number | null>(null);
 
   // Re-seed only when a different workout is opened, so background refetches (including our
   // own optimistic save echo) never clobber edits in progress.
@@ -421,6 +437,36 @@ function WorkoutDetailView({
     });
   };
 
+  // ── Exercise-level actions ─────────────────────────────────────────────────
+  // These used to require leaving for the full-page editor. They now run right here and
+  // ride the same debounced commit(), so changing one exercise never touches the rest.
+
+  /** Swap the movement but keep the sets/reps/weights already logged against it. */
+  const replaceExercise = (exIdx: number, name: string) =>
+    updateExercise(exIdx, (ex) => ({ ...ex, name }));
+
+  const moveExercise = (exIdx: number, direction: -1 | 1) => {
+    const target = exIdx + direction;
+    if (target < 0 || target >= exercises.length) return;
+    const next = [...exercises];
+    [next[exIdx], next[target]] = [next[target], next[exIdx]];
+    commit(next);
+  };
+
+  const removeExercise = (exIdx: number) => commit(exercises.filter((_, i) => i !== exIdx));
+
+  const setNote = (exIdx: number, notes: string) =>
+    updateExercise(exIdx, (ex) => ({ ...ex, notes }));
+
+  /** Seed a new exercise from the last time it was performed, falling back to 3×10. */
+  const addExercise = (name: string) => {
+    const prev = getPrevious(name)?.exercise;
+    const seeded = prev
+      ? normalizeExerciseForLogging({ ...prev, name, completedPerSet: undefined }, false)
+      : normalizeExerciseForLogging({ name, sets: 3, reps: 10 }, false);
+    commit([...exercises, { ...seeded, completedPerSet: seeded.repsPerSet?.map(() => false) }]);
+  };
+
   const totalSets = exercises.reduce((sum, ex) => sum + ex.sets, 0);
   const doneSets = exercises.reduce((sum, ex) => sum + (ex.completedPerSet?.filter(Boolean).length ?? 0), 0);
   const totalVolume = exercises.reduce((sum, ex) => sum + exerciseVolume(ex), 0);
@@ -474,10 +520,21 @@ function WorkoutDetailView({
           <RestTimer />
         </div>
 
-        <Button type="button" variant="outline" onClick={() => { flush(); onEdit(); }} className="w-full gap-2">
-          <Pencil className="h-4 w-4" />
-          Edit workout
-        </Button>
+        <div className="flex items-center justify-between gap-3">
+          <p className="text-xs text-muted-foreground">
+            Tap any weight or reps to edit — changes save automatically.
+          </p>
+          <Button
+            type="button"
+            variant="ghost"
+            size="sm"
+            onClick={() => { flush(); onEdit(); }}
+            className="shrink-0 gap-1.5 text-muted-foreground hover:text-foreground"
+          >
+            <Settings2 className="h-4 w-4" />
+            Settings
+          </Button>
+        </div>
       </DialogHeader>
 
       <div className="space-y-3 py-1">
@@ -509,7 +566,66 @@ function WorkoutDetailView({
                     </p>
                   )}
                 </div>
+
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="icon"
+                      className="h-9 w-9 shrink-0 rounded-full text-muted-foreground hover:text-foreground"
+                      aria-label={`Options for ${ex.name}`}
+                    >
+                      <MoreVertical className="h-4 w-4" />
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end" className="w-52">
+                    <DropdownMenuItem onSelect={() => setPicker({ index: idx })}>
+                      <Repeat className="mr-2 h-4 w-4" />
+                      Replace exercise
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onSelect={() => setNoteFor(noteFor === idx ? null : idx)}>
+                      <StickyNote className="mr-2 h-4 w-4" />
+                      {ex.notes ? 'Edit note' : 'Add note'}
+                    </DropdownMenuItem>
+                    <DropdownMenuSeparator />
+                    <DropdownMenuItem disabled={idx === 0} onSelect={() => moveExercise(idx, -1)}>
+                      <ArrowUp className="mr-2 h-4 w-4" />
+                      Move up
+                    </DropdownMenuItem>
+                    <DropdownMenuItem
+                      disabled={idx === exercises.length - 1}
+                      onSelect={() => moveExercise(idx, 1)}
+                    >
+                      <ArrowDown className="mr-2 h-4 w-4" />
+                      Move down
+                    </DropdownMenuItem>
+                    <DropdownMenuSeparator />
+                    <DropdownMenuItem
+                      className="text-destructive focus:text-destructive"
+                      onSelect={() => {
+                        removeExercise(idx);
+                        setNoteFor(null);
+                      }}
+                    >
+                      <Trash2 className="mr-2 h-4 w-4" />
+                      Remove exercise
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
               </div>
+
+              {(noteFor === idx || ex.notes) && (
+                <Textarea
+                  value={ex.notes ?? ''}
+                  onChange={(e) => setNote(idx, e.target.value)}
+                  placeholder="Note (e.g. felt heavy, use the wide grip)"
+                  className="mt-2.5 min-h-[2.5rem] resize-none text-sm"
+                  rows={2}
+                  autoFocus={noteFor === idx && !ex.notes}
+                  aria-label={`Note for ${ex.name}`}
+                />
+              )}
 
               <div className="mt-3">
                 <div className="grid grid-cols-[1.75rem_1fr_1fr_auto] items-center gap-2 px-0.5 pb-1 text-[10px] font-bold uppercase tracking-wider text-muted-foreground">
@@ -549,6 +665,15 @@ function WorkoutDetailView({
           );
         })}
 
+        <button
+          type="button"
+          onClick={() => setPicker({})}
+          className="flex w-full items-center justify-center gap-2 rounded-2xl border border-dashed border-primary/45 bg-primary/5 py-3.5 text-sm font-bold text-primary transition-colors hover:border-primary hover:bg-primary/10"
+        >
+          <Plus className="h-4 w-4" />
+          Add exercise
+        </button>
+
         {workout.notes && (
           <div className="rounded-2xl border border-border bg-muted/30 p-3">
             <p className="mb-1 text-[10px] font-bold uppercase tracking-wider text-muted-foreground">Notes</p>
@@ -556,6 +681,22 @@ function WorkoutDetailView({
           </div>
         )}
       </div>
+
+      <ExercisePickerSheet
+        open={picker !== null}
+        onOpenChange={(next) => { if (!next) setPicker(null); }}
+        onSelect={(choice) => {
+          if (picker?.index !== undefined) replaceExercise(picker.index, choice.name);
+          else addExercise(choice.name);
+          setPicker(null);
+        }}
+        onPreviewImage={onLightbox}
+        title={
+          picker?.index !== undefined
+            ? `Replace ${exercises[picker.index]?.name || 'exercise'}`
+            : 'Add exercise'
+        }
+      />
     </>
   );
 }
@@ -567,6 +708,8 @@ export function WorkoutModal({ open, onOpenChange, onSave, workout }: WorkoutMod
   const { exercises: catalogExercises, getImageUrl } = useExercises();
   const { workouts, updateWorkout } = useWorkouts();
   const [lightboxImage, setLightboxImage] = useState<{ src: string; alt: string } | null>(null);
+  /** Index of the editor row whose exercise is being chosen from the catalog. */
+  const [editorPicker, setEditorPicker] = useState<number | null>(null);
   // Existing workouts open in a read-only view first; new workouts open straight into the editor.
   const [mode, setMode] = useState<'view' | 'edit'>(workout ? 'view' : 'edit');
 
@@ -727,7 +870,10 @@ export function WorkoutModal({ open, onOpenChange, onSave, workout }: WorkoutMod
                 e.weightPerSet && e.weightPerSet.length === e.sets
                   ? e.weightPerSet
                   : Array.from({ length: e.sets }, () => e.weight);
-              return { name: e.name, sets: e.sets, reps: e.reps, repsPerSet, weightPerSet, weight: e.weight };
+              return {
+                name: e.name, sets: e.sets, reps: e.reps, repsPerSet, weightPerSet,
+                weight: e.weight, notes: e.notes, completedPerSet: e.completedPerSet,
+              };
             })
           : [defaultExercise],
       });
@@ -764,6 +910,16 @@ export function WorkoutModal({ open, onOpenChange, onSave, workout }: WorkoutMod
         : [defaultExercise],
     });
   };
+
+  /** Built-in routines carry a description the saved-template shape has no room for. */
+  const loadStarterTemplate = (starter: StarterTemplate) =>
+    loadTemplate({
+      title: starter.title,
+      type: starter.type,
+      durationMinutes: starter.durationMinutes,
+      exercises: starter.exercises,
+      completed: false,
+    });
 
   const saveAsTemplate = () => {
     const title = watchedTitle?.trim();
@@ -820,6 +976,17 @@ export function WorkoutModal({ open, onOpenChange, onSave, workout }: WorkoutMod
           ...(ex.repsPerSet && ex.repsPerSet.length === ex.sets ? { repsPerSet: ex.repsPerSet } : undefined),
           ...(ex.weightPerSet && ex.weightPerSet.length === ex.sets ? { weightPerSet: ex.weightPerSet } : undefined),
           weight: ex.weightPerSet?.find((value) => value !== undefined) ?? ex.weight,
+          ...(ex.notes?.trim() ? { notes: ex.notes } : undefined),
+          // Reconcile against the (possibly changed) set count so per-set progress logged
+          // in the logger view survives a save from here.
+          ...(ex.completedPerSet
+            ? {
+                completedPerSet: Array.from(
+                  { length: ex.sets },
+                  (_, i) => ex.completedPerSet?.[i] ?? false,
+                ),
+              }
+            : undefined),
         };
       });
     onSave({
@@ -865,6 +1032,28 @@ export function WorkoutModal({ open, onOpenChange, onSave, workout }: WorkoutMod
             </DialogHeader>
             <form onSubmit={handleSubmit(onSubmit)}>
               <div className="space-y-4">
+                {!workout && (
+                  <div>
+                    <Label className="mb-2 block">Start from a routine</Label>
+                    <div className="-mx-1 grid grid-cols-2 gap-2 px-1 sm:grid-cols-3">
+                      {STARTER_TEMPLATES.map((t) => (
+                        <button
+                          key={t.id}
+                          type="button"
+                          onClick={() => loadStarterTemplate(t)}
+                          className="rounded-2xl border border-border bg-card p-3 text-left shadow-card transition-colors hover:border-primary/50 active:bg-muted"
+                        >
+                          <p className="text-[13px] font-extrabold leading-tight text-foreground">{t.title}</p>
+                          <p className="mt-1 text-[11px] leading-snug text-muted-foreground">{t.description}</p>
+                          <p className="mt-1.5 text-[10px] font-bold uppercase tracking-wider text-primary">
+                            {t.exercises.length} exercises · {t.durationMinutes} min
+                          </p>
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
                 {templates.length > 0 && (
                   <div className="p-3 bg-muted rounded-lg">
                     <Label className="mb-2 block">Saved Workouts</Label>
@@ -1018,6 +1207,16 @@ export function WorkoutModal({ open, onOpenChange, onSave, workout }: WorkoutMod
                                 )}
                               />
                             </div>
+                            <Button
+                              type="button"
+                              variant="ghost"
+                              size="icon"
+                              className="h-9 w-9 shrink-0 rounded-full text-muted-foreground hover:text-primary"
+                              onClick={() => setEditorPicker(idx)}
+                              aria-label="Browse exercise catalog"
+                            >
+                              <Search className="w-4 h-4" />
+                            </Button>
                             <Button
                               type="button"
                               variant="ghost"
@@ -1176,6 +1375,22 @@ export function WorkoutModal({ open, onOpenChange, onSave, workout }: WorkoutMod
                 </div>
               </DialogFooter>
             </form>
+
+            <ExercisePickerSheet
+              open={editorPicker !== null}
+              onOpenChange={(next) => { if (!next) setEditorPicker(null); }}
+              onSelect={(choice) => {
+                if (editorPicker !== null) {
+                  setValue(`exercises.${editorPicker}.name`, choice.name, {
+                    shouldValidate: true,
+                    shouldDirty: true,
+                  });
+                }
+                setEditorPicker(null);
+              }}
+              onPreviewImage={setLightboxImage}
+              title="Choose exercise"
+            />
           </>
         )}
       </DialogContent>
