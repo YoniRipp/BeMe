@@ -6,7 +6,8 @@
       "Bash(npx tsc *)",
       "Bash(npx vitest *)",
       "Bash(npm ci *)",
-      "Bash(xargs sed -i \"s|import { toast } from 'sonner';|import { toast } from '@/components/shared/ToastProvider';|\")"
+      "Bash(xargs sed -i \"s|import { toast } from 'sonner';|import { toast } from '@/components/shared/ToastProvider';|\")",
+      "mcp__bf7c680d-5fdc-5ef4-b4a0-abadb619bf0a__send_later"
     ]
   }
 }
