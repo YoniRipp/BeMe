@@ -6,7 +6,7 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useProfile } from '@/hooks/useProfile';
 import { toast } from '@/components/shared/ToastProvider';
-import { User, Scale, Ruler, Activity, Heart } from 'lucide-react';
+import { User, Scale, Activity, Heart, Check } from 'lucide-react';
 
 const STEPS = ['Welcome', 'Basic Info', 'Body Stats', 'Activity', 'Complete'];
 
@@ -248,8 +248,8 @@ export function SetupWizard({ onComplete }: SetupWizardProps) {
           {/* Step 4: Complete */}
           {step === 4 && (
             <div className="text-center space-y-4">
-              <div className="w-16 h-16 rounded-full bg-green-100 flex items-center justify-center mx-auto">
-                <Ruler className="w-8 h-8 text-green-600" />
+              <div className="w-16 h-16 rounded-full bg-success/15 flex items-center justify-center mx-auto">
+                <Check className="w-8 h-8 text-success" strokeWidth={2.5} />
               </div>
               <h2 className="text-2xl font-bold">All Set!</h2>
               <p className="text-muted-foreground">

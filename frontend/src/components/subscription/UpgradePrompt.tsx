@@ -15,9 +15,9 @@ export function UpgradePrompt({ feature, description, compact, quotaExhausted }:
 
   if (compact) {
     return (
-      <div className="flex items-center gap-2 rounded-lg border border-amber-200 bg-amber-50 p-3 text-sm dark:border-amber-800 dark:bg-amber-950">
-        <Lock className="h-4 w-4 shrink-0 text-amber-600" />
-        <span className="text-amber-800 dark:text-amber-200">
+      <div className="flex items-center gap-2 rounded-lg border border-gold/30 bg-gold/10 p-3 text-sm">
+        <Lock className="h-4 w-4 shrink-0 text-gold" />
+        <span className="text-foreground">
           <strong>{feature}</strong> requires Pro.
         </span>
         <Button
@@ -34,10 +34,10 @@ export function UpgradePrompt({ feature, description, compact, quotaExhausted }:
 
   if (quotaExhausted) {
     return (
-      <Card className="border-blue-200 bg-gradient-to-br from-blue-50 to-indigo-50 dark:border-blue-800 dark:from-blue-950 dark:to-indigo-950">
+      <Card className="border-info/30 bg-info/5">
         <CardHeader className="text-center">
-          <div className="mx-auto mb-2 flex h-12 w-12 items-center justify-center rounded-full bg-blue-100 dark:bg-blue-900">
-            <Clock className="h-6 w-6 text-blue-600" />
+          <div className="mx-auto mb-2 flex h-12 w-12 items-center justify-center rounded-full bg-info/15">
+            <Clock className="h-6 w-6 text-info" />
           </div>
           <CardTitle className="text-lg">{feature}</CardTitle>
           <CardDescription>
@@ -54,10 +54,10 @@ export function UpgradePrompt({ feature, description, compact, quotaExhausted }:
   }
 
   return (
-    <Card className="border-amber-200 bg-gradient-to-br from-amber-50 to-orange-50 dark:border-amber-800 dark:from-amber-950 dark:to-orange-950">
+    <Card className="border-gold/30 bg-gold/5">
       <CardHeader className="text-center">
-        <div className="mx-auto mb-2 flex h-12 w-12 items-center justify-center rounded-full bg-amber-100 dark:bg-amber-900">
-          <Sparkles className="h-6 w-6 text-amber-600" />
+        <div className="mx-auto mb-2 flex h-12 w-12 items-center justify-center rounded-full bg-gold/15">
+          <Sparkles className="h-6 w-6 text-gold" />
         </div>
         <CardTitle className="text-lg">Unlock {feature}</CardTitle>
         <CardDescription>

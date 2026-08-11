@@ -78,7 +78,7 @@ export function MacroCircles({ carbs, fat, protein, onEditGoals }: MacroCirclesP
           <button
             type="button"
             onClick={onEditGoals}
-            className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium text-muted-foreground hover:text-primary hover:bg-primary/8 transition-colors"
+            className="inline-flex h-11 items-center gap-1.5 px-3 rounded-full text-xs font-medium text-muted-foreground hover:text-primary hover:bg-primary/10 transition-colors"
             aria-label="Edit macro goals"
           >
             <Pencil className="w-3 h-3" />

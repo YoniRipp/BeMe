@@ -31,7 +31,7 @@ export function Navbar() {
       }`}
     >
       <div className="mx-auto max-w-6xl px-6 lg:px-8">
-        <div className="flex h-16 items-center justify-between lg:h-18">
+        <div className="flex h-16 items-center justify-between">
           <Link to="/welcome" className="flex items-center gap-2.5">
             <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary">
               <Leaf className="h-4 w-4 text-primary-foreground" />

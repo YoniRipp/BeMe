@@ -15,7 +15,7 @@ export function UpdateBanner() {
   if (!show) return null;
 
   return (
-    <div className="fixed bottom-20 left-4 right-4 z-50 md:left-auto md:right-4 md:w-80 md:bottom-4 bg-primary text-primary-foreground rounded-lg shadow-lg p-4 flex items-center gap-3 animate-in slide-in-from-bottom-4">
+    <div className="fixed bottom-[calc(env(safe-area-inset-bottom,0px)+5.5rem)] left-4 right-4 z-50 lg:left-auto lg:right-4 lg:w-80 lg:bottom-4 bg-primary text-primary-foreground rounded-lg shadow-lg p-4 flex items-center gap-3 animate-in slide-in-from-bottom-4">
       <RefreshCw className="h-5 w-5 flex-shrink-0" />
       <div className="flex-1 min-w-0">
         <p className="text-sm font-medium">Update available</p>

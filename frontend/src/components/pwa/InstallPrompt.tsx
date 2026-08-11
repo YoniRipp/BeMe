@@ -19,16 +19,20 @@ export function InstallPrompt() {
   };
 
   return (
-    <Card className="fixed bottom-20 left-4 right-4 z-50 p-4 shadow-lg md:left-auto md:right-4 md:w-80 md:bottom-4 bg-background border animate-in slide-in-from-bottom-4">
+    // Offsets from the bottom nav (only hidden at lg) and respects the home
+    // indicator, so it can't sit on top of the nav on a notched phone. Stacked
+    // above UpdateBanner so the two never overlap.
+    <Card className="fixed bottom-[calc(env(safe-area-inset-bottom,0px)+11rem)] left-4 right-4 z-50 p-4 shadow-lg lg:left-auto lg:right-4 lg:w-80 lg:bottom-28 bg-background border animate-in slide-in-from-bottom-4">
       <button
+        type="button"
         onClick={dismiss}
-        className="absolute right-2 top-2 p-1 rounded-full hover:bg-muted transition-colors"
+        className="absolute right-1 top-1 flex h-11 w-11 items-center justify-center rounded-full hover:bg-muted transition-colors"
         aria-label="Dismiss"
       >
         <X className="h-4 w-4 text-muted-foreground" />
       </button>
 
-      <div className="flex items-start gap-3 pr-6">
+      <div className="flex items-start gap-3 pr-10">
         <div className="flex-shrink-0 w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center">
           <img src="/logo.png" alt="TrackVibe" className="w-6 h-6" />
         </div>

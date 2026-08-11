@@ -141,6 +141,15 @@ export function VoiceAgentPanel({ open, onOpenChange }: VoiceAgentPanelProps) {
     }
   }, [open, isListening, stopListening]);
 
+  // Reopening the panel should be a clean slate — otherwise the previous run's
+  // error and transcript are still on screen before the user says anything.
+  useEffect(() => {
+    if (open) {
+      setError(null);
+      setTranscript('');
+    }
+  }, [open]);
+
   const displayTranscript = currentTranscript || transcript;
 
   return (
