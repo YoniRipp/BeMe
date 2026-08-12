@@ -65,7 +65,7 @@ export function ExercisePickerSheet({
   title = 'Add exercise',
   onPreviewImage,
 }: ExercisePickerSheetProps) {
-  const { filterExercises, isLoading } = useExercises();
+  const { filterExercises, isLoading, isError, exercises: catalog, refetch } = useExercises();
   const [query, setQuery] = useState('');
   const [equipment, setEquipment] = useState<string | undefined>();
   const [muscleGroup, setMuscleGroup] = useState<string | undefined>();
@@ -84,9 +84,11 @@ export function ExercisePickerSheet({
 
   const results = useMemo(
     () => filterExercises({ query, equipment, muscleGroup }),
-    // filterExercises is recreated each render; the inputs below are what actually matter.
+    // filterExercises is recreated each render, so it cannot be the dependency. `catalog`
+    // is what it actually reads — keying off isLoading instead left the list stale
+    // whenever the catalog arrived without a loading transition.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [query, equipment, muscleGroup, isLoading],
+    [query, equipment, muscleGroup, catalog],
   );
 
   // Reset paging and scroll position whenever the result set changes.
@@ -176,6 +178,22 @@ export function ExercisePickerSheet({
         >
           {isLoading ? (
             <p className="py-10 text-center text-sm text-muted-foreground">Loading exercises…</p>
+          ) : isError ? (
+            // Distinct from the empty state below: telling someone to "try a different
+            // search" when the list never loaded sends them hunting for a typo that
+            // isn't there.
+            <div className="py-12 text-center">
+              <Dumbbell className="mx-auto mb-3 h-8 w-8 text-muted-foreground/40" aria-hidden="true" />
+              <p className="text-sm font-semibold text-foreground">Couldn’t load exercises</p>
+              <p className="mt-1 text-xs text-muted-foreground">Check your connection and try again.</p>
+              <button
+                type="button"
+                onClick={() => { void refetch(); }}
+                className="mt-4 inline-flex min-h-11 items-center rounded-full border border-border px-5 text-xs font-bold text-primary transition-colors hover:bg-primary/5"
+              >
+                Retry
+              </button>
+            </div>
           ) : results.length === 0 ? (
             <div className="py-12 text-center">
               <Dumbbell className="mx-auto mb-3 h-8 w-8 text-muted-foreground/40" aria-hidden="true" />

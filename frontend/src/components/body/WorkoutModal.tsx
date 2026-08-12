@@ -162,6 +162,9 @@ function ExerciseNameInput({
   onChange,
   onBlur,
   exercises,
+  catalogLoading,
+  catalogFailed,
+  onRetryCatalog,
   placeholder,
   ariaInvalid,
   ariaDescribedBy,
@@ -170,6 +173,9 @@ function ExerciseNameInput({
   onChange: (val: string) => void;
   onBlur: () => void;
   exercises: CatalogExercise[];
+  catalogLoading?: boolean;
+  catalogFailed?: boolean;
+  onRetryCatalog?: () => void;
   placeholder?: string;
   ariaInvalid?: boolean;
   ariaDescribedBy?: string;
@@ -236,6 +242,32 @@ function ExerciseNameInput({
         aria-describedby={ariaDescribedBy}
         autoComplete="off"
       />
+      {/* Something has to appear once the user starts typing. Rendering nothing at all —
+          no matches, no loading, no error — is indistinguishable from a broken input. */}
+      {showSuggestions && query.length >= 1 && suggestions.length === 0 && (
+        <div className="absolute z-50 top-full left-0 right-0 mt-1 rounded-lg border border-border bg-card p-3 shadow-lg">
+          {catalogLoading ? (
+            <p className="text-xs text-muted-foreground">Loading exercises…</p>
+          ) : catalogFailed ? (
+            <div className="flex items-center justify-between gap-2">
+              <p className="text-xs text-muted-foreground">Couldn’t load the exercise list.</p>
+              {onRetryCatalog && (
+                <button
+                  type="button"
+                  onMouseDown={(e) => { e.preventDefault(); onRetryCatalog(); }}
+                  className="shrink-0 text-xs font-bold text-primary"
+                >
+                  Retry
+                </button>
+              )}
+            </div>
+          ) : (
+            <p className="text-xs text-muted-foreground">
+              No match in the exercise list — “{value.trim()}” will be saved as typed.
+            </p>
+          )}
+        </div>
+      )}
       {showSuggestions && suggestions.length > 0 && (
         <div className="absolute z-50 top-full left-0 right-0 mt-1 bg-card border border-border rounded-lg shadow-lg max-h-48 overflow-y-auto">
           {suggestions.map((ex, i) => (
@@ -705,7 +737,13 @@ export function WorkoutModal({ open, onOpenChange, onSave, workout }: WorkoutMod
   const { settings } = useSettings();
   const unit = getWeightUnit(settings.units);
   const [templates, setTemplates] = useState<WorkoutTemplate[]>([]);
-  const { exercises: catalogExercises, getImageUrl } = useExercises();
+  const {
+    exercises: catalogExercises,
+    getImageUrl,
+    isLoading: catalogLoading,
+    isError: catalogFailed,
+    refetch: refetchCatalog,
+  } = useExercises();
   const { workouts, updateWorkout } = useWorkouts();
   const [lightboxImage, setLightboxImage] = useState<{ src: string; alt: string } | null>(null);
   /** Index of the editor row whose exercise is being chosen from the catalog. */
@@ -1202,6 +1240,9 @@ export function WorkoutModal({ open, onOpenChange, onSave, workout }: WorkoutMod
                                     onChange={nameField.onChange}
                                     onBlur={nameField.onBlur}
                                     exercises={catalogExercises}
+                                    catalogLoading={catalogLoading}
+                                    catalogFailed={catalogFailed}
+                                    onRetryCatalog={() => { void refetchCatalog(); }}
                                     placeholder="e.g. Squat, Deadlift"
                                     ariaInvalid={!!errors.exercises?.[idx]?.name}
                                     ariaDescribedBy={errors.exercises?.[idx]?.name ? `exercise-${idx}-name-error` : undefined}

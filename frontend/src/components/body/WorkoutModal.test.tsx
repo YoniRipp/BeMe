@@ -20,17 +20,25 @@ vi.mock('@/hooks/useSettings', () => ({
   }),
 }));
 
+const { catalogState, refetchCatalogMock } = vi.hoisted(() => ({
+  // Mutable so a test can put the exercise catalog into its loading / error states.
+  catalogState: { exercises: [] as { id: string; name: string }[], isLoading: false, isError: false },
+  refetchCatalogMock: vi.fn(),
+}));
+
 // Keep the real filter constants (ExercisePickerSheet maps over them); stub only the hook.
 vi.mock('@/hooks/useExercises', async (importOriginal) => ({
   ...(await importOriginal<typeof import('@/hooks/useExercises')>()),
   useExercises: () => ({
-    exercises: [],
-    isLoading: false,
+    exercises: catalogState.exercises,
+    isLoading: catalogState.isLoading,
+    isError: catalogState.isError,
+    refetch: refetchCatalogMock,
     getExercise: () => undefined,
     getImageUrl: () => undefined,
     getVideoUrl: () => undefined,
-    searchExercises: () => [],
-    filterExercises: () => [],
+    searchExercises: () => catalogState.exercises,
+    filterExercises: () => catalogState.exercises,
   }),
 }));
 
@@ -42,6 +50,10 @@ describe('WorkoutModal', () => {
   beforeEach(() => {
     updateWorkoutMock.mockReset();
     updateWorkoutMock.mockResolvedValue(undefined);
+    catalogState.exercises = [];
+    catalogState.isLoading = false;
+    catalogState.isError = false;
+    refetchCatalogMock.mockReset();
   });
 
   it('renders Add Workout form with N rep inputs when sets = N', () => {
@@ -392,6 +404,45 @@ describe('WorkoutModal', () => {
       const saved = onSave.mock.calls[0][0];
       expect(saved.exercises[0].notes).toBe('Belt on for the second set');
       expect(saved.exercises[0].completedPerSet).toEqual([true, false]);
+    });
+  });
+
+  // Typing an exercise name used to render nothing at all when there was no match — no
+  // dropdown, no message. Indistinguishable from an input that simply does not work,
+  // which is exactly how it was reported.
+  describe('exercise name autocomplete', () => {
+    const typeExerciseName = async (text: string) => {
+      const user = userEvent.setup();
+      const onSave = vi.fn();
+      render(<WorkoutModal open={true} onOpenChange={vi.fn()} onSave={onSave} />);
+      await user.type(screen.getByPlaceholderText(/e\.g\. Squat, Deadlift/i), text);
+      return user;
+    };
+
+    it('says the typed name will be kept when nothing in the catalog matches', async () => {
+      catalogState.exercises = [{ id: '1', name: 'Bench Press' }];
+
+      await typeExerciseName('Zercher Carry');
+
+      expect(await screen.findByText(/will be saved as typed/i)).toBeInTheDocument();
+    });
+
+    it('reports a catalog that failed to load, and offers a retry', async () => {
+      catalogState.isError = true;
+
+      const user = await typeExerciseName('Bench');
+
+      expect(await screen.findByText(/couldn’t load the exercise list/i)).toBeInTheDocument();
+      await user.click(screen.getByRole('button', { name: /retry/i }));
+      expect(refetchCatalogMock).toHaveBeenCalled();
+    });
+
+    it('says it is still loading rather than showing nothing', async () => {
+      catalogState.isLoading = true;
+
+      await typeExerciseName('Bench');
+
+      expect(await screen.findByText(/loading exercises/i)).toBeInTheDocument();
     });
   });
 });

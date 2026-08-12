@@ -11,50 +11,67 @@ const catalog: CatalogExercise[] = [
   { id: '4', name: 'Squat', muscleGroup: 'legs', equipment: 'barbell' },
 ];
 
-const { filterSpy } = vi.hoisted(() => ({ filterSpy: vi.fn() }));
+const { filterSpy, refetchSpy, catalogState } = vi.hoisted(() => ({
+  filterSpy: vi.fn(),
+  refetchSpy: vi.fn(),
+  // Mutable so a test can put the hook into its loading / error / loaded states.
+  catalogState: { isLoading: false, isError: false, loaded: true },
+}));
 
 // Exercise the real filtering logic, but over a small fixture instead of the network.
 vi.mock('@/hooks/useExercises', async (importOriginal) => {
   const actual = await importOriginal<typeof import('@/hooks/useExercises')>();
   return {
     ...actual,
-    useExercises: () => ({
-      exercises: catalog,
-      isLoading: false,
-      getExercise: () => undefined,
-      getImageUrl: () => undefined,
-      getVideoUrl: () => undefined,
-      searchExercises: () => catalog,
-      filterExercises: (filters: { query?: string; equipment?: string; muscleGroup?: string }) => {
-        filterSpy(filters);
-        const q = filters.query?.toLowerCase().trim() ?? '';
-        return catalog.filter((ex) => {
-          if (filters.equipment && ex.equipment !== filters.equipment) return false;
-          if (filters.muscleGroup && ex.muscleGroup !== filters.muscleGroup) return false;
-          if (q && !ex.name.toLowerCase().includes(q)) return false;
-          return true;
-        });
-      },
-    }),
+    useExercises: () => {
+      const rows = catalogState.loaded ? catalog : [];
+      return {
+        exercises: rows,
+        isLoading: catalogState.isLoading,
+        isError: catalogState.isError,
+        refetch: refetchSpy,
+        getExercise: () => undefined,
+        getImageUrl: () => undefined,
+        getVideoUrl: () => undefined,
+        searchExercises: () => rows,
+        filterExercises: (filters: { query?: string; equipment?: string; muscleGroup?: string }) => {
+          filterSpy(filters);
+          const q = filters.query?.toLowerCase().trim() ?? '';
+          return rows.filter((ex) => {
+            if (filters.equipment && ex.equipment !== filters.equipment) return false;
+            if (filters.muscleGroup && ex.muscleGroup !== filters.muscleGroup) return false;
+            if (q && !ex.name.toLowerCase().includes(q)) return false;
+            return true;
+          });
+        },
+      };
+    },
   };
 });
 
 describe('ExercisePickerSheet', () => {
   beforeEach(() => {
     filterSpy.mockClear();
+    refetchSpy.mockClear();
+    catalogState.isLoading = false;
+    catalogState.isError = false;
+    catalogState.loaded = true;
   });
 
   const renderSheet = (props: Partial<React.ComponentProps<typeof ExercisePickerSheet>> = {}) => {
     const onSelect = vi.fn();
-    render(
+    // Build a fresh element each time: React bails out of re-rendering when handed the
+    // identical element reference, which would mask the very thing these tests check.
+    const ui = () => (
       <ExercisePickerSheet
         open={true}
         onOpenChange={vi.fn()}
         onSelect={onSelect}
         {...props}
-      />,
+      />
     );
-    return { onSelect };
+    const { rerender } = render(ui());
+    return { onSelect, rerender: () => rerender(ui()) };
   };
 
   it('lists every exercise with its muscle and equipment', () => {
@@ -117,6 +134,47 @@ describe('ExercisePickerSheet', () => {
     expect(screen.getByText('No exercises found')).toBeInTheDocument();
 
     await user.click(screen.getByRole('button', { name: /clear filters/i }));
+    expect(screen.getByText('4 exercises')).toBeInTheDocument();
+  });
+
+  // A catalog that never arrived is not the same as a search that matched nothing.
+  // Reporting the second when it was the first sends the user hunting for a typo.
+  describe('when the catalog could not be loaded', () => {
+    beforeEach(() => {
+      catalogState.isError = true;
+      catalogState.loaded = false;
+    });
+
+    it('says so instead of blaming the search', async () => {
+      const user = userEvent.setup();
+      renderSheet();
+
+      await user.type(screen.getByLabelText(/search exercises/i), 'bench');
+
+      expect(screen.getByText(/couldn’t load exercises/i)).toBeInTheDocument();
+      expect(screen.queryByText('No exercises found')).not.toBeInTheDocument();
+    });
+
+    it('offers a retry', async () => {
+      const user = userEvent.setup();
+      renderSheet();
+
+      await user.click(screen.getByRole('button', { name: /retry/i }));
+
+      expect(refetchSpy).toHaveBeenCalled();
+    });
+  });
+
+  it('renders the catalog when it arrives without a loading transition', () => {
+    // The results memo used to key off isLoading, so a catalog that populated while
+    // isLoading stayed false left the sheet showing an empty list forever.
+    catalogState.loaded = false;
+    const { rerender } = renderSheet();
+    expect(screen.getByText('No exercises found')).toBeInTheDocument();
+
+    catalogState.loaded = true;
+    rerender();
+
     expect(screen.getByText('4 exercises')).toBeInTheDocument();
   });
 });

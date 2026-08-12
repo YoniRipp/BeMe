@@ -113,7 +113,10 @@ export interface ExerciseFilters {
 }
 
 export function useExercises() {
-  const { data, isLoading } = useQuery({
+  // isError/refetch are part of the contract: a failed catalog fetch is otherwise
+  // indistinguishable from an empty catalog, and every consumer then renders "nothing
+  // found" at a user who is typing a perfectly real exercise name.
+  const { data, isLoading, isError, refetch } = useQuery({
     queryKey: queryKeys.exercises,
     queryFn: (): Promise<CatalogExercise[]> => request(`/api/exercises?limit=${EXERCISE_CATALOG_LIMIT}`),
     staleTime: 10 * 60 * 1000,
@@ -185,6 +188,8 @@ export function useExercises() {
   return {
     exercises,
     isLoading,
+    isError,
+    refetch,
     getExercise,
     getImageUrl,
     getVideoUrl,
