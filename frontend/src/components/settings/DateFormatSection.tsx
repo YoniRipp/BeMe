@@ -22,7 +22,7 @@ export function DateFormatSection() {
   };
 
   return (
-    <SettingsSection icon={Calendar} title="Date Format" iconColor="text-blue-600">
+    <SettingsSection icon={Calendar} title="Date Format" iconColor="text-info">
       <div className="space-y-2">
         <Label>Date Format</Label>
         <Select value={settings.dateFormat} onValueChange={handleDateFormatChange}>

@@ -112,7 +112,6 @@ export function Home() {
 
   const calPct = calorieGoal > 0 ? Math.min(todaySummary.totalCal / calorieGoal, 1) : 0;
   const sleepHours = Number(todayCheckIn?.sleepHours ?? 0);
-  const weightKg = profile?.currentWeight ? Number(profile.currentWeight).toFixed(1) : '--';
   const todayDate = format(new Date(), 'EEE · MMM d');
   const todaysWeight = useMemo(
     () => weightEntries.find((entry) => isSameDay(new Date(entry.date), new Date())),
@@ -235,14 +234,23 @@ export function Home() {
 
           {/* Quick log */}
           <PulseSectionHeader title="Quick log" eyebrow="Today" />
+          {/* 2x2 so no tile is ever orphaned on a half row, and every action stays
+              reachable after it has been logged (the pill shows today's value). */}
           <div className="grid grid-cols-2 gap-2.5">
             <PulseQuickTile icon={Apple} label="Log food" onClick={() => setFoodModalOpen(true)} />
             <PulseQuickTile icon={Dumbbell} label="Log workout" onClick={() => setWorkoutModalOpen(true)} />
-            {sleepHours > 0 ? (
-              !todaysWeight && <PulseQuickTile icon={Scale} label="Log weight" pill={weightKg === '--' ? undefined : `${weightKg}kg`} onClick={() => setWeightModalOpen(true)} />
-            ) : (
-              <PulseQuickTile icon={Moon} label="Log sleep" onClick={() => setSleepModalOpen(true)} />
-            )}
+            <PulseQuickTile
+              icon={Moon}
+              label="Log sleep"
+              pill={sleepHours > 0 ? `${sleepHours}h` : undefined}
+              onClick={() => setSleepModalOpen(true)}
+            />
+            <PulseQuickTile
+              icon={Scale}
+              label="Log weight"
+              pill={todaysWeight ? `${todaysWeight.weight}kg` : undefined}
+              onClick={() => setWeightModalOpen(true)}
+            />
           </div>
 
           {/* Health trackers */}
@@ -259,7 +267,13 @@ export function Home() {
               <h3 className="mb-4 text-base font-bold tracking-tight">Recent activity</h3>
               <div className="space-y-1">
                 {recentActivity.map((item) => (
-                  <div key={`${item.type}-${item.id}`} className="flex items-center gap-3 py-2.5">
+                  <button
+                    key={`${item.type}-${item.id}`}
+                    type="button"
+                    onClick={() => navigate(item.type === 'food' ? '/energy' : '/body')}
+                    className="flex w-full items-center gap-3 rounded-xl py-2.5 text-left transition-colors hover:bg-muted/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/70"
+                    aria-label={`${item.name}, ${item.detail}. Open ${item.type === 'food' ? 'food log' : 'workouts'}`}
+                  >
                     <div className={`h-8 w-8 rounded-lg flex items-center justify-center shrink-0 ${item.type === 'food' ? 'bg-terracotta/15 text-terracotta' : 'bg-info/15 text-info'}`}>
                       {item.type === 'food'
                         ? <UtensilsCrossed className="w-4 h-4" />
@@ -273,7 +287,7 @@ export function Home() {
                       {isSameDay(item.date, new Date()) ? 'Today' : format(item.date, 'EEE, MMM d')}
                       <ChevronRight className="w-3 h-3" />
                     </span>
-                  </div>
+                  </button>
                 ))}
               </div>
             </PulseCard>

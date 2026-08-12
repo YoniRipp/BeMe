@@ -244,7 +244,7 @@ export default function QuickVoiceEntry({
             >
               {/* Pulse ring when listening */}
               {isListening && (
-                <span className="absolute inset-0 animate-ping rounded-full bg-red-400 opacity-30" />
+                <span className="absolute inset-0 animate-ping rounded-full bg-destructive/30" />
               )}
               {isListening ? (
                 <MicOff className="relative z-10 h-8 w-8" />

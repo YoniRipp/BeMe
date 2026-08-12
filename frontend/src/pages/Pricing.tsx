@@ -76,9 +76,9 @@ export function Pricing() {
               ))}
             </ul>
             {!isLoggedIn ? (
-              <Link to="/signup" className="block">
-                <Button className="w-full">Start Free Trial</Button>
-              </Link>
+              <Button asChild className="w-full">
+                <Link to="/signup">Start Free Trial</Link>
+              </Button>
             ) : isPro ? (
               <Button className="w-full" disabled>Current Plan</Button>
             ) : (
@@ -117,9 +117,9 @@ export function Pricing() {
               ))}
             </ul>
             {!isLoggedIn ? (
-              <Link to="/signup?plan=yearly" className="block">
-                <Button className="w-full">Start Free Trial</Button>
-              </Link>
+              <Button asChild className="w-full">
+                <Link to="/signup?plan=yearly">Start Free Trial</Link>
+              </Button>
             ) : isPro ? (
               <Button className="w-full" disabled>Current Plan</Button>
             ) : (

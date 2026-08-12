@@ -22,7 +22,7 @@ export function CurrencySection() {
   };
 
   return (
-    <SettingsSection icon={DollarSign} title="Currency" iconColor="text-green-600">
+    <SettingsSection icon={DollarSign} title="Currency" iconColor="text-success">
       <div className="space-y-2">
         <Label>Currency</Label>
         <Select value={settings.currency} onValueChange={handleCurrencyChange}>

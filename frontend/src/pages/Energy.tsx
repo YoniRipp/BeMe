@@ -85,6 +85,14 @@ function groupFoodEntries(
   });
 }
 
+/** Eyebrow above the "Journal" heading — must never just repeat the heading. */
+const JOURNAL_EYEBROW: Record<'daily' | 'weekly' | 'monthly' | 'yearly', string> = {
+  daily: "Today's meals",
+  weekly: 'This week',
+  monthly: 'This month',
+  yearly: 'This year',
+};
+
 function CollapsibleGroup({
   group,
   defaultOpen,
@@ -429,7 +437,7 @@ export function Energy() {
             <div className="flex items-center justify-between gap-3">
               <div>
                 <p className="text-[11px] font-bold uppercase tracking-[0.14em] text-muted-foreground">
-                  {caloriePeriod === 'daily' ? "Today's meals" : 'Journal'}
+                  {JOURNAL_EYEBROW[caloriePeriod]}
                 </p>
                 <h3 className="mt-1 text-xl font-extrabold tracking-tight">Journal</h3>
                 {caloriePeriod === 'daily' && (

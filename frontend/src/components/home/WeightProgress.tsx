@@ -1,5 +1,4 @@
 import { useState } from 'react';
-import { Button } from '@/components/ui/button';
 import { useWeight } from '@/hooks/useWeight';
 import { useProfile } from '@/hooks/useProfile';
 import { Scale, TrendingDown, TrendingUp, Minus, Plus } from 'lucide-react';
@@ -22,7 +21,19 @@ export function WeightProgress() {
 
   return (
     <>
-      <PulseCard className="overflow-hidden cursor-pointer p-5 hover:border-primary/30 transition-colors press" onClick={() => setModalOpen(true)} role="button">
+      <PulseCard
+        className="overflow-hidden cursor-pointer p-5 hover:border-primary/30 transition-colors press focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/70"
+        onClick={() => setModalOpen(true)}
+        role="button"
+        tabIndex={0}
+        aria-label="Log weight"
+        onKeyDown={(e) => {
+          if (e.key === 'Enter' || e.key === ' ') {
+            e.preventDefault();
+            setModalOpen(true);
+          }
+        }}
+      >
           <div className="flex items-center justify-between mb-4">
             <div className="flex items-center gap-2">
               <div className="h-7 w-7 rounded-lg bg-primary/15 flex items-center justify-center">
@@ -90,10 +101,13 @@ export function WeightProgress() {
             </div>
           ) : (
             <div className="text-center py-3">
+              {/* The whole card is the button — a nested <button> here would be
+                  invalid interactive nesting, so this is a hint, not a control. */}
               <p className="text-sm text-muted-foreground mb-3">No weight logged yet</p>
-              <Button variant="outline" size="sm" onClick={() => setModalOpen(true)}>
+              <span className="inline-flex items-center gap-1.5 rounded-full border border-border px-3 py-1.5 text-sm font-medium text-primary">
+                <Plus className="w-3.5 h-3.5" />
                 Log your weight
-              </Button>
+              </span>
             </div>
           )}
       </PulseCard>

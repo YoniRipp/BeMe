@@ -80,11 +80,9 @@ export function About() {
           impact your energy levels.
         </p>
         <div className="mt-6">
-          <Link to="/welcome#features">
-            <Button variant="outline" className="gap-2">
-              See all features <ArrowRight className="h-4 w-4" />
-            </Button>
-          </Link>
+          <Button asChild variant="outline" className="gap-2">
+            <Link to="/welcome#features">See all features <ArrowRight className="h-4 w-4" /></Link>
+          </Button>
         </div>
       </section>
 
@@ -142,11 +140,9 @@ export function About() {
           Join thousands of people who track their whole life in one place.
         </p>
         <div className="mt-8">
-          <Link to="/signup">
-            <Button size="lg" className="gap-2">
-              Get Started Free <ArrowRight className="h-4 w-4" />
-            </Button>
-          </Link>
+          <Button asChild size="lg" className="gap-2">
+            <Link to="/signup">Get Started Free <ArrowRight className="h-4 w-4" /></Link>
+          </Button>
         </div>
       </section>
     </>

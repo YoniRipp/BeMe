@@ -3,6 +3,7 @@ import { Bell } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { Switch } from '@/components/ui/switch';
 import { useNotifications } from '@/context/NotificationContext';
 import { SettingsSection } from './SettingsSection';
 import { FEATURE_FLAGS } from '@/lib/featureFlags';
@@ -42,11 +43,11 @@ export function NotificationsSection() {
   };
 
   return (
-    <SettingsSection icon={Bell} title="Notifications" iconColor="text-blue-600">
+    <SettingsSection icon={Bell} title="Notifications" iconColor="text-info">
       <div className="space-y-4">
         {permission === 'default' && (
-          <div className="p-3 bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-lg">
-            <p className="text-sm text-yellow-800 dark:text-yellow-200 mb-2">
+          <div className="p-3 bg-gold/10 border border-gold/30 rounded-lg">
+            <p className="text-sm text-foreground mb-2">
               Enable browser notifications to receive reminders
             </p>
             <Button onClick={requestPermission} size="sm">
@@ -56,8 +57,8 @@ export function NotificationsSection() {
         )}
 
         {permission === 'denied' && (
-          <div className="p-3 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg">
-            <p className="text-sm text-red-800 dark:text-red-200">
+          <div className="p-3 bg-destructive/10 border border-destructive/30 rounded-lg">
+            <p className="text-sm text-foreground">
               Notifications are blocked. Please enable them in your browser settings.
             </p>
           </div>
@@ -65,33 +66,31 @@ export function NotificationsSection() {
 
         {permission === 'granted' && (
           <>
-            <div className="flex items-center justify-between">
-              <div>
-                <Label>Enable Notifications</Label>
+            <div className="flex items-center justify-between gap-4">
+              <div className="min-w-0">
+                <Label id="notif-enabled-label">Enable Notifications</Label>
                 <p className="text-sm text-muted-foreground">
                   Receive daily reminders for logging food and sleep
                 </p>
               </div>
-              <input
-                type="checkbox"
+              <Switch
                 checked={preferences.enabled}
-                onChange={(e) => updatePreferences({ enabled: e.target.checked })}
-                className="rounded"
+                onCheckedChange={(checked) => updatePreferences({ enabled: checked })}
+                aria-labelledby="notif-enabled-label"
               />
             </div>
 
             {preferences.enabled && (
               <>
                 <div className="space-y-2">
-                  <div className="flex items-center justify-between">
-                    <Label>Food Logging Reminder</Label>
-                    <input
-                      type="checkbox"
+                  <div className="flex items-center justify-between gap-4">
+                    <Label id="notif-food-label">Food Logging Reminder</Label>
+                    <Switch
                       checked={preferences.logFoodReminder}
-                      onChange={(e) =>
-                        updatePreferences({ logFoodReminder: e.target.checked })
+                      onCheckedChange={(checked) =>
+                        updatePreferences({ logFoodReminder: checked })
                       }
-                      className="rounded"
+                      aria-labelledby="notif-food-label"
                     />
                   </div>
                   {preferences.logFoodReminder && (
@@ -131,15 +130,14 @@ export function NotificationsSection() {
                 </div>
 
                 <div className="space-y-2">
-                  <div className="flex items-center justify-between">
-                    <Label>Sleep Logging Reminder</Label>
-                    <input
-                      type="checkbox"
+                  <div className="flex items-center justify-between gap-4">
+                    <Label id="notif-sleep-label">Sleep Logging Reminder</Label>
+                    <Switch
                       checked={preferences.logSleepReminder}
-                      onChange={(e) =>
-                        updatePreferences({ logSleepReminder: e.target.checked })
+                      onCheckedChange={(checked) =>
+                        updatePreferences({ logSleepReminder: checked })
                       }
-                      className="rounded"
+                      aria-labelledby="notif-sleep-label"
                     />
                   </div>
                   {preferences.logSleepReminder && (

@@ -44,7 +44,7 @@ export function CycleSection() {
   };
 
   return (
-    <SettingsSection icon={Heart} title="Cycle Tracking" iconColor="text-pink-500">
+    <SettingsSection icon={Heart} title="Cycle Tracking" iconColor="text-terracotta">
       <div className="space-y-4">
         <div className="flex items-center justify-between">
           <div>

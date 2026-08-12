@@ -20,7 +20,7 @@ export function UnitsSection() {
   };
 
   return (
-    <SettingsSection icon={Ruler} title="Units" iconColor="text-purple-600">
+    <SettingsSection icon={Ruler} title="Units" iconColor="text-primary">
       <div className="space-y-2">
         <Label>Measurement Units</Label>
         <Select value={settings.units} onValueChange={handleUnitsChange}>
