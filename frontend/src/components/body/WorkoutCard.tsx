@@ -58,7 +58,7 @@ export const WorkoutCard = memo(function WorkoutCard({ workout, onEdit, onDelete
           <p className={`text-[15px] font-extrabold truncate leading-tight ${workout.completed ? 'line-through text-muted-foreground' : 'text-foreground'}`}>
             {workout.title}
           </p>
-          <Badge variant="secondary" className="bg-muted text-muted-foreground border-0 text-[10px] px-1.5 py-0 h-4 font-bold uppercase tracking-wider">
+          <Badge variant="secondary" className="bg-muted text-muted-foreground border-0 text-caption px-1.5 py-0 h-4 font-bold uppercase tracking-wider">
             {workout.type}
           </Badge>
         </div>
@@ -74,13 +74,13 @@ export const WorkoutCard = memo(function WorkoutCard({ workout, onEdit, onDelete
             {workout.exercises.slice(0, 3).map((ex, i) => (
               <div key={i} className="flex items-center justify-between gap-3 rounded-lg bg-muted/70 px-2.5 py-2">
                 <span className="min-w-0 truncate text-[12px] font-semibold text-foreground/90">{ex.name}</span>
-                <span className="shrink-0 text-[11px] font-medium tabular-nums text-muted-foreground">
+                <span className="shrink-0 text-eyebrow font-medium tabular-nums text-muted-foreground">
                   {ex.sets} sets × {ex.reps} reps{ex.weight ? ` · ${ex.weight}${getWeightUnit(settings.units)}` : ''}
                 </span>
               </div>
             ))}
             {workout.exercises.length > 3 && (
-              <div className="inline-flex items-center gap-1 px-2 text-[11px] font-medium text-muted-foreground">
+              <div className="inline-flex items-center gap-1 px-2 text-eyebrow font-medium text-muted-foreground">
                 +{workout.exercises.length - 3} more
                 <ChevronRight className="h-3 w-3" />
               </div>

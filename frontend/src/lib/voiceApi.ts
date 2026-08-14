@@ -151,7 +151,7 @@ export function blobToBase64(blob: Blob): Promise<string> {
   });
 }
 
-/** Legacy: Submit transcript for sync processing. Used by VoiceAgentButton when backend supports it. */
+/** Legacy: submit a transcript for synchronous processing, when the backend supports it. */
 export async function understandTranscript(
   transcript: string,
   _lang?: string,

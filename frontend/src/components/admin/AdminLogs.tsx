@@ -84,7 +84,7 @@ function PayloadDetails({ payload }: { payload: Record<string, unknown> | null }
       {Object.keys(topFields).length > 0 && (
         <div className="flex flex-wrap gap-2">
           {Object.entries(topFields).map(([k, v]) => (
-            <span key={k} className="inline-flex items-center gap-1 text-[11px] bg-muted rounded px-2 py-0.5">
+            <span key={k} className="inline-flex items-center gap-1 text-eyebrow bg-muted rounded px-2 py-0.5">
               <span className="text-muted-foreground font-medium">{k}:</span>
               <span className="font-mono truncate max-w-[140px]" title={String(v)}>
                 {Array.isArray(v) ? v.join(', ') : String(v)}
@@ -94,10 +94,10 @@ function PayloadDetails({ payload }: { payload: Record<string, unknown> | null }
         </div>
       )}
       <details className="group">
-        <summary className="text-[11px] text-muted-foreground cursor-pointer hover:text-foreground select-none">
+        <summary className="text-eyebrow text-muted-foreground cursor-pointer hover:text-foreground select-none">
           Raw payload
         </summary>
-        <pre className="mt-1.5 text-[11px] bg-muted/50 rounded p-2 overflow-x-auto whitespace-pre-wrap break-words text-muted-foreground max-h-48 overflow-y-auto">
+        <pre className="mt-1.5 text-eyebrow bg-muted/50 rounded p-2 overflow-x-auto whitespace-pre-wrap break-words text-muted-foreground max-h-48 overflow-y-auto">
           {JSON.stringify(payload, null, 2)}
         </pre>
       </details>

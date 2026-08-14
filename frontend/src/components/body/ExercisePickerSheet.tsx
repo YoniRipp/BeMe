@@ -210,7 +210,7 @@ export function ExercisePickerSheet({
             </div>
           ) : (
             <>
-              <p className="px-0.5 pb-2 text-[11px] font-bold uppercase tracking-wider text-muted-foreground">
+              <p className="px-0.5 pb-2 text-eyebrow font-bold uppercase tracking-wider text-muted-foreground">
                 {results.length} {results.length === 1 ? 'exercise' : 'exercises'}
               </p>
               <div className="space-y-1.5">

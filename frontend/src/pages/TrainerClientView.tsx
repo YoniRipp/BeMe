@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { PulseCard, PulsePage } from '@/components/pulse/PulseUI';
+import { Page } from '@/components/ui/page';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { ContentWithLoading } from '@/components/shared/ContentWithLoading';
@@ -48,6 +48,7 @@ import type { Workout } from '@/types/workout';
 import { apiWorkoutToWorkout } from '@/features/body/mappers';
 import { apiCheckInToDailyCheckIn, apiFoodEntryToFoodEntry } from '@/features/energy/mappers';
 import { apiGoalToGoal } from '@/features/goals/mappers';
+import { Card } from '@/components/ui/card';
 
 type Tab = 'food' | 'workouts' | 'water' | 'checkins' | 'goals';
 
@@ -192,7 +193,7 @@ export default function TrainerClientView() {
   const activeTabCanAdd = activeTab !== 'water';
 
   return (
-    <PulsePage>
+    <Page>
       {/* Header */}
       <div className="flex items-center gap-3 mb-5">
         <Button
@@ -207,7 +208,7 @@ export default function TrainerClientView() {
       </div>
 
       {/* Client card */}
-      <PulseCard className="mb-5 flex items-center gap-4 p-5">
+      <Card className="mb-5 flex items-center gap-4 p-5">
         <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-full bg-primary/10 text-xl font-extrabold text-primary">
           {(client?.clientName ?? '?').trim().charAt(0).toUpperCase()}
         </div>
@@ -231,7 +232,7 @@ export default function TrainerClientView() {
             )}
           </div>
         </div>
-      </PulseCard>
+      </Card>
 
       {/* Summary stats */}
       <div className="grid grid-cols-4 gap-2.5 mb-5">
@@ -242,7 +243,7 @@ export default function TrainerClientView() {
       </div>
 
       <ContentWithLoading loading={isLoading} loadingText="Loading client data...">
-        <PulseCard className="mb-4 flex items-center justify-between gap-3 p-4">
+        <Card className="mb-4 flex items-center justify-between gap-3 p-4">
           <div className="min-w-0">
             <p className="text-sm font-extrabold">Trainer edits</p>
             <p className="text-xs text-muted-foreground truncate">
@@ -259,7 +260,7 @@ export default function TrainerClientView() {
             <Plus className="h-4 w-4" />
             Add
           </Button>
-        </PulseCard>
+        </Card>
 
         {/* Tab bar */}
         <div className="flex gap-1 overflow-x-auto pb-1 mb-4 scrollbar-none">
@@ -282,7 +283,7 @@ export default function TrainerClientView() {
                 {tab.label}
                 {count > 0 && (
                   <span className={cn(
-                    'rounded-full px-1.5 py-0.5 text-[10px] font-bold tabular-nums',
+                    'rounded-full px-1.5 py-0.5 text-caption font-bold tabular-nums',
                     activeTab === tab.id ? 'bg-primary-foreground/20' : 'bg-muted-foreground/20'
                   )}>
                     {count}
@@ -316,7 +317,7 @@ export default function TrainerClientView() {
                 <div className="text-right shrink-0">
                   <p className="text-sm font-semibold">{item.calories != null ? `${item.calories} cal` : ''}</p>
                   {(item.protein != null || item.carbs != null || item.fats != null) && (
-                    <p className="text-[11px] text-muted-foreground">
+                    <p className="text-eyebrow text-muted-foreground">
                       P{Number(item.protein) || 0} C{Number(item.carbs) || 0} F{Number(item.fats) || 0}g
                     </p>
                   )}
@@ -358,11 +359,11 @@ export default function TrainerClientView() {
 
         {activeTab === 'water' && (
           waterEntries.length === 0 ? (
-            <PulseCard className="py-12 text-center">
+            <Card className="py-12 text-center">
               <p className="text-sm text-muted-foreground">No water entries yet.</p>
-            </PulseCard>
+            </Card>
           ) : (
-            <PulseCard className="overflow-hidden p-0">
+            <Card className="overflow-hidden p-0">
               <div className="divide-y divide-border">
                 {waterEntries.map((entry, i) => (
                   <div key={entry.id ?? i} className="flex items-center justify-between gap-3 px-5 py-3.5">
@@ -376,7 +377,7 @@ export default function TrainerClientView() {
                   </div>
                 ))}
               </div>
-            </PulseCard>
+            </Card>
           )
         )}
 
@@ -460,7 +461,7 @@ export default function TrainerClientView() {
         onSave={(goal) => void handleSaveGoal(goal)}
         goal={editingGoal}
       />
-    </PulsePage>
+    </Page>
   );
 }
 
@@ -523,14 +524,14 @@ function EntryList<T extends { id?: string }>({
 }: EntryListProps<T>) {
   if (items.length === 0) {
     return (
-      <PulseCard className="py-12 text-center">
+      <Card className="py-12 text-center">
         <p className="text-sm text-muted-foreground">{emptyMessage}</p>
-      </PulseCard>
+      </Card>
     );
   }
 
   return (
-    <PulseCard className="overflow-hidden p-0">
+    <Card className="overflow-hidden p-0">
       <div className="divide-y divide-border">
         {items.map((item, i) => (
           <div key={String(item.id ?? i)} className="flex items-center gap-2 px-5 py-3.5">
@@ -547,7 +548,7 @@ function EntryList<T extends { id?: string }>({
           </div>
         ))}
       </div>
-    </PulseCard>
+    </Card>
   );
 }
 
@@ -588,9 +589,9 @@ function EntryActions({
 
 function StatChip({ label, value }: { label: string; value: string | number }) {
   return (
-    <PulseCard className="p-3 text-center">
+    <Card className="p-3 text-center">
       <p className="text-lg font-extrabold tabular-nums leading-none">{value}</p>
-      <p className="mt-1 text-[10px] font-semibold uppercase tracking-widest text-muted-foreground leading-none">{label}</p>
-    </PulseCard>
+      <p className="mt-1 text-caption font-semibold uppercase tracking-widest text-muted-foreground leading-none">{label}</p>
+    </Card>
   );
 }

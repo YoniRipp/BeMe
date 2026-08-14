@@ -44,7 +44,7 @@ export const FoodCard = memo(function FoodCard({ entry, onEdit, onDelete }: Food
       <div className="flex items-center gap-1 shrink-0">
         <div className="text-right pr-1">
           <p className="text-[18px] font-extrabold leading-none tabular-nums text-primary">{entry.calories}</p>
-          <p className="text-[10px] uppercase tracking-wider text-muted-foreground mt-0.5">kcal</p>
+          <p className="text-caption uppercase tracking-wider text-muted-foreground mt-0.5">kcal</p>
         </div>
         <Button
           variant="ghost"

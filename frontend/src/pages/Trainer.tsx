@@ -43,7 +43,7 @@ import {
   useTrainerClients,
   useTrainerInvitations,
 } from '@/hooks/useTrainer';
-import { PulseCard, PulseHeader, PulsePage } from '@/components/pulse/PulseUI';
+import { Page, PageHeader } from '@/components/ui/page';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
@@ -51,6 +51,7 @@ import { ContentWithLoading } from '@/components/shared/ContentWithLoading';
 import { ConfirmationDialog } from '@/components/shared/ConfirmationDialog';
 import { cn } from '@/lib/utils';
 import { toast } from '@/components/shared/ToastProvider';
+import { Card } from '@/components/ui/card';
 import type {
   TrainerAnalytics,
   TrainerAnalyticsRange,
@@ -166,8 +167,8 @@ export default function Trainer() {
   };
 
   return (
-    <PulsePage>
-      <PulseHeader
+    <Page>
+      <PageHeader
         kicker="Trainer"
         title={`Coach overview, ${firstName}`}
         subtitle="Track trainee engagement, progress signals, and subscriptions from one mobile-first dashboard."
@@ -305,7 +306,7 @@ export default function Trainer() {
         variant="destructive"
         onConfirm={handleConfirmRemove}
       />
-    </PulsePage>
+    </Page>
   );
 }
 
@@ -335,33 +336,33 @@ function SummaryCard({
   tone?: 'normal' | 'danger';
 }) {
   return (
-    <PulseCard className="min-h-[112px] p-4">
+    <Card className="min-h-[112px] p-4">
       <div className="flex items-center justify-between gap-2">
-        <p className="text-[11px] font-bold uppercase tracking-[0.14em] text-muted-foreground">{label}</p>
+        <p className="text-eyebrow font-bold uppercase tracking-[0.14em] text-muted-foreground">{label}</p>
         <Icon className={cn('h-4 w-4', tone === 'danger' ? 'text-destructive' : 'text-primary')} />
       </div>
       <p className="mt-4 text-3xl font-extrabold leading-none tracking-tight tabular-nums">{value}</p>
       <p className="mt-1.5 text-xs font-medium text-muted-foreground">{sub}</p>
-    </PulseCard>
+    </Card>
   );
 }
 
 function ChartCard({ title, subtitle, children }: { title: string; subtitle: string; children: React.ReactNode }) {
   return (
-    <PulseCard className="p-4">
+    <Card className="p-4">
       <div className="mb-3">
         <p className="text-base font-extrabold">{title}</p>
         <p className="text-xs text-muted-foreground">{subtitle}</p>
       </div>
       {children}
-    </PulseCard>
+    </Card>
   );
 }
 
 function ProgressPanel({ analytics }: { analytics?: TrainerAnalytics }) {
   const data = analytics?.progress.series ?? [];
   return (
-    <PulseCard className="p-4">
+    <Card className="p-4">
       <div className="mb-3">
         <p className="text-base font-extrabold">Progress changes</p>
         <p className="text-xs text-muted-foreground">Team trends across weight, calories, and volume</p>
@@ -384,7 +385,7 @@ function ProgressPanel({ analytics }: { analytics?: TrainerAnalytics }) {
           </ComposedChart>
         </ResponsiveContainer>
       </div>
-    </PulseCard>
+    </Card>
   );
 }
 
@@ -440,7 +441,7 @@ function RosterPanel({
     return map;
   }, [clients]);
   return (
-    <PulseCard className="overflow-hidden p-0">
+    <Card className="overflow-hidden p-0">
       <div className="border-b border-border px-5 py-4">
         <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
           <div>
@@ -486,14 +487,14 @@ function RosterPanel({
                   <div className="flex flex-wrap items-center gap-2">
                     <p className="font-semibold truncate">{client.clientName}</p>
                     {traineeNumberMap.get(client.clientId) != null && (
-                      <span className="text-[11px] font-bold text-muted-foreground tabular-nums">#{traineeNumberMap.get(client.clientId)}</span>
+                      <span className="text-eyebrow font-bold text-muted-foreground tabular-nums">#{traineeNumberMap.get(client.clientId)}</span>
                     )}
                     <Badge variant="outline" className={cn('capitalize', STATUS_STYLES[client.status])}>
                       {STATUS_LABELS[client.status]}
                     </Badge>
                   </div>
                   <p className="text-xs text-muted-foreground truncate">{client.clientEmail}</p>
-                  <p className="mt-1 text-[11px] font-medium text-muted-foreground">
+                  <p className="mt-1 text-eyebrow font-medium text-muted-foreground">
                     Connected {formatAge(client.subscriptionAgeDays)} - last active {client.lastActivityAt ? format(new Date(client.lastActivityAt), 'MMM d') : 'never'}
                   </p>
                 </div>
@@ -528,7 +529,7 @@ function RosterPanel({
           Engagement counts food, workouts, weight, water, and check-ins.
         </div>
       )}
-    </PulseCard>
+    </Card>
   );
 }
 
@@ -536,7 +537,7 @@ function RosterMetric({ label, value }: { label: string; value: string }) {
   return (
     <div>
       <p className="font-bold text-foreground">{value}</p>
-      <p className="text-[10px] uppercase tracking-[0.1em] text-muted-foreground">{label}</p>
+      <p className="text-caption uppercase tracking-[0.1em] text-muted-foreground">{label}</p>
     </div>
   );
 }
@@ -574,7 +575,7 @@ function InvitePanel({
 }) {
   return (
     <div ref={refTarget}>
-      <PulseCard className="overflow-hidden p-0">
+      <Card className="overflow-hidden p-0">
         <div className="border-b border-border px-5 py-4">
           <p className="text-base font-extrabold">Invite a client</p>
           <p className="text-xs text-muted-foreground">Send an invite by email or generate a code.</p>
@@ -649,7 +650,7 @@ function InvitePanel({
         </div>
         {pendingInvitations.length > 0 && (
           <div className="space-y-2 border-t border-border px-5 py-4">
-            <p className="mb-3 text-[11px] font-bold uppercase tracking-[0.18em] text-muted-foreground">
+            <p className="mb-3 text-eyebrow font-bold uppercase tracking-[0.18em] text-muted-foreground">
               Pending ({pendingInvitations.length})
             </p>
             {pendingInvitations.map((inv) => (
@@ -662,7 +663,7 @@ function InvitePanel({
             ))}
           </div>
         )}
-      </PulseCard>
+      </Card>
     </div>
   );
 }
@@ -675,7 +676,7 @@ function VoiceTipsCard() {
     { cmd: '"Add Guy Malka\'s lunch: 200g chicken breast"', label: 'Log food by full name' },
   ];
   return (
-    <PulseCard className="p-4">
+    <Card className="p-4">
       <div className="mb-3 flex items-center gap-2">
         <Mic className="h-4 w-4 text-primary" />
         <p className="text-base font-extrabold">Voice commands for trainees</p>
@@ -684,12 +685,12 @@ function VoiceTipsCard() {
       <div className="space-y-2">
         {tips.map((t) => (
           <div key={t.cmd} className="rounded-xl bg-muted/50 px-3 py-2">
-            <p className="text-[10px] font-bold uppercase tracking-[0.1em] text-muted-foreground">{t.label}</p>
+            <p className="text-caption font-bold uppercase tracking-[0.1em] text-muted-foreground">{t.label}</p>
             <p className="mt-0.5 text-xs italic text-foreground">{t.cmd}</p>
           </div>
         ))}
       </div>
-    </PulseCard>
+    </Card>
   );
 }
 

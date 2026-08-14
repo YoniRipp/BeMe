@@ -1,51 +1,60 @@
-import { LucideIcon } from 'lucide-react';
-import { Button } from '@/components/ui/button';
+import { type LucideIcon, Plus } from 'lucide-react';
+import { Card } from '@/components/ui/card';
 
 interface EmptyStateProps {
-  icon: LucideIcon;
+  /**
+   * Tinted glyph above the title. Present for a first-run state ("you have nothing yet,
+   * here is how to start"); omit for the quieter "nothing matched your filter" panel.
+   */
+  icon?: LucideIcon;
   title: string;
   description?: string;
-  /** Use either action or actionLabel+onAction (base44-style). */
-  action?: {
-    label: string;
-    onClick: () => void;
-  };
+  /** Label for the action button. Required for the button to render. */
   actionLabel?: string;
   onAction?: () => void;
-  tips?: string[];
 }
 
-export function EmptyState({ icon: Icon, title, description, action, actionLabel, onAction, tips }: EmptyStateProps) {
-  const resolvedAction = action ?? (actionLabel != null && onAction != null ? { label: actionLabel, onClick: onAction } : undefined);
+/**
+ * The single empty state. Every "nothing here yet" in the app renders through this, so
+ * they stay visually identical.
+ *
+ * The action is a real `<button>` rather than a card with `role="button"` — the card
+ * previously faked one and hand-rolled Enter/Space handling while also drawing something
+ * that only looked like a button.
+ */
+export function EmptyState({ icon: Icon, title, description, actionLabel, onAction }: EmptyStateProps) {
+  const firstRun = !!Icon;
+
   return (
-    <div className="flex flex-col items-center justify-center p-12 text-center" role="status" aria-live="polite">
-      <div className="p-4 rounded-full bg-muted mb-4 animate-in fade-in duration-300">
-        <Icon className="w-8 h-8 text-muted-foreground" aria-hidden="true" />
-      </div>
-      <h3 className="text-lg font-semibold mb-1">{title}</h3>
-      {description && (
-        <p className="text-sm text-muted-foreground mb-4 max-w-sm">
-          {description}
-        </p>
-      )}
-      {tips && tips.length > 0 && (
-        <div className="mt-4 p-4 bg-muted/50 rounded-lg max-w-md">
-          <p className="text-xs font-semibold mb-2 text-muted-foreground">Tips:</p>
-          <ul className="text-xs text-muted-foreground space-y-1 text-left">
-            {tips.map((tip, idx) => (
-              <li key={idx} className="flex items-start gap-2">
-                <span className="text-primary">•</span>
-                <span>{tip}</span>
-              </li>
-            ))}
-          </ul>
+    <Card className="p-8 text-center" role="status" aria-live="polite">
+      {Icon && (
+        <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-2xl bg-primary/10">
+          <Icon className="h-6 w-6 text-primary" aria-hidden="true" />
         </div>
       )}
-      {resolvedAction && (
-        <Button onClick={resolvedAction.onClick} className="mt-4" aria-label={resolvedAction.label}>
-          {resolvedAction.label}
-        </Button>
+
+      <p className={firstRun ? 'text-lg font-extrabold tracking-tight text-foreground' : 'text-sm font-bold text-foreground'}>
+        {title}
+      </p>
+
+      {description && (
+        <p className="mx-auto mt-1.5 max-w-xs text-sm leading-relaxed text-muted-foreground">{description}</p>
       )}
-    </div>
+
+      {actionLabel && onAction && (
+        <button
+          type="button"
+          onClick={onAction}
+          className={
+            firstRun
+              ? 'mt-4 inline-flex min-h-11 items-center gap-1.5 rounded-xl px-4 text-sm font-medium text-primary transition-colors hover:bg-primary/10'
+              : 'mt-4 min-h-11 rounded-xl border border-dashed border-border px-4 text-eyebrow uppercase tracking-wide text-muted-foreground transition-colors hover:border-primary hover:text-primary'
+          }
+        >
+          {firstRun && <Plus className="h-4 w-4" aria-hidden="true" />}
+          {actionLabel}
+        </button>
+      )}
+    </Card>
   );
 }

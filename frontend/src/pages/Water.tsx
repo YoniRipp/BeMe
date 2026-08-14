@@ -5,7 +5,10 @@ import { toast } from '@/components/shared/ToastProvider';
 import { ContentWithLoading } from '@/components/shared/ContentWithLoading';
 import { useWater } from '@/hooks/useWater';
 import { useProfile } from '@/hooks/useProfile';
-import { PulseBackButton, PulseCard, PulseHeader, PulsePage, PulseRing } from '@/components/pulse/PulseUI';
+import { Page, PageHeader } from '@/components/ui/page';
+import { ProgressRing } from '@/components/ui/progress-ring';
+import { BackButton } from '@/components/ui/quick-tile';
+import { Card } from '@/components/ui/card';
 
 export function Water() {
   const navigate = useNavigate();
@@ -30,23 +33,31 @@ export function Water() {
   const adjustBy = (delta: number) => setTarget(glasses + delta);
 
   return (
-    <PulsePage narrow className="pb-28">
-      <PulseHeader
+    <Page narrow className="pb-28">
+      <PageHeader
         kicker="Today"
         title="Water"
         subtitle="Keep your hydration streak moving."
-        action={<PulseBackButton onClick={() => navigate(-1)} />}
+        action={<BackButton onClick={() => navigate(-1)} />}
       />
 
       <ContentWithLoading loading={waterLoading} loadingText="Loading water..." minHeight={420}>
-      <PulseCard className="overflow-hidden p-6 text-center">
+      <Card className="overflow-hidden p-6 text-center">
         <div className="mx-auto mb-5 flex h-12 w-12 items-center justify-center rounded-2xl bg-info/15 text-info">
           <Droplets className="h-6 w-6" />
         </div>
-        <PulseRing pct={pct} size={180} stroke={9} colorClass="text-info" className="mx-auto">
+        <ProgressRing
+          pct={pct}
+          label="Water today"
+          valueText={`${glasses} of ${goal} glasses`}
+          size={180}
+          stroke={9}
+          colorClass="text-info"
+          className="mx-auto"
+        >
           <span className="text-[56px] font-extrabold leading-none tracking-tight text-info tabular-nums">{glasses}</span>
           <span className="mt-1 text-xs font-bold uppercase tracking-[0.14em] text-muted-foreground">of {goal}</span>
-        </PulseRing>
+        </ProgressRing>
         <p className="mt-4 text-sm font-semibold text-muted-foreground tabular-nums">{mlTotal} ml logged</p>
 
         <div className="mt-6 grid grid-cols-4 gap-2">
@@ -93,9 +104,9 @@ export function Water() {
             Add glass
           </button>
         </div>
-      </PulseCard>
+      </Card>
       </ContentWithLoading>
-    </PulsePage>
+    </Page>
   );
 }
 

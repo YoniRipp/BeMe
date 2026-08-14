@@ -37,7 +37,7 @@ export function Footer() {
               </div>
               <div>
                 <p className="text-sm font-bold text-foreground">TrackVibe</p>
-                <p className="text-[10px] uppercase tracking-widest text-muted-foreground">
+                <p className="text-caption uppercase tracking-widest text-muted-foreground">
                   Life Balance
                 </p>
               </div>

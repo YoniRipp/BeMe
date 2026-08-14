@@ -12,7 +12,7 @@ import { parseFoodItems, getMealStartTime, inferMealFromTime, textContainsMealKe
 import type { MealType } from '@/features/energy/parseFoodText';
 import { searchFoods, lookupOrCreateFood } from '@/features/energy/api';
 import type { FoodSearchResult } from '@/features/energy/api';
-import { PulseWave } from '@/components/pulse/PulseUI';
+import { AudioWave } from '@/components/ui/audio-wave';
 
 interface ResolvedEntry {
   name: string;
@@ -227,7 +227,7 @@ export default function QuickVoiceEntry({
 
         {phase === 'recording' && (
           <div className="flex flex-col items-center gap-4 py-6">
-            {isListening && <PulseWave className="-mb-2" />}
+            {isListening && <AudioWave className="-mb-2" />}
             {/* Mic button */}
             <button
               type="button"
@@ -388,7 +388,7 @@ export default function QuickVoiceEntry({
                               value={MEALS.find((m) => m.toLowerCase() === item.mealType) ?? 'Snack'}
                               onChange={(e) => handleChangeMeal(idx, e.target.value as MealType)}
                               aria-label={`Meal for ${item.name}`}
-                              className="appearance-none rounded-full bg-muted py-0.5 pl-2 pr-5 text-[10px] font-semibold capitalize text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+                              className="appearance-none rounded-full bg-muted py-0.5 pl-2 pr-5 text-caption font-semibold capitalize text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
                             >
                               {MEALS.map((m) => (
                                 <option key={m} value={m}>{m}</option>

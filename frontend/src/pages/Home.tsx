@@ -26,14 +26,10 @@ import { Apple, ChevronRight, Dumbbell, Moon, Pencil, Scale, UtensilsCrossed, Us
 import { isSameDay, format } from 'date-fns';
 import { toast } from '@/components/shared/ToastProvider';
 import { cn } from '@/lib/utils';
-import {
-  PulseCard,
-  PulseHeader,
-  PulsePage,
-  PulseQuickTile,
-  PulseRing,
-  PulseSectionHeader,
-} from '@/components/pulse/PulseUI';
+import { Page, PageHeader, SectionHeader } from '@/components/ui/page';
+import { ProgressRing } from '@/components/ui/progress-ring';
+import { QuickTile } from '@/components/ui/quick-tile';
+import { Card } from '@/components/ui/card';
 
 export function Home() {
   // Hooks
@@ -154,8 +150,8 @@ export function Home() {
   }
 
   return (
-    <PulsePage>
-      <PulseHeader
+    <Page>
+      <PageHeader
         kicker={todayDate}
         title={<>Hey {firstName}</>}
         subtitle={progressMessage}
@@ -175,8 +171,8 @@ export function Home() {
         <div className="space-y-5">
 
           {/* Today's fuel */}
-          <PulseCard className="relative overflow-hidden p-5" data-onboarding="dashboard">
-            <div className="relative z-10 mb-4 flex items-center justify-between text-[11px] font-bold uppercase tracking-[0.18em] text-muted-foreground">
+          <Card className="relative overflow-hidden p-5" data-onboarding="dashboard">
+            <div className="relative z-10 mb-4 flex items-center justify-between text-eyebrow font-bold uppercase tracking-[0.18em] text-muted-foreground">
               <span className="text-primary">Today's fuel</span>
               <div className="flex items-center gap-2">
                 <span>{Math.round(todaySummary.totalCal)} / {calorieGoal} kcal</span>
@@ -192,14 +188,18 @@ export function Home() {
               </div>
             </div>
             <div className="relative z-10 flex items-center gap-5">
-              <PulseRing pct={calPct}>
+              <ProgressRing
+                pct={calPct}
+                label="Calories today"
+                valueText={`${Math.round(todaySummary.totalCal)} of ${calorieGoal} kcal`}
+              >
                 <span className="text-[34px] font-extrabold tabular-nums leading-none tracking-tight">
                   {Math.round(todaySummary.totalCal)}
                 </span>
-                <span className="mt-1 text-[10px] font-bold uppercase tracking-[0.16em] text-muted-foreground">
+                <span className="mt-1 text-caption font-bold uppercase tracking-[0.16em] text-muted-foreground">
                   kcal in
                 </span>
-              </PulseRing>
+              </ProgressRing>
               <div className="flex-1 space-y-3">
                 {macroRows.map((row) => {
                   const pct = row.goal > 0 ? Math.min(row.current / row.goal, 1) : 0;
@@ -223,24 +223,24 @@ export function Home() {
                 })}
               </div>
             </div>
-          </PulseCard>
+          </Card>
 
           <StreakCard />
 
           {/* Quick log */}
-          <PulseSectionHeader title="Quick log" eyebrow="Today" />
+          <SectionHeader title="Quick log" eyebrow="Today" />
           {/* 2x2 so no tile is ever orphaned on a half row, and every action stays
               reachable after it has been logged (the pill shows today's value). */}
           <div className="grid grid-cols-2 gap-2.5">
-            <PulseQuickTile icon={Apple} label="Log food" onClick={() => setFoodModalOpen(true)} />
-            <PulseQuickTile icon={Dumbbell} label="Log workout" onClick={() => setWorkoutModalOpen(true)} />
-            <PulseQuickTile
+            <QuickTile icon={Apple} label="Log food" onClick={() => setFoodModalOpen(true)} />
+            <QuickTile icon={Dumbbell} label="Log workout" onClick={() => setWorkoutModalOpen(true)} />
+            <QuickTile
               icon={Moon}
               label="Log sleep"
               pill={sleepHours > 0 ? `${sleepHours}h` : undefined}
               onClick={() => setSleepModalOpen(true)}
             />
-            <PulseQuickTile
+            <QuickTile
               icon={Scale}
               label="Log weight"
               pill={todaysWeight ? `${todaysWeight.weight}kg` : undefined}
@@ -258,7 +258,7 @@ export function Home() {
 
           {/* Recent activity */}
           {recentActivity.length > 0 && (
-            <PulseCard className="overflow-hidden p-5">
+            <Card className="overflow-hidden p-5">
               <h3 className="mb-4 text-base font-bold tracking-tight">Recent activity</h3>
               <div className="space-y-1">
                 {recentActivity.map((item) => (
@@ -285,7 +285,7 @@ export function Home() {
                   </button>
                 ))}
               </div>
-            </PulseCard>
+            </Card>
           )}
 
         </div>
@@ -321,6 +321,6 @@ export function Home() {
         onSave={setMacroGoals}
       />
       <WeightLogModal open={weightModalOpen} onOpenChange={setWeightModalOpen} />
-    </PulsePage>
+    </Page>
   );
 }

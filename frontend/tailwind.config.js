@@ -9,6 +9,16 @@ export default {
   ],
   theme: {
     extend: {
+      fontSize: {
+        // The two sizes that were written as text-[11px] / text-[10px] 64 times between
+        // them. They are a real part of the scale — the uppercase label above a value,
+        // and the caption under it — so they get names rather than magic numbers.
+        // Size only, no paired line-height or weight: these replace bare arbitrary values,
+        // and a bundled lineHeight/fontWeight would silently override the font-* and
+        // leading-* utilities already sitting alongside them at every call site.
+        eyebrow: '0.6875rem',
+        caption: '0.625rem',
+      },
       fontFamily: {
         sans: ['Inter', 'ui-sans-serif', 'system-ui', '-apple-system', 'Segoe UI', 'Roboto', 'Helvetica Neue', 'Arial', 'sans-serif'],
         serif: ['Fraunces', 'Georgia', 'Times New Roman', 'serif'],

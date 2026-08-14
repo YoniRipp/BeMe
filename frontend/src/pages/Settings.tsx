@@ -16,7 +16,8 @@ import { SubscriptionSection } from '@/components/settings/SubscriptionSection';
 import { storage } from '@/lib/storage';
 import { PendingInvitations } from '@/components/trainer/PendingInvitations';
 import { useApp } from '@/context/AppContext';
-import { PulseCard, PulseHeader, PulsePage } from '@/components/pulse/PulseUI';
+import { Page, PageHeader } from '@/components/ui/page';
+import { Card } from '@/components/ui/card';
 
 export function Settings() {
   const { updateSettings } = useSettings();
@@ -45,9 +46,9 @@ export function Settings() {
   };
 
   return (
-    <PulsePage className="space-y-5">
-      <PulseHeader kicker="Profile" title="Settings" subtitle="Manage your account, preferences, and data." />
-      <PulseCard className="flex items-center gap-4 p-5">
+    <Page className="space-y-5">
+      <PageHeader kicker="Profile" title="Settings" subtitle="Manage your account, preferences, and data." />
+      <Card className="flex items-center gap-4 p-5">
         <div className="flex h-16 w-16 items-center justify-center rounded-full bg-primary text-2xl font-extrabold text-primary-foreground shadow-card-lg">
           {(user?.name ?? 'T').trim().charAt(0).toUpperCase()}
         </div>
@@ -57,7 +58,7 @@ export function Settings() {
             {profile.activityLevel ? `${profile.activityLevel} activity` : 'Fitness profile'}
           </p>
         </div>
-      </PulseCard>
+      </Card>
       <SubscriptionSection />
       <AccountSection />
       <ProfileSection />
@@ -93,6 +94,6 @@ export function Settings() {
         cancelLabel="Cancel"
         variant="default"
       />
-    </PulsePage>
+    </Page>
   );
 }

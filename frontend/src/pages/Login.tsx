@@ -59,7 +59,7 @@ export function Login() {
                 onChange={(e) => setEmail(e.target.value)}
                 placeholder="you@example.com"
                 required
-                className="rounded-[14px] h-[50px] border-white/10 bg-[#1d2123] px-4 text-[14px] text-white placeholder:text-white/30"
+                className="rounded-lg h-[50px] border-white/10 bg-[#1d2123] px-4 text-[14px] text-white placeholder:text-white/30"
               />
             </div>
             <div className="space-y-2">
@@ -71,12 +71,12 @@ export function Login() {
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 required
-                className="rounded-[14px] h-[50px] border-white/10 bg-[#1d2123] px-4 text-[14px] text-white"
+                className="rounded-lg h-[50px] border-white/10 bg-[#1d2123] px-4 text-[14px] text-white"
               />
             </div>
           </CardContent>
           <CardFooter className="flex flex-col gap-4">
-            <Button type="submit" className="w-full h-[50px] rounded-[14px] bg-[#9cf25b] text-[15px] font-extrabold text-[#0b0d0c] shadow-[0_0_24px_rgba(156,242,91,0.28),0_8px_20px_rgba(0,0,0,0.35)] hover:bg-[#a8f76b]" disabled={loading}>
+            <Button type="submit" className="w-full h-[50px] rounded-lg bg-[#9cf25b] text-[15px] font-extrabold text-[#0b0d0c] shadow-[0_0_24px_rgba(156,242,91,0.28),0_8px_20px_rgba(0,0,0,0.35)] hover:bg-[#a8f76b]" disabled={loading}>
               {loading ? 'Signing in...' : 'Sign in'}
             </Button>
             <Link to="/forgot-password" className="text-sm text-white/55 hover:text-[#9cf25b] transition-colors">

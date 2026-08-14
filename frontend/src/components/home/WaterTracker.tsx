@@ -4,7 +4,7 @@ import { useProfile } from '@/hooks/useProfile';
 import { Droplets, Plus, Minus } from 'lucide-react';
 import { toast } from '@/components/shared/ToastProvider';
 import { useNavigate } from 'react-router-dom';
-import { PulseCard } from '@/components/pulse/PulseUI';
+import { Card } from '@/components/ui/card';
 
 export function WaterTracker() {
   const navigate = useNavigate();
@@ -31,7 +31,7 @@ export function WaterTracker() {
   };
 
   return (
-    <PulseCard className="overflow-hidden p-5">
+    <Card className="overflow-hidden p-5">
         <div className="flex items-center justify-between mb-4">
           <div className="flex items-center gap-2">
             <div className="h-7 w-7 rounded-lg bg-info/15 flex items-center justify-center">
@@ -79,6 +79,6 @@ export function WaterTracker() {
             Add glass
           </Button>
         </div>
-    </PulseCard>
+    </Card>
   );
 }

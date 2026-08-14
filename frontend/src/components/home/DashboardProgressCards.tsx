@@ -97,7 +97,7 @@ function ProgressCard({
               {data.formatValue(data.current)}
             </span>
             {hasGoal && (
-              <span className="text-[10px] text-muted-foreground tabular-nums mt-1">
+              <span className="text-caption text-muted-foreground tabular-nums mt-1">
                 / {data.formatValue(data.target)}
               </span>
             )}
@@ -109,12 +109,12 @@ function ProgressCard({
             {data.label}
           </span>
         </div>
-        <span className="text-[10px] text-muted-foreground mt-0.5">{data.period}</span>
+        <span className="text-caption text-muted-foreground mt-0.5">{data.period}</span>
         {!hasGoal && onAddGoal && (
-          <p className="text-[11px] text-primary font-medium mt-2">Tap to set goal</p>
+          <p className="text-eyebrow text-primary font-medium mt-2">Tap to set goal</p>
         )}
         {hasGoal && onAdd && (
-          <span className="text-[11px] text-primary font-medium mt-2">+ {data.addLabel}</span>
+          <span className="text-eyebrow text-primary font-medium mt-2">+ {data.addLabel}</span>
         )}
       </CardContent>
     </Card>

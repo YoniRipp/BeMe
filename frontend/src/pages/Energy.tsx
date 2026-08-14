@@ -15,14 +15,13 @@ import { MacroGoalModal } from '@/components/home/MacroGoalModal';
 import { ConfirmationDialog } from '@/components/shared/ConfirmationDialog';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
-import { EmptyStateCard } from '@/components/shared/EmptyStateCard';
+import { EmptyState } from '@/components/shared/EmptyState';
 import { AddAnotherCard } from '@/components/shared/AddAnotherCard';
 import { PeriodSelector } from '@/components/shared/PeriodSelector';
-import { Moon, Trash2, Pencil, ChevronDown, ClipboardList, Copy } from 'lucide-react';
+import { Moon, Trash2, Pencil, ChevronDown, ClipboardList, Copy, UtensilsCrossed } from 'lucide-react';
 import { isSameDay, isWithinInterval, format, startOfWeek, endOfWeek, subWeeks } from 'date-fns';
 import { getPeriodRange, toLocalDateString } from '@/lib/dateRanges';
-import { PulseCard, PulseHeader, PulsePage } from '@/components/pulse/PulseUI';
-
+import { Page, PageHeader } from '@/components/ui/page';
 interface FoodGroup {
   key: string;
   label: string;
@@ -364,10 +363,10 @@ export function Energy() {
   };
 
   return (
-    <PulsePage className="pb-24">
+    <Page className="pb-24">
       <ContentWithLoading loading={energyLoading} loadingText="Loading energy...">
         <div className="space-y-6">
-          <PulseHeader
+          <PageHeader
             kicker="Energy"
             title="Food log"
             subtitle={caloriePeriod === 'daily' ? 'Tap a meal mic and log naturally.' : 'Review your nutrition history.'}
@@ -399,7 +398,7 @@ export function Energy() {
                 </svg>
                 <div className="absolute inset-0 flex flex-col items-center justify-center">
                   <span className="text-[34px] font-extrabold tabular-nums leading-none tracking-tight">{Math.round(periodTotals.calories)}</span>
-                  <span className="mt-1.5 text-[10px] leading-none text-muted-foreground">of {calGoalTarget}{caloriePeriod !== 'daily' ? ' / day' : ''} kcal</span>
+                  <span className="mt-1.5 text-caption leading-none text-muted-foreground">of {calGoalTarget}{caloriePeriod !== 'daily' ? ' / day' : ''} kcal</span>
                 </div>
               </div>
             );
@@ -415,11 +414,11 @@ export function Energy() {
             return (
               <div className="space-y-4 sm:space-y-5">
                 <div className="md:hidden">
-                  <PulseCard className="overflow-hidden p-5">
+                  <Card className="overflow-hidden p-5">
                     {periodSelectorEl}
                     <div className="mt-4 flex justify-center">{calorieRingEl}</div>
-                  </PulseCard>
-                  <PulseCard className="mt-4 overflow-hidden p-5">{macroCirclesEl}</PulseCard>
+                  </Card>
+                  <Card className="mt-4 overflow-hidden p-5">{macroCirclesEl}</Card>
                 </div>
 
                 <Card className="hidden overflow-hidden md:block">
@@ -438,7 +437,7 @@ export function Energy() {
           <div className="space-y-4 sm:space-y-5">
             <div className="flex items-center justify-between gap-3">
               <div>
-                <p className="text-[11px] font-bold uppercase tracking-[0.14em] text-muted-foreground">
+                <p className="text-eyebrow font-bold uppercase tracking-[0.14em] text-muted-foreground">
                   {JOURNAL_EYEBROW[caloriePeriod]}
                 </p>
                 <h3 className="mt-1 text-xl font-extrabold tracking-tight">Journal</h3>
@@ -480,14 +479,16 @@ export function Energy() {
                 ))}
               </div>
             ) : periodFoodEntries.length === 0 ? (
-              <EmptyStateCard
-                onClick={() => handleAddFood()}
+              <EmptyState
+                icon={UtensilsCrossed}
                 title="Add your first food entry"
-                description="Tap to log what you ate"
+                description="Log what you ate to start tracking calories and macros."
+                actionLabel="Log food"
+                onAction={() => handleAddFood()}
               />
             ) : (
               <div className="space-y-4">
-                <PulseCard className="overflow-hidden divide-y divide-border">
+                <Card className="overflow-hidden divide-y divide-border">
                   {foodGroups.map((group, i) => (
                     <CollapsibleGroup
                       key={group.key}
@@ -498,13 +499,13 @@ export function Energy() {
                       onDelete={handleDeleteFood}
                     />
                   ))}
-                </PulseCard>
+                </Card>
                 <AddAnotherCard onClick={() => handleAddFood()} label="Add food entry" />
               </div>
             )}
           </div>
 
-          <PulseCard className="mt-2 p-5 sm:p-6">
+          <Card className="mt-2 p-5 sm:p-6">
             <h3 className="mb-4 text-xl font-extrabold tracking-tight">Sleep</h3>
 
             <PeriodSelector
@@ -532,7 +533,7 @@ export function Energy() {
 
         {recentCheckIns.length > 0 && (
           <div className="space-y-2 mb-4">
-            <h4 className="text-[11px] font-semibold uppercase tracking-[0.12em] text-muted-foreground mb-2">Sleep log</h4>
+            <h4 className="text-eyebrow font-semibold uppercase tracking-[0.12em] text-muted-foreground mb-2">Sleep log</h4>
             {recentCheckIns.map((c) => {
               const dateStr = toLocalDateString(new Date(c.date));
               return (
@@ -569,7 +570,7 @@ export function Energy() {
         )}
 
         <AddAnotherCard onClick={openSleepModalForToday} icon={Moon} label="Log sleep" />
-      </PulseCard>
+      </Card>
         </div>
       </ContentWithLoading>
 
@@ -639,7 +640,7 @@ export function Energy() {
         onOpenChange={setDuplicateDialogOpen}
         onDuplicate={duplicateDay}
       />
-    </PulsePage>
+    </Page>
   );
 }
 

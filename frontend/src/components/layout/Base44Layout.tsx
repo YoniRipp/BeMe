@@ -155,13 +155,13 @@ export function Base44Layout() {
               </div>
               <div>
                 <h1 className="font-display text-2xl font-medium tracking-tight leading-none">TrackVibe</h1>
-                <p className="text-[10px] uppercase tracking-[0.22em] text-muted-foreground font-medium mt-1.5">Life Balance</p>
+                <p className="text-caption uppercase tracking-[0.22em] text-muted-foreground font-medium mt-1.5">Life Balance</p>
               </div>
             </Link>
           </div>
 
           <nav className="flex-1 px-3 py-2">
-            <p className="px-3 mb-2 text-[10px] uppercase tracking-[0.18em] text-muted-foreground font-semibold">Navigate</p>
+            <p className="px-3 mb-2 text-caption uppercase tracking-[0.18em] text-muted-foreground font-semibold">Navigate</p>
             <div className="space-y-0.5">
               {sidebarNav.map((item) => {
                 const isActive = pathname === item.path;
