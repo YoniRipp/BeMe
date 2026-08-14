@@ -6,6 +6,7 @@
  */
 import { Request, Response } from 'express';
 import { asyncHandler } from '../middleware/errorHandler.js';
+import { getEffectiveUserId } from '../middleware/auth.js';
 import { sendJson, sendError } from '../utils/response.js';
 import { sendMessage, getChatHistory, clearChatHistory, sendMessageStream, executePlanProposal, type PlanProposal } from '../services/chat.js';
 import { sendAgentMessage } from '../services/chatAgent.js';
@@ -22,18 +23,18 @@ export const chat = asyncHandler(async (req: Request, res: Response) => {
   if (message.length > 2000) {
     return sendError(res, 400, 'Message too long (max 2000 characters)');
   }
-  const { message: reply, actions } = await sendMessage(req.user!.id, message.trim());
+  const { message: reply, actions } = await sendMessage(getEffectiveUserId(req), message.trim());
   return sendJson(res, { ...reply, actions });
 });
 
 export const getHistory = asyncHandler(async (req: Request, res: Response) => {
   const limit = Math.min(Math.max(1, parseInt(req.query.limit as string, 10) || 30), 100);
-  const messages = await getChatHistory(req.user!.id, limit);
+  const messages = await getChatHistory(getEffectiveUserId(req), limit);
   return sendJson(res, { messages });
 });
 
 export const deleteHistory = asyncHandler(async (req: Request, res: Response) => {
-  await clearChatHistory(req.user!.id);
+  await clearChatHistory(getEffectiveUserId(req));
   return res.status(204).send();
 });
 
@@ -66,7 +67,7 @@ export const agentChatStream = asyncHandler(async (req: Request, res: Response) 
 
   try {
     const result = await sendMessageStream(
-      req.user!.id,
+      getEffectiveUserId(req),
       message.trim(),
       (chunk: string) => send({ chunk }),
       () => send({ thinking: true }),
@@ -95,7 +96,7 @@ export const confirmPlan = asyncHandler(async (req: Request, res: Response) => {
   if (!Array.isArray(p.workouts) && !Array.isArray(p.foods)) {
     return sendError(res, 400, 'Proposal must include workouts or foods');
   }
-  const results = await executePlanProposal(req.user!.id, {
+  const results = await executePlanProposal(getEffectiveUserId(req), {
     id: p.id ?? '',
     title: p.title ?? '',
     summary: p.summary ?? '',
@@ -116,6 +117,6 @@ export const agentChat = asyncHandler(async (req: Request, res: Response) => {
   if (message.length > 2000) {
     return sendError(res, 400, 'Message too long (max 2000 characters)');
   }
-  const result = await sendAgentMessage(req.user!.id, message.trim());
+  const result = await sendAgentMessage(getEffectiveUserId(req), message.trim());
   return sendJson(res, result);
 });

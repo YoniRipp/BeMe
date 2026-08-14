@@ -106,22 +106,26 @@ export async function update(id: string, userId: string, updates: UpdateWorkoutI
   return (result.rowCount ?? 0) > 0 ? rowToWorkout(result.rows[0]) : null;
 }
 
-export async function deleteById(id: string, userId: string, client?: pg.Pool | pg.PoolClient): Promise<boolean> {
+/** Returns the deleted row's date (for event payloads), or null if nothing matched. */
+export async function deleteById(id: string, userId: string, client?: pg.Pool | pg.PoolClient): Promise<{ date: string } | null> {
   const db = client ?? getPool('body');
-  const result = await db.query('DELETE FROM workouts WHERE id = $1 AND user_id = $2 RETURNING id', [id, userId]);
-  return (result.rowCount ?? 0) > 0;
+  const result = await db.query('DELETE FROM workouts WHERE id = $1 AND user_id = $2 RETURNING date', [id, userId]);
+  const row = result.rows[0];
+  if (!row) return null;
+  return { date: row.date instanceof Date ? row.date.toISOString().split('T')[0] : String(row.date) };
 }
 
 /**
  * Bulk-delete a user's workouts, optionally restricted to an inclusive date
- * range. Returns the ids of every deleted row so the caller can emit events /
- * clear embeddings per workout. With no range, deletes ALL of the user's workouts.
+ * range. Returns the id and date of every deleted row so the caller can emit
+ * events / clear embeddings per workout. With no range, deletes ALL of the
+ * user's workouts.
  */
 export async function deleteAllByUser(
   userId: string,
   range?: { from?: string; to?: string },
   client?: pg.Pool | pg.PoolClient,
-): Promise<string[]> {
+): Promise<Array<{ id: string; date: string }>> {
   const db = client ?? getPool('body');
   const conditions = ['user_id = $1'];
   const params: unknown[] = [userId];
@@ -134,8 +138,11 @@ export async function deleteAllByUser(
     conditions.push(`date <= $${params.length}::date`);
   }
   const result = await db.query(
-    `DELETE FROM workouts WHERE ${conditions.join(' AND ')} RETURNING id`,
+    `DELETE FROM workouts WHERE ${conditions.join(' AND ')} RETURNING id, date`,
     params,
   );
-  return result.rows.map((r: { id: string }) => r.id);
+  return result.rows.map((r: { id: string; date: unknown }) => ({
+    id: r.id,
+    date: r.date instanceof Date ? r.date.toISOString().split('T')[0] : String(r.date),
+  }));
 }

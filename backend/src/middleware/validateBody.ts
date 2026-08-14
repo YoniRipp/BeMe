@@ -1,10 +1,12 @@
 /**
  * Request body validation middleware using Zod.
- * On failure sends 400 with first error message or formatted Zod errors.
+ * On failure sends 400 in the standard error envelope with the first error
+ * message (plus formatted Zod errors outside production).
  */
 import { Request, Response, NextFunction, RequestHandler } from 'express';
 import { ZodSchema } from 'zod';
 import { firstZodErrorMessage } from '../utils/validation.js';
+import { sendError } from '../utils/response.js';
 
 export function validateBody(schema: ZodSchema): RequestHandler {
   return (req: Request, res: Response, next: NextFunction) => {
@@ -15,10 +17,9 @@ export function validateBody(schema: ZodSchema): RequestHandler {
       return;
     }
     const err = result.error;
-    const response: Record<string, unknown> = { error: firstZodErrorMessage(err) };
-    if (process.env.NODE_ENV !== 'production') {
-      response.details = err.flatten();
-    }
-    return res.status(400).json(response);
+    return sendError(res, 400, firstZodErrorMessage(err), {
+      code: 'VALIDATION_ERROR',
+      ...(process.env.NODE_ENV !== 'production' ? { details: err.flatten() } : {}),
+    });
   };
 }

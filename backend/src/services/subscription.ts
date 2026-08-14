@@ -22,6 +22,8 @@ export interface LemonSqueezyWebhookPayload {
       status?: string;
       renews_at?: string;
       variant_id?: number | string;
+      // Present on subscription-invoice payloads (payment events), where data.id is the invoice id
+      subscription_id?: number | string;
       urls?: { customer_portal?: string };
       [key: string]: unknown;
     };
@@ -119,6 +121,7 @@ export async function getUserSubscription(userId: string) {
   };
 }
 
+/** Null subscriptionId/periodEnd/plan mean "keep the stored value", not "clear it". */
 export async function updateSubscriptionStatus(
   lemonSqueezyCustomerId: string,
   status: string,
@@ -130,8 +133,8 @@ export async function updateSubscriptionStatus(
   await pool.query(
     `UPDATE users
      SET subscription_status = $1,
-         subscription_id = $2,
-         subscription_current_period_end = $3,
+         subscription_id = COALESCE($2, subscription_id),
+         subscription_current_period_end = COALESCE($3, subscription_current_period_end),
          subscription_plan = COALESCE($4, subscription_plan)
      WHERE lemon_squeezy_customer_id = $5`,
     [status, subscriptionId, periodEnd, plan, lemonSqueezyCustomerId],
@@ -229,10 +232,12 @@ export async function handleWebhookEvent(payload: LemonSqueezyWebhookPayload) {
       break;
     }
     case 'subscription_payment_failed': {
+      // Payment webhooks carry a subscription-invoice: data.id is the invoice id,
+      // the subscription id lives in attributes.subscription_id.
       await updateSubscriptionStatus(
         customerId,
         'past_due',
-        String(payload.data.id),
+        attrs.subscription_id != null ? String(attrs.subscription_id) : null,
         null,
         plan,
       );
@@ -243,7 +248,7 @@ export async function handleWebhookEvent(payload: LemonSqueezyWebhookPayload) {
       await updateSubscriptionStatus(
         customerId,
         'pro',
-        String(payload.data.id),
+        attrs.subscription_id != null ? String(attrs.subscription_id) : null,
         attrs.renews_at ? new Date(attrs.renews_at) : null,
         plan,
       );

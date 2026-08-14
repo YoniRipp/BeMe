@@ -3,6 +3,7 @@
 import { STORAGE_KEYS } from '@/lib/storage';
 import { FEATURE_FLAGS } from '@/lib/featureFlags';
 import { enqueue } from '@/lib/syncQueue';
+import type { PaginatedResponse } from '@/types/api';
 
 const API_BASE = (import.meta as { env?: { VITE_API_URL?: string } }).env?.VITE_API_URL
   || (typeof window !== 'undefined' && (import.meta as { env?: { PROD?: boolean } }).env?.PROD ? window.location.origin : '')
@@ -100,8 +101,9 @@ export async function request<T>(path: string, options: RequestOptions = {}): Pr
   clearTimeout(timeoutId);
   if (res.status === 401) {
     handleUnauthorized({ suppressEvent: suppressUnauthorizedEvent });
-    const err = (await res.json().catch(() => ({}))) as { error?: string };
-    throw new Error(err.error ?? 'Session expired');
+    const err = (await res.json().catch(() => ({}))) as { error?: string | { message?: string } };
+    const errMsg = typeof err.error === 'string' ? err.error : err.error?.message;
+    throw new Error(errMsg ?? 'Session expired');
   }
   if (!res.ok) {
     const errBody = await res.json().catch(() => ({}));
@@ -113,4 +115,25 @@ export async function request<T>(path: string, options: RequestOptions = {}): Pr
   }
   if (res.status === 204) return undefined as T;
   return res.json() as Promise<T>;
+}
+
+const PAGE_LIMIT = 200; // server caps limit at 200 per page
+const MAX_PAGES = 25;
+
+/**
+ * Fetch every page of a paginated list endpoint ({ data, total, hasMore }).
+ * Without explicit limit/offset the server returns only the newest 50 rows,
+ * which callers used to mistake for the complete dataset.
+ */
+export async function requestAllPages<T>(path: string): Promise<PaginatedResponse<T>> {
+  const sep = path.includes('?') ? '&' : '?';
+  const data: T[] = [];
+  let total = 0;
+  for (let page = 0; page < MAX_PAGES; page++) {
+    const res = await request<PaginatedResponse<T>>(`${path}${sep}limit=${PAGE_LIMIT}&offset=${data.length}`);
+    data.push(...res.data);
+    total = res.total;
+    if (!res.hasMore || res.data.length === 0) break;
+  }
+  return { data, total, limit: data.length, offset: 0, hasMore: data.length < total };
 }

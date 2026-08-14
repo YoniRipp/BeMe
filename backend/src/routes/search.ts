@@ -2,11 +2,11 @@
  * Semantic search routes.
  */
 import { Router } from 'express';
-import { requireAuth } from '../middleware/auth.js';
+import { withUser } from './helpers.js';
 import * as searchController from '../controllers/search.js';
 
 const router = Router();
 
-router.post('/api/search', requireAuth, searchController.search);
+router.post('/api/search', withUser, searchController.search);
 
 export default router;

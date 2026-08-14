@@ -49,6 +49,12 @@ function eventDate(event: EventEnvelope): string {
   return d && typeof d === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(d) ? d : new Date().toISOString().slice(0, 10);
 }
 
+/** Old date when an update moved the record to a different day, else null. */
+function eventPreviousDate(event: EventEnvelope): string | null {
+  const d = event.payload?.previousDate;
+  return typeof d === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(d) ? d : null;
+}
+
 type SubscribeFn = (eventType: string, handler: (event: EventEnvelope) => Promise<void> | void) => void;
 
 /**
@@ -61,11 +67,16 @@ export function registerStatsAggregatorConsumer(subscribe: SubscribeFn) {
     if (!userId) return;
     const date = eventDate(event);
     await recomputeDayStats(userId, date);
+    const previousDate = eventPreviousDate(event);
+    if (previousDate && previousDate !== date) {
+      await recomputeDayStats(userId, previousDate);
+    }
     logger.debug({ eventType: event.type, userId, date }, 'statsAggregator: day stats updated');
   };
 
   // Fitness events
   subscribe('body.WorkoutCreated', handler);
+  subscribe('body.WorkoutUpdated', handler);
   subscribe('body.WorkoutDeleted', handler);
 
   // Nutrition events
@@ -76,4 +87,5 @@ export function registerStatsAggregatorConsumer(subscribe: SubscribeFn) {
   // Sleep events
   subscribe('energy.CheckInCreated', handler);
   subscribe('energy.CheckInUpdated', handler);
+  subscribe('energy.CheckInDeleted', handler);
 }

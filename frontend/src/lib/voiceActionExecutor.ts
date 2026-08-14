@@ -5,6 +5,7 @@ import type { VoiceAction } from '@/lib/voiceApi';
 import type { Workout, WorkoutType } from '@/types/workout';
 import type { Goal } from '@/types/goals';
 import type { DailyCheckIn, FoodEntry } from '@/types/energy';
+import { toLocalDateString } from '@/lib/dateRanges';
 
 const VALID_WORKOUT_TYPES = ['strength', 'cardio', 'flexibility', 'sports'] as const;
 
@@ -298,7 +299,7 @@ const handleDeleteGoal: Handler = async (action, ctx) => {
 const handleLogWeight: Handler = async (action, ctx) => {
   if (action.intent !== 'log_weight') return { success: false };
   if (!ctx.addWeightEntry) return { success: false, message: 'Weight tracking not available' };
-  await ctx.addWeightEntry({ weightKg: action.weightKg, date: action.date ?? new Date().toISOString().slice(0, 10), notes: action.notes });
+  await ctx.addWeightEntry({ weightKg: action.weightKg, date: action.date ?? toLocalDateString(new Date()), notes: action.notes });
   return { success: true, message: `Logged weight: ${action.weightKg} kg` };
 };
 
@@ -354,7 +355,7 @@ const handleLogCycle: Handler = async (action, ctx) => {
   if (action.intent !== 'log_cycle') return { success: false };
   if (!ctx.addCycleEntry) return { success: false, message: 'Cycle tracking not available' };
   await ctx.addCycleEntry({
-    date: action.date ?? new Date().toISOString().slice(0, 10),
+    date: action.date ?? toLocalDateString(new Date()),
     periodStart: action.periodStart,
     flow: action.flow,
     symptoms: action.symptoms,

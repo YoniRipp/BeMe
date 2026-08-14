@@ -16,7 +16,7 @@ const FOOD_SEARCH_CACHE_TTL_SEC = 3600;
 
 export const search = asyncHandler(async (req: Request, res: Response) => {
   if (!config.isDbConfigured) {
-    return res.status(503).json({ error: 'Food search is not configured (missing DATABASE_URL)' });
+    return sendError(res, 503, 'Food search is not configured (missing DATABASE_URL)', { code: 'SERVICE_UNAVAILABLE' });
   }
   const q = typeof req.query?.q === 'string' ? req.query.q.trim() : '';
   const limit = Math.min(Math.max(1, parseInt(req.query?.limit as string, 10) || 10), 25);

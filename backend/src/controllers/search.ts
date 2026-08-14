@@ -4,6 +4,7 @@
  */
 import { Request, Response } from 'express';
 import { asyncHandler } from '../middleware/errorHandler.js';
+import { getEffectiveUserId } from '../middleware/auth.js';
 import { sendJson, sendError } from '../utils/response.js';
 import { semanticSearch } from '../services/embeddings.js';
 import { config } from '../config/index.js';
@@ -29,7 +30,7 @@ export const search = asyncHandler(async (req: Request, res: Response) => {
 
   const maxLimit = Math.min(Number.isFinite(Number(limit)) ? Number(limit) : 10, 50);
 
-  const userId = req.user!.id;
+  const userId = getEffectiveUserId(req);
 
   const results = await semanticSearch(userId, query, {
     types: filterTypes,

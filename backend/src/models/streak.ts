@@ -68,6 +68,11 @@ export async function upsertActivity(userId: string, type: string, date: string,
       return { streak: rowToStreak(row), milestone: null };
     }
 
+    if (lastDateStr && activityDateStr < lastDateStr) {
+      // Backfilled entry for a past date — never reset or regress the streak
+      return { streak: rowToStreak(row), milestone: null };
+    }
+
     // Check if activity date is yesterday + 1 (consecutive)
     const yesterday = new Date(activityDate);
     yesterday.setUTCDate(yesterday.getUTCDate() - 1);

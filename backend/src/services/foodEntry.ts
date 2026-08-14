@@ -47,6 +47,9 @@ export async function create(userId: string, body: CreateFoodEntryBody): Promise
 
 export async function update(userId: string, id: string, body: UpdateFoodEntryBody): Promise<FoodEntry> {
   if (!id) throw new ValidationError('id is required');
+  // A date change moves the entry between days — capture the old day so
+  // consumers (stats aggregation) can recompute both.
+  const previous = body.date !== undefined ? await foodEntryModel.findOne(userId, { entryId: id }) : null;
   const updates: UpdateFoodEntryInput = {};
   if (body.date !== undefined) updates.date = body.date;
   if (body.name !== undefined) updates.name = body.name;
@@ -63,7 +66,10 @@ export async function update(userId: string, id: string, body: UpdateFoodEntryBo
 
   const updated = await foodEntryModel.update(id, userId, updates);
   if (!updated) throw new NotFoundError('Food entry not found');
-  await publishEvent('energy.FoodEntryUpdated', updated as unknown as Record<string, unknown>, userId);
+  await publishEvent('energy.FoodEntryUpdated', {
+    ...(updated as unknown as Record<string, unknown>),
+    ...(previous && previous.date !== updated.date ? { previousDate: previous.date } : {}),
+  }, userId);
   upsertEmbedding(userId, 'food_entry', updated.id, buildEmbeddingText('food_entry', updated as unknown as Record<string, unknown>));
   return updated;
 }
@@ -141,6 +147,6 @@ export async function remove(userId: string, id: string): Promise<void> {
   if (!id) throw new ValidationError('id is required');
   const deleted = await foodEntryModel.deleteById(id, userId);
   if (!deleted) throw new NotFoundError('Food entry not found');
-  await publishEvent('energy.FoodEntryDeleted', { id }, userId);
+  await publishEvent('energy.FoodEntryDeleted', { id, date: deleted.date }, userId);
   deleteEmbedding(id, 'food_entry');
 }

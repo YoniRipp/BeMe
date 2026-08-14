@@ -44,7 +44,7 @@ describe('requireAuth', () => {
     await requireAuth(req, res, next);
 
     expect(res.status).toHaveBeenCalledWith(401);
-    expect(res.json).toHaveBeenCalledWith({ error: 'Missing or invalid Authorization header' });
+    expect(res.json).toHaveBeenCalledWith({ error: { code: 'UNAUTHORIZED', message: 'Missing or invalid Authorization header' } });
     expect(next).not.toHaveBeenCalled();
   });
 
@@ -53,7 +53,7 @@ describe('requireAuth', () => {
     await requireAuth(req, res, next);
 
     expect(res.status).toHaveBeenCalledWith(401);
-    expect(res.json).toHaveBeenCalledWith({ error: 'Missing or invalid Authorization header' });
+    expect(res.json).toHaveBeenCalledWith({ error: { code: 'UNAUTHORIZED', message: 'Missing or invalid Authorization header' } });
     expect(next).not.toHaveBeenCalled();
   });
 
@@ -67,7 +67,7 @@ describe('requireAuth', () => {
 
     expect(jwt.verify).toHaveBeenCalledWith('invalid-token', 'test-secret', { algorithms: ['HS256'] });
     expect(res.status).toHaveBeenCalledWith(401);
-    expect(res.json).toHaveBeenCalledWith({ error: 'Invalid or expired token' });
+    expect(res.json).toHaveBeenCalledWith({ error: { code: 'UNAUTHORIZED', message: 'Invalid or expired token' } });
     expect(next).not.toHaveBeenCalled();
   });
 
@@ -103,7 +103,7 @@ describe('requireAuth', () => {
     await requireAuth(req, res, next);
 
     expect(res.status).toHaveBeenCalledWith(401);
-    expect(res.json).toHaveBeenCalledWith({ error: 'Token has been revoked' });
+    expect(res.json).toHaveBeenCalledWith({ error: { code: 'UNAUTHORIZED', message: 'Token has been revoked' } });
     expect(next).not.toHaveBeenCalled();
   });
 });

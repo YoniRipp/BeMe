@@ -127,7 +127,8 @@ async function deleteUser(req: Request, res: Response) {
       await client.query('BEGIN');
 
       // Clear attribution columns (keep the rows, drop the link).
-      // Each statement is guarded so missing tables don't abort the transaction.
+      // Each statement runs inside a savepoint: a failed statement aborts the
+      // whole transaction otherwise, so catching the error is not enough.
       const setNullStatements = [
         `UPDATE app_logs SET user_id = NULL WHERE user_id = $1`,
         `UPDATE user_activity_log SET user_id = NULL WHERE user_id = $1`,
@@ -135,8 +136,13 @@ async function deleteUser(req: Request, res: Response) {
         `UPDATE foods SET verified_by = NULL WHERE verified_by = $1`,
       ];
       for (const sql of setNullStatements) {
-        try { await client.query(sql, [id]); } catch (err: any) {
+        await client.query('SAVEPOINT delete_user_stmt');
+        try {
+          await client.query(sql, [id]);
+          await client.query('RELEASE SAVEPOINT delete_user_stmt');
+        } catch (err: any) {
           if (err?.code !== '42P01' && err?.code !== '42703') throw err; // missing table/column ok
+          await client.query('ROLLBACK TO SAVEPOINT delete_user_stmt');
         }
       }
 
@@ -149,8 +155,13 @@ async function deleteUser(req: Request, res: Response) {
         `DELETE FROM daily_check_ins WHERE user_id = $1`,
       ];
       for (const sql of deleteStatements) {
-        try { await client.query(sql, [id]); } catch (err: any) {
+        await client.query('SAVEPOINT delete_user_stmt');
+        try {
+          await client.query(sql, [id]);
+          await client.query('RELEASE SAVEPOINT delete_user_stmt');
+        } catch (err: any) {
           if (err?.code !== '42P01') throw err;
+          await client.query('ROLLBACK TO SAVEPOINT delete_user_stmt');
         }
       }
 

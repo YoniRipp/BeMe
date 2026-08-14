@@ -214,7 +214,9 @@ export function Energy() {
       { calories: 0, protein: 0, carbs: 0, fats: 0 }
     );
     if (caloriePeriod === 'daily' || periodFoodEntries.length === 0) return totals;
-    const uniqueDays = new Set(periodFoodEntries.map(e => e.date)).size;
+    // Key by calendar day — Date objects are unique per entry, so a Set of them
+    // would count entries, not days.
+    const uniqueDays = new Set(periodFoodEntries.map(e => new Date(e.date).toDateString())).size;
     if (uniqueDays <= 1) return totals;
     return {
       calories: Math.round(totals.calories / uniqueDays),
