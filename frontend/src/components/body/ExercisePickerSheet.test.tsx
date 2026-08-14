@@ -11,50 +11,76 @@ const catalog: CatalogExercise[] = [
   { id: '4', name: 'Squat', muscleGroup: 'legs', equipment: 'barbell' },
 ];
 
-const { filterSpy } = vi.hoisted(() => ({ filterSpy: vi.fn() }));
+const NOTHING: CatalogExercise[] = [];
+
+const { filterSpy, reloadSpy, hookState } = vi.hoisted(() => ({
+  filterSpy: vi.fn(),
+  reloadSpy: vi.fn(),
+  hookState: {
+    catalog: [] as unknown[],
+    isLoading: false,
+    error: null as string | null,
+  },
+}));
 
 // Exercise the real filtering logic, but over a small fixture instead of the network.
+// `filterExercises` is memoized on the catalog just like the real hook, because the sheet
+// memoizes its result list on that identity.
 vi.mock('@/hooks/useExercises', async (importOriginal) => {
   const actual = await importOriginal<typeof import('@/hooks/useExercises')>();
+  const { useCallback } = await import('react');
   return {
     ...actual,
-    useExercises: () => ({
-      exercises: catalog,
-      isLoading: false,
-      getExercise: () => undefined,
-      getImageUrl: () => undefined,
-      getVideoUrl: () => undefined,
-      searchExercises: () => catalog,
-      filterExercises: (filters: { query?: string; equipment?: string; muscleGroup?: string }) => {
-        filterSpy(filters);
-        const q = filters.query?.toLowerCase().trim() ?? '';
-        return catalog.filter((ex) => {
-          if (filters.equipment && ex.equipment !== filters.equipment) return false;
-          if (filters.muscleGroup && ex.muscleGroup !== filters.muscleGroup) return false;
-          if (q && !ex.name.toLowerCase().includes(q)) return false;
-          return true;
-        });
-      },
-    }),
+    useExercises: () => {
+      const list = hookState.catalog as CatalogExercise[];
+      return {
+        exercises: list,
+        isLoading: hookState.isLoading,
+        error: hookState.error,
+        reload: reloadSpy,
+        getExercise: () => undefined,
+        getImageUrl: () => undefined,
+        getVideoUrl: () => undefined,
+        searchExercises: () => list,
+        filterExercises: useCallback(
+          (filters: { query?: string; equipment?: string; muscleGroup?: string }) => {
+            filterSpy(filters);
+            const q = filters.query?.toLowerCase().trim() ?? '';
+            return list.filter((ex) => {
+              if (filters.equipment && ex.equipment !== filters.equipment) return false;
+              if (filters.muscleGroup && ex.muscleGroup !== filters.muscleGroup) return false;
+              if (q && !ex.name.toLowerCase().includes(q)) return false;
+              return true;
+            });
+          },
+          [list],
+        ),
+      };
+    },
   };
 });
 
 describe('ExercisePickerSheet', () => {
   beforeEach(() => {
     filterSpy.mockClear();
+    reloadSpy.mockClear();
+    hookState.catalog = catalog;
+    hookState.isLoading = false;
+    hookState.error = null;
   });
 
   const renderSheet = (props: Partial<React.ComponentProps<typeof ExercisePickerSheet>> = {}) => {
     const onSelect = vi.fn();
-    render(
+    const build = () => (
       <ExercisePickerSheet
         open={true}
         onOpenChange={vi.fn()}
         onSelect={onSelect}
         {...props}
-      />,
+      />
     );
-    return { onSelect };
+    const utils = render(build());
+    return { onSelect, rerender: () => utils.rerender(build()) };
   };
 
   it('lists every exercise with its muscle and equipment', () => {
@@ -115,8 +141,49 @@ describe('ExercisePickerSheet', () => {
     await user.type(screen.getByLabelText(/search exercises/i), 'zzzz');
 
     expect(screen.getByText('No exercises found')).toBeInTheDocument();
+    expect(screen.getByText('Try a different search or filter.')).toBeInTheDocument();
 
     await user.click(screen.getByRole('button', { name: /clear filters/i }));
     expect(screen.getByText('4 exercises')).toBeInTheDocument();
+  });
+
+  // A failed catalog fetch used to render the empty state, which told the user their
+  // exercise doesn't exist rather than that the catalog never arrived.
+  it('separates a failed catalog load from an empty one, and offers a retry', async () => {
+    const user = userEvent.setup();
+    hookState.catalog = NOTHING;
+    hookState.error = 'Failed to fetch';
+    renderSheet();
+
+    expect(screen.getByText('Couldn’t load exercises')).toBeInTheDocument();
+    expect(screen.getByText('Failed to fetch')).toBeInTheDocument();
+    expect(screen.queryByText('No exercises found')).not.toBeInTheDocument();
+
+    await user.click(screen.getByRole('button', { name: /try again/i }));
+    expect(reloadSpy).toHaveBeenCalledTimes(1);
+  });
+
+  it('says the catalog is empty rather than blaming the filters', () => {
+    hookState.catalog = NOTHING;
+    renderSheet();
+
+    expect(screen.getByText('No exercises found')).toBeInTheDocument();
+    expect(screen.getByText('The exercise catalog is empty.')).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: /clear filters/i })).not.toBeInTheDocument();
+  });
+
+  // A retried fetch resolves with the loading flag already false, so the sheet cannot key
+  // its result list off that flag -- it has to react to the catalog itself.
+  it('renders a catalog that arrives after the loading flag has cleared', () => {
+    hookState.catalog = NOTHING;
+    const { rerender } = renderSheet();
+
+    expect(screen.getByText('No exercises found')).toBeInTheDocument();
+
+    hookState.catalog = catalog;
+    rerender();
+
+    expect(screen.getByText('4 exercises')).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Select Bench Press' })).toBeInTheDocument();
   });
 });

@@ -1,4 +1,4 @@
-import { useMemo } from 'react';
+import { useCallback, useMemo } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { request } from '@/core/api/client';
 import { EXERCISE_CATALOG_LIMIT } from '@/lib/constants';
@@ -112,14 +112,17 @@ export interface ExerciseFilters {
   muscleGroup?: string;
 }
 
+/** Shared empty catalog, so `exercises` keeps one identity while the fetch is in flight. */
+const NO_EXERCISES: CatalogExercise[] = [];
+
 export function useExercises() {
-  const { data, isLoading } = useQuery({
+  const { data, isLoading, error, refetch } = useQuery({
     queryKey: queryKeys.exercises,
     queryFn: (): Promise<CatalogExercise[]> => request(`/api/exercises?limit=${EXERCISE_CATALOG_LIMIT}`),
     staleTime: 10 * 60 * 1000,
   });
 
-  const exercises = data ?? [];
+  const exercises = data ?? NO_EXERCISES;
 
   // Index by normalized name once per fetch. The catalog is ~900 entries and the
   // lookups below run per exercise per render, so a linear scan each time is wasteful.
@@ -135,33 +138,41 @@ export function useExercises() {
       if (!held || (!held.imageUrl && ex.imageUrl)) loose.set(key, ex);
     }
     return { byName: exact, byLooseName: loose };
-  }, [data]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [exercises]);
 
-  const getExercise = (exerciseName: string): CatalogExercise | undefined => {
+  const getExercise = useCallback((exerciseName: string): CatalogExercise | undefined => {
     const exact = byName.get(normalizeName(exerciseName));
     if (exact) return exact;
     // A name of pure punctuation folds to '', which must not match a catalog row that
     // folded the same way.
     const loose = looseNameKey(exerciseName);
     return loose ? byLooseName.get(loose) : undefined;
-  };
+  }, [byName, byLooseName]);
 
-  const getImageUrl = (exerciseName: string): string | undefined => getExercise(exerciseName)?.imageUrl;
+  const getImageUrl = useCallback(
+    (exerciseName: string): string | undefined => getExercise(exerciseName)?.imageUrl,
+    [getExercise],
+  );
 
-  const getVideoUrl = (exerciseName: string): string | undefined => getExercise(exerciseName)?.videoUrl;
+  const getVideoUrl = useCallback(
+    (exerciseName: string): string | undefined => getExercise(exerciseName)?.videoUrl,
+    [getExercise],
+  );
 
-  const searchExercises = (query: string): CatalogExercise[] => {
+  const searchExercises = useCallback((query: string): CatalogExercise[] => {
     if (!query.trim()) return exercises;
     const normalized = normalizeName(query);
     return exercises.filter((ex) => ex.name.toLowerCase().includes(normalized));
-  };
+  }, [exercises]);
 
   /**
    * Search + facet filter for the picker. Results are ranked so that names starting with
    * the query come first — with ~900 entries, a plain `includes` match buries
    * "Bench Press" under "Close-Grip Barbell Bench Press".
+   *
+   * Identity changes only when the catalog does, so callers can memoize on it directly.
    */
-  const filterExercises = ({ query, equipment, muscleGroup }: ExerciseFilters): CatalogExercise[] => {
+  const filterExercises = useCallback(({ query, equipment, muscleGroup }: ExerciseFilters): CatalogExercise[] => {
     const q = query ? normalizeName(query) : '';
     const matches = exercises.filter((ex) => {
       if (equipment && (ex.equipment ?? ex.category) !== equipment) return false;
@@ -175,11 +186,19 @@ export function useExercises() {
       const bStarts = b.name.toLowerCase().startsWith(q) ? 0 : 1;
       return aStarts - bStarts || a.name.localeCompare(b.name);
     });
-  };
+  }, [exercises]);
+
+  const reload = useCallback(() => { void refetch(); }, [refetch]);
 
   return {
     exercises,
     isLoading,
+    /**
+     * Display string, not an Error. A failed catalog fetch is otherwise indistinguishable
+     * from an empty catalog, which reads to the user as "this exercise doesn't exist".
+     */
+    error: error ? (error instanceof Error ? error.message : 'Could not load exercises. Please try again.') : null,
+    reload,
     getExercise,
     getImageUrl,
     getVideoUrl,

@@ -281,7 +281,10 @@ export async function initSchema() {
       );
     `);
 
-    // Exercise catalog
+    // Exercise catalog. The columns below `video_url` arrived with the free-exercise-db
+    // import (migration 1776100000000) and every one of them is in the model's SELECT
+    // list, so a table missing them makes GET /api/exercises fail outright rather than
+    // degrade -- which the picker can only report as "no exercises found".
     await client.query(`
       CREATE TABLE IF NOT EXISTS exercises (
         id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -290,10 +293,33 @@ export async function initSchema() {
         category text,
         image_url text,
         video_url text,
+        equipment text,
+        discipline text,
+        level text,
+        mechanic text,
+        force text,
+        primary_muscles text[],
+        secondary_muscles text[],
+        instructions text[],
+        image_url_2 text,
         created_by uuid REFERENCES users(id),
         created_at timestamptz DEFAULT now(),
         updated_at timestamptz DEFAULT now()
       );
+    `);
+    // CREATE TABLE IF NOT EXISTS is a no-op on a database that predates those columns,
+    // so add them explicitly too -- same approach as user_embeddings below.
+    await client.query(`
+      ALTER TABLE exercises
+        ADD COLUMN IF NOT EXISTS equipment text,
+        ADD COLUMN IF NOT EXISTS discipline text,
+        ADD COLUMN IF NOT EXISTS level text,
+        ADD COLUMN IF NOT EXISTS mechanic text,
+        ADD COLUMN IF NOT EXISTS force text,
+        ADD COLUMN IF NOT EXISTS primary_muscles text[],
+        ADD COLUMN IF NOT EXISTS secondary_muscles text[],
+        ADD COLUMN IF NOT EXISTS instructions text[],
+        ADD COLUMN IF NOT EXISTS image_url_2 text;
     `);
 
     // AI chat messages
@@ -382,13 +408,19 @@ export async function initSchema() {
     await client.query('CREATE INDEX IF NOT EXISTS idx_cycle_entries_user_date ON cycle_entries(user_id, date DESC)');
     await client.query('CREATE INDEX IF NOT EXISTS idx_exercises_name ON exercises (lower(name))');
     await client.query('CREATE INDEX IF NOT EXISTS idx_exercises_muscle_group ON exercises (muscle_group)');
+    await client.query('CREATE INDEX IF NOT EXISTS idx_exercises_equipment ON exercises (equipment)');
+    await client.query('CREATE INDEX IF NOT EXISTS idx_exercises_discipline ON exercises (discipline)');
     await client.query('CREATE INDEX IF NOT EXISTS idx_chat_messages_user_created ON chat_messages(user_id, created_at DESC)');
     await client.query('CREATE INDEX IF NOT EXISTS idx_ai_insights_user_created ON ai_insights(user_id, created_at DESC)');
     await client.query('CREATE INDEX IF NOT EXISTS idx_user_activity_log_user_created ON user_activity_log(user_id, created_at DESC)');
     await client.query('CREATE INDEX IF NOT EXISTS idx_user_activity_log_event_type_created ON user_activity_log(event_type, created_at DESC)');
     await client.query('CREATE INDEX IF NOT EXISTS idx_user_storage_stats_measured ON user_storage_stats (measured_at NULLS FIRST)');
 
-    // pgvector (optional, non-fatal)
+    // pgvector (optional, non-fatal). A failed statement aborts the whole surrounding
+    // transaction, so this runs inside a savepoint: without one, a database without the
+    // extension turns the COMMIT below into a rollback and initSchema reports success
+    // having created no tables at all.
+    await client.query('SAVEPOINT pgvector');
     try {
       await client.query('CREATE EXTENSION IF NOT EXISTS vector');
       await client.query(`
@@ -414,7 +446,9 @@ export async function initSchema() {
       await client.query('CREATE INDEX IF NOT EXISTS idx_user_embeddings_user_created ON user_embeddings (user_id, created_at)');
       // Without this, semanticSearch degrades to a sequential scan
       await client.query('CREATE INDEX IF NOT EXISTS idx_user_embeddings_hnsw ON user_embeddings USING hnsw (embedding vector_cosine_ops)');
+      await client.query('RELEASE SAVEPOINT pgvector');
     } catch {
+      await client.query('ROLLBACK TO SAVEPOINT pgvector');
       logger.warn('pgvector not available -- skipping user_embeddings table');
     }
 
