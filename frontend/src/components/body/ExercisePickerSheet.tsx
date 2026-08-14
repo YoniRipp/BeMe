@@ -1,5 +1,5 @@
 import { useState, useMemo, useEffect, useRef } from 'react';
-import { Search, X, Dumbbell } from 'lucide-react';
+import { Search, X, Dumbbell, WifiOff } from 'lucide-react';
 import {
   Sheet,
   SheetContent,
@@ -65,7 +65,7 @@ export function ExercisePickerSheet({
   title = 'Add exercise',
   onPreviewImage,
 }: ExercisePickerSheetProps) {
-  const { filterExercises, isLoading } = useExercises();
+  const { filterExercises, isLoading, error, reload } = useExercises();
   const [query, setQuery] = useState('');
   const [equipment, setEquipment] = useState<string | undefined>();
   const [muscleGroup, setMuscleGroup] = useState<string | undefined>();
@@ -82,11 +82,11 @@ export function ExercisePickerSheet({
     }
   }, [open]);
 
+  // filterExercises changes identity when the catalog does, so a late arrival (a retry
+  // that lands after `isLoading` already went false, or a reconnect) recomputes here.
   const results = useMemo(
     () => filterExercises({ query, equipment, muscleGroup }),
-    // filterExercises is recreated each render; the inputs below are what actually matter.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    [query, equipment, muscleGroup, isLoading],
+    [filterExercises, query, equipment, muscleGroup],
   );
 
   // Reset paging and scroll position whenever the result set changes.
@@ -176,11 +176,28 @@ export function ExercisePickerSheet({
         >
           {isLoading ? (
             <p className="py-10 text-center text-sm text-muted-foreground">Loading exercises…</p>
+          ) : error ? (
+            // A failed fetch used to fall through to the empty state, which told the user
+            // their exercise doesn't exist instead of that the catalog never arrived.
+            <div className="py-12 text-center" role="alert">
+              <WifiOff className="mx-auto mb-3 h-8 w-8 text-muted-foreground/40" aria-hidden="true" />
+              <p className="text-sm font-semibold text-foreground">Couldn’t load exercises</p>
+              <p className="mt-1 text-xs text-muted-foreground">{error}</p>
+              <button
+                type="button"
+                onClick={reload}
+                className="mt-4 inline-flex min-h-11 items-center rounded-full border border-border px-5 text-xs font-bold text-primary transition-colors hover:bg-primary/5"
+              >
+                Try again
+              </button>
+            </div>
           ) : results.length === 0 ? (
             <div className="py-12 text-center">
               <Dumbbell className="mx-auto mb-3 h-8 w-8 text-muted-foreground/40" aria-hidden="true" />
               <p className="text-sm font-semibold text-foreground">No exercises found</p>
-              <p className="mt-1 text-xs text-muted-foreground">Try a different search or filter.</p>
+              <p className="mt-1 text-xs text-muted-foreground">
+                {hasFilters ? 'Try a different search or filter.' : 'The exercise catalog is empty.'}
+              </p>
               {hasFilters && (
                 <button
                   type="button"
