@@ -426,6 +426,7 @@ export default function TrainerClientView() {
       </ContentWithLoading>
 
       <FoodEntryModal
+        showRecentFoods={false}
         open={foodModalOpen}
         onOpenChange={(open) => {
           setFoodModalOpen(open);

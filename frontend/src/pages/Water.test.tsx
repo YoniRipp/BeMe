@@ -58,7 +58,7 @@ describe('Water page', () => {
     renderWater();
 
     await waitFor(() => expect(screen.getByText('of 8')).toBeInTheDocument());
-    await user.click(screen.getByRole('button', { name: 'Glass 6' }));
+    await user.click(screen.getByRole('button', { name: 'Set water to 6 glasses' }));
 
     await waitFor(() => expect(upsertMock).toHaveBeenCalledTimes(1));
     expect(upsertMock).toHaveBeenCalledWith(expect.objectContaining({ glasses: 6 }));
@@ -72,7 +72,7 @@ describe('Water page', () => {
     renderWater();
 
     await waitFor(() => expect(screen.getByText('of 8')).toBeInTheDocument());
-    await user.click(screen.getByRole('button', { name: 'Glass 3' }));
+    await user.click(screen.getByRole('button', { name: 'Set water to 3 glasses' }));
 
     await waitFor(() => expect(screen.getByText('3')).toBeInTheDocument());
     expect(screen.getByText('750 ml logged')).toBeInTheDocument();
@@ -85,7 +85,7 @@ describe('Water page', () => {
     renderWater();
 
     await waitFor(() => expect(screen.getByText('2')).toBeInTheDocument());
-    await user.click(screen.getByRole('button', { name: 'Glass 5' }));
+    await user.click(screen.getByRole('button', { name: 'Set water to 5 glasses' }));
 
     await waitFor(() => expect(screen.getByText('2')).toBeInTheDocument());
     expect(screen.getByText('500 ml logged')).toBeInTheDocument();
@@ -97,8 +97,9 @@ describe('Water page', () => {
     renderWater();
 
     await waitFor(() => expect(screen.getByText('3')).toBeInTheDocument());
-    // The third tile is the last filled one, so tapping it drops the count to 2.
-    await user.click(screen.getByRole('button', { name: 'Glass 3' }));
+    // The third tile is the last filled one, so it offers to clear itself rather than
+    // silently discarding glasses above it.
+    await user.click(screen.getByRole('button', { name: 'Clear glass 3' }));
 
     await waitFor(() => expect(upsertMock).toHaveBeenCalledWith(
       expect.objectContaining({ glasses: 2 })

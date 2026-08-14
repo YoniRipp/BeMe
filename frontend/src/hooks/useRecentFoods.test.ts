@@ -90,4 +90,32 @@ describe('useRecentFoods', () => {
 
     expect(result.current.map((f) => f.name)).toEqual(['Oats']);
   });
+
+  // `date` is date-only, so two entries logged the same day tie on time alone. The later
+  // one — a corrected portion — has to win, or one-tap re-log writes the stale macros.
+  it('prefers the later of two entries logged on the same day', () => {
+    const sameDay = new Date(2026, 0, 5);
+    const entries = [
+      entry({ name: 'Oats', date: sameDay, calories: 350, portionAmount: 100 }),
+      entry({ name: 'Oats', date: sameDay, calories: 420, portionAmount: 120 }),
+    ];
+
+    const { result } = renderHook(() => useRecentFoods(entries));
+
+    expect(result.current[0].calories).toBe(420);
+    expect(result.current[0].portionAmount).toBe(120);
+  });
+
+  // useEnergy appends optimistic writes to the tail, so a just-logged food is last in the
+  // array while being the newest thing in it.
+  it('sees a food appended after the scan window', () => {
+    const old = Array.from({ length: 320 }, (_, i) =>
+      entry({ name: `Filler ${i}`, date: new Date(2025, 0, 1) })
+    );
+    const justLogged = entry({ name: 'Fresh Bagel', date: new Date(2026, 5, 1) });
+
+    const { result } = renderHook(() => useRecentFoods([...old, justLogged]));
+
+    expect(result.current.map((f) => f.name)).toContain('Fresh Bagel');
+  });
 });

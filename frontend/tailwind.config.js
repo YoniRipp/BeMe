@@ -116,7 +116,10 @@ export default {
           DEFAULT: "hsl(var(--terracotta))",
           light: "hsl(var(--terracotta-light))",
         },
-        gold: "hsl(var(--gold))",
+        gold: {
+          DEFAULT: "hsl(var(--gold))",
+          foreground: "hsl(var(--gold-foreground))",
+        },
         success: {
           DEFAULT: "hsl(var(--success))",
           foreground: "hsl(var(--success-foreground))",
@@ -125,8 +128,14 @@ export default {
           DEFAULT: "hsl(var(--info))",
           foreground: "hsl(var(--info-foreground))",
         },
-        warning: "hsl(var(--warning))",
-        scrim: "hsl(var(--scrim))",
+        warning: {
+          DEFAULT: "hsl(var(--warning))",
+          foreground: "hsl(var(--warning-foreground))",
+        },
+        scrim: {
+          DEFAULT: "hsl(var(--scrim))",
+          foreground: "hsl(var(--scrim-foreground))",
+        },
       },
       borderRadius: {
         lg: "var(--radius)",

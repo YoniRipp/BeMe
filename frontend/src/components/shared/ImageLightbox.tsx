@@ -22,7 +22,7 @@ export function ImageLightbox({ open, onOpenChange, src, alt }: ImageLightboxPro
           <button
             type="button"
             onClick={() => onOpenChange(false)}
-            className="absolute -top-12 right-0 flex h-11 w-11 items-center justify-center rounded-full bg-scrim/70 text-background hover:bg-scrim/90 transition-colors"
+            className="absolute -top-12 right-0 flex h-11 w-11 items-center justify-center rounded-full bg-scrim/70 text-scrim-foreground hover:bg-scrim/90 transition-colors"
             aria-label="Close image preview"
           >
             <X className="w-5 h-5" />
@@ -34,7 +34,7 @@ export function ImageLightbox({ open, onOpenChange, src, alt }: ImageLightboxPro
             className="max-h-[70vh] w-auto rounded-xl object-contain"
           />
           {alt && (
-            <p className="mt-3 text-sm font-medium text-center text-background">{alt}</p>
+            <p className="mt-3 text-sm font-medium text-center text-scrim-foreground">{alt}</p>
           )}
         </div>
       </DialogContent>

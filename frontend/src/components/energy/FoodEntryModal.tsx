@@ -5,9 +5,8 @@ import { FoodEntry } from '@/types/energy';
 import { foodEntryFormSchema, type FoodEntryFormValues } from '@/schemas/foodEntry';
 import { useDebounce } from '@/hooks/useDebounce';
 import { searchFoods, lookupOrCreateFood, type FoodSearchResult } from '@/features/energy/api';
-import { useEnergy } from '@/hooks/useEnergy';
-import { useRecentFoods, type RecentFood } from '@/hooks/useRecentFoods';
-import { RecentFoodsStrip } from './RecentFoodsStrip';
+import { type RecentFood } from '@/hooks/useRecentFoods';
+import { RecentFoodsSection } from './RecentFoodsStrip';
 import { lookupBarcode } from '@/features/energy/barcodeLookup';
 import { BarcodeScanner } from '@/components/energy/BarcodeScanner';
 import {
@@ -72,6 +71,11 @@ interface FoodEntryModalProps {
   onSave: (entry: Omit<FoodEntry, 'id'>) => void;
   entry?: FoodEntry;
   defaultMealType?: MealTypeOption;
+  /**
+   * Show "Log again" suggestions built from the signed-in user's own history. Off for
+   * trainers logging on a client's behalf, where that history is the wrong data.
+   */
+  showRecentFoods?: boolean;
 }
 
 const MIN_SEARCH_LENGTH = 2;
@@ -109,7 +113,7 @@ const defaultValues: FoodEntryFormValues = {
   fats: '',
 };
 
-export function FoodEntryModal({ open, onOpenChange, onSave, entry, defaultMealType }: FoodEntryModalProps) {
+export function FoodEntryModal({ open, onOpenChange, onSave, entry, defaultMealType, showRecentFoods = true }: FoodEntryModalProps) {
   const [selectedMealType, setSelectedMealType] = useState<MealTypeOption>(defaultMealType ?? getCurrentMealType());
   const [portionGrams, setPortionGrams] = useState(DEFAULT_REFERENCE_GRAMS);
   const [per100g, setPer100g] = useState<Per100g | null>(null);
@@ -120,6 +124,8 @@ export function FoodEntryModal({ open, onOpenChange, onSave, entry, defaultMealT
   const [unitWeightGrams, setUnitWeightGrams] = useState<number | null>(null);
   const [unitCount, setUnitCount] = useState(1);
   const [isCustomPortion, setIsCustomPortion] = useState(false);
+  /** Portion carried in from a "Log again" chip, where macros are already totals. */
+  const [directPortion, setDirectPortion] = useState<{ amount: number; unit: string } | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [searchResults, setSearchResults] = useState<FoodSearchResult[]>([]);
   const [isSearching, setIsSearching] = useState(false);
@@ -145,12 +151,6 @@ export function FoodEntryModal({ open, onOpenChange, onSave, entry, defaultMealT
     mode: 'onChange',
   });
 
-  // Suggestions come from entries already in the cache — no extra request, and the scan
-  // is bounded inside the hook. Editing an entry excludes itself, since "log again" makes
-  // no sense for the row you are currently editing.
-  const { foodEntries } = useEnergy();
-  const recentFoods = useRecentFoods(foodEntries, selectedMealType, entry?.name);
-
   const handleSelectRecent = useCallback(
     (food: RecentFood) => {
       setValue('name', food.name, { shouldValidate: true });
@@ -158,10 +158,28 @@ export function FoodEntryModal({ open, onOpenChange, onSave, entry, defaultMealT
       setValue('protein', String(food.protein), { shouldValidate: true });
       setValue('carbs', String(food.carbs), { shouldValidate: true });
       setValue('fats', String(food.fats), { shouldValidate: true });
-      // The macros are already the totals for the logged portion, so scaling must not
-      // run over them again — clear the per-100g basis the search path sets up.
+
+      // The chip's macros are already totals for the portion that was logged, so the
+      // per-100g scaling path must not run over them again. Every piece of state that
+      // path owns is cleared — leaving any of it behind would carry the previous food's
+      // portion (its unit, its liquid-ness, its serving size) onto this one.
       setPer100g(null);
+      setPortionGrams(DEFAULT_REFERENCE_GRAMS);
+      setIsLiquid(false);
+      setServingSizesMl(null);
+      setServingType('');
+      setDefaultUnit(null);
+      setUnitWeightGrams(null);
+      setUnitCount(1);
       setIsCustomPortion(false);
+      // The portion travels with the suggestion instead, so re-logging "Oats · 120 g"
+      // saves 120 g rather than dropping the portion the chip advertised.
+      setDirectPortion(
+        food.portionAmount != null
+          ? { amount: food.portionAmount, unit: food.portionUnit ?? 'g' }
+          : null
+      );
+
       setSearchQuery('');
       setSearchResults([]);
       setDropdownOpen(false);
@@ -192,6 +210,7 @@ export function FoodEntryModal({ open, onOpenChange, onSave, entry, defaultMealT
     setUnitWeightGrams(null);
     setUnitCount(1);
     setIsCustomPortion(false);
+    setDirectPortion(null);
     setSearchQuery('');
     setSearchResults([]);
     setSearchError(null);
@@ -398,6 +417,10 @@ export function FoodEntryModal({ open, onOpenChange, onSave, entry, defaultMealT
         portionUnit: defaultUnit ? defaultUnit : (isLiquid ? ('ml' as const) : ('g' as const)),
         ...(isLiquid && !defaultUnit && servingType && servingType !== 'other' && { servingType }),
       }),
+      ...(per100g == null && directPortion != null && {
+        portionAmount: directPortion.amount,
+        portionUnit: directPortion.unit,
+      }),
       startTime: entry?.startTime ?? MEAL_START_TIMES[selectedMealType],
       ...(entry?.endTime != null && { endTime: entry.endTime }),
       mealType: selectedMealType,
@@ -447,7 +470,13 @@ export function FoodEntryModal({ open, onOpenChange, onSave, entry, defaultMealT
 
             {/* Above search on purpose: re-logging a usual meal should not start with
                 typing its name again. */}
-            <RecentFoodsStrip foods={recentFoods} onSelect={handleSelectRecent} />
+            {showRecentFoods && (
+              <RecentFoodsSection
+                mealType={selectedMealType}
+                excludeName={entry?.name}
+                onSelect={handleSelectRecent}
+              />
+            )}
 
             <div ref={searchContainerRef} className="relative">
               <Label htmlFor="food-search">Search food (optional)</Label>

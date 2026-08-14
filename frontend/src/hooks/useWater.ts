@@ -1,4 +1,4 @@
-import { useCallback } from 'react';
+import { useCallback, useRef } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { waterApi, type ApiWaterEntry } from '@/core/api/health';
 import { queryKeys } from '@/lib/queryClient';
@@ -44,28 +44,35 @@ export function useWater() {
    * sequential add-glass calls with the UI frozen until the last one landed; this writes
    * the new count immediately and reconciles when the server answers.
    */
+  // Taps arrive faster than responses, and responses can land out of order — a slow reply
+  // for "3" must not overwrite a later "5". Only the newest request is allowed to write.
+  const latestSetRef = useRef(0);
+
   const setGlassesMutation = useMutation({
     mutationFn: (glasses: number) => waterApi.upsert({ date: today, glasses }),
     onMutate: async (glasses: number) => {
       await queryClient.cancelQueries({ queryKey: todayKey });
       const previous = queryClient.getQueryData<ApiWaterEntry>(todayKey);
+      const requestId = ++latestSetRef.current;
       queryClient.setQueryData<ApiWaterEntry>(todayKey, (current) => ({
         ...(current ?? { date: today }),
         glasses,
         mlTotal: glasses * ML_PER_GLASS,
       }));
-      return { previous };
+      return { previous, requestId };
     },
     onError: (_error, _glasses, context) => {
-      if (context?.previous !== undefined) {
+      // Only roll back if nothing newer has been optimistically applied since.
+      if (context?.previous !== undefined && context.requestId === latestSetRef.current) {
         queryClient.setQueryData(todayKey, context.previous);
       }
     },
-    onSuccess: (updated) => {
-      queryClient.setQueryData(todayKey, updated);
-    },
-    onSettled: () => {
-      queryClient.invalidateQueries({ queryKey: todayKey });
+    onSuccess: (updated, _glasses, context) => {
+      // The server response is authoritative, so no follow-up refetch is needed — and
+      // invalidating here would add a GET to every tap on the most-tapped screen.
+      if (context?.requestId === latestSetRef.current) {
+        queryClient.setQueryData(todayKey, updated);
+      }
     },
   });
 

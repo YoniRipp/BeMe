@@ -124,16 +124,43 @@ const MAX_PAGES = 25;
  * Fetch every page of a paginated list endpoint ({ data, total, hasMore }).
  * Without explicit limit/offset the server returns only the newest 50 rows,
  * which callers used to mistake for the complete dataset.
+ *
+ * The first response carries `total`, so the remaining pages are requested together
+ * rather than one after another. Chaining them made the wait scale with history length:
+ * ~4,000 food entries meant twenty serialized round-trips before the dashboard painted.
+ *
+ * This is still a whole-history read. Filtering by date server-side is the real fix —
+ * see `backend/data-lifecycle` — but that changes the endpoints' contract, so it is a
+ * separate piece of work.
  */
 export async function requestAllPages<T>(path: string): Promise<PaginatedResponse<T>> {
   const sep = path.includes('?') ? '&' : '?';
-  const data: T[] = [];
-  let total = 0;
-  for (let page = 0; page < MAX_PAGES; page++) {
-    const res = await request<PaginatedResponse<T>>(`${path}${sep}limit=${PAGE_LIMIT}&offset=${data.length}`);
-    data.push(...res.data);
-    total = res.total;
-    if (!res.hasMore || res.data.length === 0) break;
+  const page = (offset: number) =>
+    request<PaginatedResponse<T>>(`${path}${sep}limit=${PAGE_LIMIT}&offset=${offset}`);
+
+  const first = await page(0);
+  const total = first.total ?? first.data.length;
+
+  if (!first.hasMore || first.data.length === 0) {
+    return { data: first.data, total, limit: first.data.length, offset: 0, hasMore: false };
   }
-  return { data, total, limit: data.length, offset: 0, hasMore: data.length < total };
+
+  const remaining = Math.min(
+    Math.ceil(Math.max(0, total - first.data.length) / PAGE_LIMIT),
+    MAX_PAGES - 1
+  );
+  const rest = await Promise.all(
+    Array.from({ length: remaining }, (_, i) => page((i + 1) * PAGE_LIMIT))
+  );
+
+  const data = [...first.data, ...rest.flatMap((r) => r.data)];
+  return {
+    data,
+    total,
+    limit: data.length,
+    offset: 0,
+    // Truthful when MAX_PAGES capped the walk; `total` being absent must not read as
+    // "everything fetched".
+    hasMore: first.total != null && data.length < first.total,
+  };
 }

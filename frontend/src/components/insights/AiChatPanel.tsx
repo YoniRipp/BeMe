@@ -144,8 +144,9 @@ export function AiChatPanel({ open, onOpenChange }: AiChatPanelProps) {
   const handleStartRecording = useCallback(async () => {
     try {
       await dictation.start();
-    } catch (e) {
-      toast.error(e instanceof Error ? e.message : 'Could not start recording.');
+    } catch {
+      // start() sets `error` before it throws, and the effect above turns that into a
+      // toast — reporting it here as well would show the same message twice.
     }
   }, [dictation]);
 
@@ -293,7 +294,7 @@ export function AiChatPanel({ open, onOpenChange }: AiChatPanelProps) {
                 rows={1}
                 className={cn(
                   'flex-1 resize-none rounded-xl border px-3 py-2 text-sm',
-                  'focus:outline-none focus:ring-2 focus:ring-primary/50/50',
+                  'focus:outline-none focus:ring-2 focus:ring-primary/50',
                   'max-h-[120px] min-h-[40px]',
                   'bg-background'
                 )}
@@ -321,7 +322,7 @@ export function AiChatPanel({ open, onOpenChange }: AiChatPanelProps) {
                 type="submit"
                 size="sm"
                 disabled={!input.trim() || sendMutation.isPending}
-                className="bg-primary hover:bg-primary/90 text-white h-10 w-10 p-0 rounded-xl shrink-0"
+                className="bg-primary hover:bg-primary/90 text-primary-foreground h-10 w-10 p-0 rounded-xl shrink-0"
                 aria-label="Send message"
               >
                 <Send className="w-4 h-4" />
@@ -350,7 +351,7 @@ function MessageBubble({ message }: { message: ChatMessage }) {
         className={cn(
           'max-w-[85%] rounded-2xl px-3 py-2 text-sm whitespace-pre-wrap',
           isUser
-            ? 'bg-primary text-white rounded-tr-sm'
+            ? 'bg-primary text-primary-foreground rounded-tr-sm'
             : 'bg-muted rounded-tl-sm'
         )}
       >

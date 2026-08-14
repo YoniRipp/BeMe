@@ -19,10 +19,15 @@ export interface RestTimer {
  * Driven off a wall-clock deadline rather than by decrementing a counter, because the
  * interval stops firing when the phone sleeps or the tab is backgrounded — which is
  * exactly what happens while someone is resting. On return the remaining time is
- * recomputed from the deadline instead of being however far the interval got.
+ * recomputed from the deadline, so the display is correct rather than however far the
+ * interval got before it froze.
  *
- * Completion is announced through a notification, so it lands even if the app is not in
- * front; the toast is the fallback for when notifications were never granted.
+ * Known limitation: the alert is driven by that same interval, so a phone locked for the
+ * whole rest period is told the moment it wakes, not at the deadline. Firing on time from
+ * the background needs the service worker (or a native local notification) to own the
+ * schedule — worth doing, but a larger change than this hook. `showNotification` is used
+ * rather than a toast so the message survives the app not being in front, with the toast
+ * as the fallback when notification permission was never granted.
  */
 export function useRestTimer(): RestTimer {
   const [remaining, setRemaining] = useState<number | null>(null);

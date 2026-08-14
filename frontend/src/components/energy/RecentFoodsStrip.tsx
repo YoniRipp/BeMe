@@ -1,5 +1,28 @@
 import { History } from 'lucide-react';
-import type { RecentFood } from '@/hooks/useRecentFoods';
+import { useEnergy } from '@/hooks/useEnergy';
+import { useRecentFoods, type RecentFood } from '@/hooks/useRecentFoods';
+import type { FoodEntry } from '@/types/energy';
+
+/**
+ * Reads the signed-in user's own food log and renders the suggestions.
+ *
+ * Kept as its own component so the `useEnergy` call only happens where suggestions are
+ * wanted. FoodEntryModal is also used by trainers logging on a client's behalf, where the
+ * trainer's own history is the wrong data — there, the parent simply does not render this.
+ */
+export function RecentFoodsSection({
+  mealType,
+  excludeName,
+  onSelect,
+}: {
+  mealType?: FoodEntry['mealType'];
+  excludeName?: string;
+  onSelect: (food: RecentFood) => void;
+}) {
+  const { foodEntries } = useEnergy();
+  const foods = useRecentFoods(foodEntries, mealType, excludeName);
+  return <RecentFoodsStrip foods={foods} onSelect={onSelect} />;
+}
 
 /**
  * One-tap re-log for the foods this user actually eats. Sits above the search field

@@ -47,10 +47,10 @@ export function ExerciseList({ exercises }: ExerciseListProps) {
                       e.stopPropagation();
                       setVideoModal({ name: exercise.name, url: videoUrl });
                     }}
-                    className="absolute inset-0 flex items-center justify-center bg-black/30 rounded-lg"
+                    className="absolute inset-0 flex items-center justify-center rounded-lg bg-scrim/40"
                     aria-label={`Play video for ${exercise.name}`}
                   >
-                    <Play className="w-4 h-4 text-white fill-white" />
+                    <Play className="w-4 h-4 text-scrim-foreground fill-current" />
                   </button>
                 )}
               </div>

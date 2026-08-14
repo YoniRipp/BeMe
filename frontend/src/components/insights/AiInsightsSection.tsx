@@ -446,7 +446,7 @@ export function AiInsightsSection() {
             </div>
             <Button
               onClick={() => setChatOpen(true)}
-              className="bg-primary hover:bg-primary/90 text-white shrink-0"
+              className="bg-primary hover:bg-primary/90 text-primary-foreground shrink-0"
               size="sm"
             >
               Chat Now

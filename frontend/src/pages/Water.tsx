@@ -79,7 +79,11 @@ export function Water() {
                     : 'border-border bg-muted/40 text-muted-foreground hover:border-info/60',
                 ].join(' ')}
                 aria-pressed={filled}
-                aria-label={`Glass ${i + 1}`}
+                aria-label={
+                  target === glasses - 1 && filled
+                    ? `Clear glass ${i + 1}`
+                    : `Set water to ${target} ${target === 1 ? 'glass' : 'glasses'}`
+                }
               >
                 <Droplets className="h-5 w-5" />
               </button>

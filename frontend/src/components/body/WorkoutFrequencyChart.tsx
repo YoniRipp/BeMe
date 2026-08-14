@@ -23,7 +23,13 @@ interface WorkoutFrequencyChartProps {
   weeks?: number;
 }
 
-const COLORS = ['hsl(var(--chart-4))', 'hsl(var(--chart-1))', 'hsl(var(--chart-1))', 'hsl(var(--chart-3))', 'hsl(var(--destructive))'];
+const COLORS = [
+  'hsl(var(--chart-1))',
+  'hsl(var(--chart-2))',
+  'hsl(var(--chart-3))',
+  'hsl(var(--chart-4))',
+  'hsl(var(--chart-5))',
+];
 
 export function WorkoutFrequencyChart({ workouts, weeks = 12 }: WorkoutFrequencyChartProps) {
   const [chartType, setChartType] = useState<'bar' | 'pie'>('bar');
