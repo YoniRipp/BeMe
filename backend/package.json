@@ -25,6 +25,8 @@
     "seed:foods": "node scripts/seedPopularFoods.js",
     "import:foundation-foods": "node scripts/importFoundationFoods.js",
     "migrate:up": "node scripts/migrate-up.cjs",
+    "schema:init": "tsx scripts/run-init-schema.ts",
+    "check:schema-drift": "node scripts/check-schema-drift.mjs",
     "migrate:create": "node-pg-migrate create --envPath .env.development"
   },
   "dependencies": {

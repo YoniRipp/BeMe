@@ -125,8 +125,18 @@ export async function initSchema() {
         unit_weight_grams numeric,
         search_aliases text[],
         name_tsv tsvector,
+        verified boolean NOT NULL DEFAULT false,
+        verified_at timestamptz,
+        verified_by uuid REFERENCES users(id),
         created_at timestamptz DEFAULT now()
       );
+    `);
+    // Added by migration 1775100000000 for admin review of Gemini-created foods.
+    await client.query(`
+      ALTER TABLE foods
+        ADD COLUMN IF NOT EXISTS verified boolean NOT NULL DEFAULT false,
+        ADD COLUMN IF NOT EXISTS verified_at timestamptz,
+        ADD COLUMN IF NOT EXISTS verified_by uuid REFERENCES users(id);
     `);
 
     await client.query(`
@@ -281,6 +291,21 @@ export async function initSchema() {
       );
     `);
 
+    // Activity streaks (migration 1775000000000).
+    await client.query(`
+      CREATE TABLE IF NOT EXISTS streaks (
+        id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+        user_id uuid NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+        type text NOT NULL CHECK (type IN ('workout', 'food', 'water', 'weight', 'login')),
+        current_count int NOT NULL DEFAULT 0,
+        best_count int NOT NULL DEFAULT 0,
+        last_date date,
+        created_at timestamptz NOT NULL DEFAULT now(),
+        updated_at timestamptz NOT NULL DEFAULT now(),
+        UNIQUE (user_id, type)
+      );
+    `);
+
     // Exercise catalog. The columns below `video_url` arrived with the free-exercise-db
     // import (migration 1776100000000) and every one of them is in the model's SELECT
     // list, so a table missing them makes GET /api/exercises fail outright rather than
@@ -406,6 +431,8 @@ export async function initSchema() {
     await client.query('CREATE INDEX IF NOT EXISTS idx_weight_entries_user_date ON weight_entries(user_id, date DESC)');
     await client.query('CREATE INDEX IF NOT EXISTS idx_water_entries_user_date ON water_entries(user_id, date DESC)');
     await client.query('CREATE INDEX IF NOT EXISTS idx_cycle_entries_user_date ON cycle_entries(user_id, date DESC)');
+    await client.query('CREATE INDEX IF NOT EXISTS idx_streaks_user ON streaks(user_id)');
+    await client.query('CREATE INDEX IF NOT EXISTS idx_foods_source_verified ON foods (source, verified)');
     await client.query('CREATE INDEX IF NOT EXISTS idx_exercises_name ON exercises (lower(name))');
     await client.query('CREATE INDEX IF NOT EXISTS idx_exercises_muscle_group ON exercises (muscle_group)');
     await client.query('CREATE INDEX IF NOT EXISTS idx_exercises_equipment ON exercises (equipment)');
