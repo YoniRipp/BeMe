@@ -313,7 +313,7 @@ export function AiChatPanel({ open, onOpenChange }: AiChatPanelProps) {
                   variant="ghost"
                   onClick={handleStartRecording}
                   disabled={sendMutation.isPending}
-                  className="h-10 w-10 p-0 rounded-xl shrink-0 text-muted-foreground hover:text-foreground"
+                  className="h-10 w-10 p-0 rounded-md shrink-0 text-muted-foreground hover:text-foreground"
                   aria-label="Record a message"
                 >
                   <Mic className="w-[18px] h-[18px]" />
@@ -323,7 +323,7 @@ export function AiChatPanel({ open, onOpenChange }: AiChatPanelProps) {
                 type="submit"
                 size="sm"
                 disabled={!input.trim() || sendMutation.isPending}
-                className="bg-primary hover:bg-primary/90 text-primary-foreground h-10 w-10 p-0 rounded-xl shrink-0"
+                className="bg-primary hover:bg-primary/90 text-primary-foreground h-10 w-10 p-0 rounded-md shrink-0"
                 aria-label="Send message"
               >
                 <Send className="w-4 h-4" />

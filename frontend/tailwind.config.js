@@ -137,10 +137,15 @@ export default {
           foreground: "hsl(var(--scrim-foreground))",
         },
       },
+      // Every step derives from --radius, so the scale stays ordered and moves together.
+      // `xl` was previously left undefined and fell through to Tailwind's own 0.75rem —
+      // 12px, which made it *smaller* than `lg` and identical to `md`.
+      //   sm 10 · md 12 · lg 14 · xl 18 · 2xl 22 · 3xl 30
       borderRadius: {
-        lg: "var(--radius)",
-        md: "calc(var(--radius) - 2px)",
         sm: "calc(var(--radius) - 4px)",
+        md: "calc(var(--radius) - 2px)",
+        lg: "var(--radius)",
+        xl: "calc(var(--radius) + 4px)",
         '2xl': "calc(var(--radius) + 8px)",
         '3xl': "calc(var(--radius) + 16px)",
       },

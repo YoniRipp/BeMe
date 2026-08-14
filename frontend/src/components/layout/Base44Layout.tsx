@@ -182,7 +182,7 @@ export function Base44Layout() {
               className="flex items-center gap-3"
               aria-label="TrackVibe home"
             >
-              <div className="w-10 h-10 rounded-xl bg-primary flex items-center justify-center shadow-card">
+              <div className="w-10 h-10 rounded-md bg-primary flex items-center justify-center shadow-card">
                 <Leaf className="w-5 h-5 text-primary-foreground" />
               </div>
               <div>

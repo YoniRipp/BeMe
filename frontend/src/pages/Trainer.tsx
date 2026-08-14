@@ -189,7 +189,7 @@ export default function Trainer() {
                 type="button"
                 onClick={() => setRange(option.value)}
                 className={cn(
-                  'h-9 min-w-14 flex-1 rounded-xl px-3 text-xs font-extrabold tracking-wide transition-colors',
+                  'h-9 min-w-14 flex-1 rounded-md px-3 text-xs font-extrabold tracking-wide transition-colors',
                   range === option.value
                     ? 'bg-background text-foreground shadow-sm'
                     : 'text-muted-foreground hover:text-foreground'
@@ -507,7 +507,7 @@ function RosterPanel({
               <button
                 type="button"
                 onClick={() => navigateToClient(client.clientId)}
-                className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl text-muted-foreground hover:bg-muted hover:text-foreground"
+                className="flex h-9 w-9 shrink-0 items-center justify-center rounded-md text-muted-foreground hover:bg-muted hover:text-foreground"
                 aria-label={`Open ${client.clientName}`}
               >
                 <ChevronRight className="h-4 w-4" />
@@ -515,7 +515,7 @@ function RosterPanel({
               <button
                 type="button"
                 onClick={() => removeClient(client)}
-                className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl text-muted-foreground hover:bg-destructive/10 hover:text-destructive"
+                className="flex h-9 w-9 shrink-0 items-center justify-center rounded-md text-muted-foreground hover:bg-destructive/10 hover:text-destructive"
                 aria-label={`Remove ${client.clientName}`}
               >
                 <Trash2 className="h-4 w-4" />

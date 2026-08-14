@@ -58,12 +58,19 @@ Status: implemented. Net −547 lines across 43 files.
 - [ ] `npx playwright test` — not run here; no browser/server in this container
 - [ ] Visual pass: the empty states on Body / Energy / Goals, and the two progress rings
 
-## Open decision for the owner
+## Resolved after review
 
-`rounded-xl` (45 call sites) resolves to Tailwind's default 12px because the config never
-defines `xl` — so it is **smaller** than `rounded-lg` (14px) and identical to `rounded-md`.
-Fixing the scale means `xl: calc(var(--radius) + 4px)` = 18px, which visibly changes all 45.
-Left undecided; the four remaining arbitrary radii (18px, 20px, 24px ×2) are waiting on it.
+`rounded-xl` resolved to Tailwind's default 12px because the config never defined `xl` — so
+it was **smaller** than `rounded-lg` (14px) and identical to `rounded-md`. With the owner's
+sign-off the scale is now fully derived from `--radius` and monotonic:
+
+`sm 10 · md 12 · lg 14 · xl 18 · 2xl 22 · 3xl 30`
+
+Seven of the 48 `rounded-xl` call sites sat on controls ≤40px, where 18px is half the height
+and turns a square into a circle; those name `rounded-md` explicitly and render exactly as
+before. The remaining 41 — cards, inputs, tiles, chips — soften from 12px to 18px, which is
+the intended effect. The last arbitrary radius (`rounded-[20px]` on WorkoutCard) became
+`rounded-2xl`, so no bracket radius remains anywhere in `src/`.
 
 ## Still ahead
 

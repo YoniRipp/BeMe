@@ -21,7 +21,7 @@ export const WorkoutCard = memo(function WorkoutCard({ workout, onEdit, onDelete
   const cardImageUrl = workout.exercises.map(ex => getImageUrl(ex.name)).find(Boolean);
   return (
     <div
-      className={`group flex items-start gap-3.5 rounded-[20px] border border-border bg-card p-4 shadow-card hover:border-primary/35 transition-colors cursor-pointer tap-target ${workout.completed ? 'opacity-75' : ''}`}
+      className={`group flex items-start gap-3.5 rounded-2xl border border-border bg-card p-4 shadow-card hover:border-primary/35 transition-colors cursor-pointer tap-target ${workout.completed ? 'opacity-75' : ''}`}
       onClick={() => onEdit && onEdit(workout)}
       role="button"
       tabIndex={0}
