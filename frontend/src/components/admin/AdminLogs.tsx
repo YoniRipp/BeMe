@@ -87,7 +87,7 @@ function PayloadDetails({ payload }: { payload: Record<string, unknown> | null }
             <span key={k} className="inline-flex items-center gap-1 text-eyebrow bg-muted rounded px-2 py-0.5">
               <span className="text-muted-foreground font-medium">{k}:</span>
               <span className="font-mono truncate max-w-[140px]" title={String(v)}>
-                {Array.isArray(v) ? v.join(', ') : String(v)}
+                {Array.isArray(v) ? v.join(',') : String(v)}
               </span>
             </span>
           ))}

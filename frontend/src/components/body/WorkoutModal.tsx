@@ -89,7 +89,7 @@ function summarizeSets(ex: Exercise, unit: string): string {
   if (sameWeight && sameReps) {
     return `${rows.length}×${rows[0].reps}${rows[0].weight != null ? ` · ${rows[0].weight}${unit}` : ''}`;
   }
-  return rows.map((r) => (r.weight != null ? `${r.weight}${unit}×${r.reps}` : `${r.reps}`)).join(', ');
+  return rows.map((r) => (r.weight != null ? `${r.weight}${unit}×${r.reps}` : `${r.reps}`)).join(',');
 }
 
 function fmtRest(s: number) {
@@ -314,6 +314,7 @@ function WorkoutDetailView({
   getImageUrl,
   getPrevious,
   onEdit,
+  restTimer,
   onLightbox,
   onPersist,
 }: {
@@ -323,7 +324,9 @@ function WorkoutDetailView({
   dateFormat: string;
   getImageUrl: (name: string) => string | undefined;
   getPrevious: (name: string) => { date: Date; exercise: Exercise } | undefined;
-  onEdit: () => void;
+  onEdit: (loggedExercises: Exercise[]) => void;
+  /** Owned by the modal so a running rest survives closing the logger. */
+  restTimer: RestTimerState;
   onLightbox: (img: { src: string; alt: string }) => void;
   onPersist: (updates: Partial<Workout>) => void;
 }) {
@@ -334,7 +337,6 @@ function WorkoutDetailView({
   const [picker, setPicker] = useState<{ index?: number } | null>(null);
   /** Index of the exercise whose note field is expanded. */
   const [noteFor, setNoteFor] = useState<number | null>(null);
-  const restTimer = useRestTimer();
 
   // Re-seed only when a different workout is opened, so background refetches (including our
   // own optimistic save echo) never clobber edits in progress.
@@ -538,7 +540,7 @@ function WorkoutDetailView({
             type="button"
             variant="ghost"
             size="sm"
-            onClick={() => { flush(); onEdit(); }}
+            onClick={() => { flush(); onEdit(exercises); }}
             className="shrink-0 gap-1.5 text-muted-foreground hover:text-foreground"
           >
             <Settings2 className="h-4 w-4" />
@@ -722,9 +724,12 @@ export function WorkoutModal({ open, onOpenChange, onSave, workout }: WorkoutMod
   const [editorPicker, setEditorPicker] = useState<number | null>(null);
   // Existing workouts open in a read-only view first; new workouts open straight into the editor.
   const [mode, setMode] = useState<'view' | 'edit'>(workout ? 'view' : 'edit');
-  // The editor has no set-completion ticks, so its timer is manual and separate from the
-  // logger's — starting one there should not affect a rest already running in the logger.
-  const editorRestTimer = useRestTimer();
+  // One rest timer for the whole modal. Owned here rather than in WorkoutDetailView,
+  // which unmounts the moment the user switches to the editor or closes the sheet — the
+  // countdown has to outlive that.
+  const restTimer = useRestTimer();
+  /** Exercises handed up by the logger when the user opens the editor. */
+  const [handoffExercises, setHandoffExercises] = useState<Exercise[] | null>(null);
 
   // Most recent prior performance of each exercise (by name), for the "Last time" hint.
   const previousByName = useMemo(() => {
@@ -870,14 +875,18 @@ export function WorkoutModal({ open, onOpenChange, onSave, workout }: WorkoutMod
   useEffect(() => {
     if (!open) return;
     if (workout) {
+      // Prefer what the logger handed up. updateWorkout only writes the cache once the
+      // server answers, so the `workout` prop can still be pre-flush at this point —
+      // seeding from it would put the logged sets back to how they were.
+      const sourceExercises = handoffExercises ?? workout.exercises;
       reset({
         title: workout.title,
         type: workout.type,
         date: toLocalDateString(new Date(workout.date)),
         durationMinutes: workout.durationMinutes.toString(),
         notes: workout.notes ?? '',
-        exercises: workout.exercises.length
-          ? workout.exercises.map((e) => {
+        exercises: sourceExercises.length
+          ? sourceExercises.map((e) => {
               const repsPerSet =
                 e.repsPerSet && e.repsPerSet.length === e.sets
                   ? e.repsPerSet
@@ -901,7 +910,12 @@ export function WorkoutModal({ open, onOpenChange, onSave, workout }: WorkoutMod
     // not keyed on `workout` identity: that changes on every cache write, which would
     // reset the form under the user mid-edit.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [open, workout?.id, mode, reset]);
+  }, [open, workout?.id, mode, handoffExercises, reset]);
+
+  // Consumed — a later background refetch must not re-apply a stale handoff.
+  useEffect(() => {
+    if (mode === 'view' || !open) setHandoffExercises(null);
+  }, [mode, open]);
 
   const addExercise = () =>
     append({
@@ -1040,7 +1054,11 @@ export function WorkoutModal({ open, onOpenChange, onSave, workout }: WorkoutMod
             dateFormat={settings.dateFormat}
             getImageUrl={getImageUrl}
             getPrevious={getPrevious}
-            onEdit={() => setMode('edit')}
+            restTimer={restTimer}
+            onEdit={(loggedExercises) => {
+              setHandoffExercises(loggedExercises);
+              setMode('edit');
+            }}
             onLightbox={setLightboxImage}
             onPersist={(updates) =>
               updateWorkout(workout.id, updates).catch(() => toast.error('Could not save changes. Please try again.'))
@@ -1186,7 +1204,7 @@ export function WorkoutModal({ open, onOpenChange, onSave, workout }: WorkoutMod
                     </Button>
                   </div>
                   <div className="mb-3 flex items-center gap-2 rounded-xl border border-border bg-muted/40 px-3 py-2">
-                    <RestTimer timer={editorRestTimer} />
+                    <RestTimer timer={restTimer} />
                   </div>
                   <div className="space-y-3">
                     {fields.map((field, idx) => {

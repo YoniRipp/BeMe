@@ -32,7 +32,7 @@ function PeriodSelector({ value, onChange }: { value: number; onChange: (days: n
           className={cn(
             'px-3 py-1 rounded-full text-xs font-medium transition-colors',
             value === opt.days
-              ? 'bg-primary/10 text-primary  '
+              ? 'bg-primary/10 text-primary'
               : 'bg-muted text-muted-foreground hover:bg-muted/80'
           )}
         >

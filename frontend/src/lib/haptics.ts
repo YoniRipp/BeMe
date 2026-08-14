@@ -20,20 +20,19 @@ const PATTERNS: Record<Pattern, number | number[]> = {
   warning: [20, 60, 20],
 };
 
-let enabled = true;
-
-/** Turn haptics off globally, e.g. from a future settings toggle. */
-export function setHapticsEnabled(next: boolean) {
-  enabled = next;
-}
+/**
+ * Queried once and kept live, rather than constructed on every tap — `haptic` is called
+ * from the hottest paths in the app (each set ticked, each water tile).
+ */
+const reducedMotion =
+  typeof window !== 'undefined' && typeof window.matchMedia === 'function'
+    ? window.matchMedia('(prefers-reduced-motion: reduce)')
+    : null;
 
 export function haptic(pattern: Pattern = 'light') {
-  if (!enabled) return;
+  // Vibration is motion, so honour the same preference animation does.
+  if (reducedMotion?.matches) return;
   if (typeof navigator === 'undefined' || typeof navigator.vibrate !== 'function') return;
-  // Respect users who have asked the OS to reduce motion — vibration is motion.
-  if (typeof window !== 'undefined' && typeof window.matchMedia === 'function') {
-    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
-  }
   try {
     navigator.vibrate(PATTERNS[pattern]);
   } catch {

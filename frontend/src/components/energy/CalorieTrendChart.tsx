@@ -22,7 +22,7 @@ interface CalorieTrendChartProps {
   days?: number;
 }
 
-const COLORS = ['hsl(var(--chart-1))', 'hsl(var(--chart-4))', 'hsl(var(--chart-3))', 'hsl(var(--destructive))'];
+const COLORS = ['hsl(var(--chart-1))', 'hsl(var(--chart-4))', 'hsl(var(--chart-3))', 'hsl(var(--chart-5))'];
 
 export function CalorieTrendChart({ foodEntries, days = 30 }: CalorieTrendChartProps) {
   const [chartType, setChartType] = useState<'line' | 'pie'>('line');

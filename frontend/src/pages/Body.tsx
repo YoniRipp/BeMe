@@ -233,7 +233,7 @@ export function Body() {
                         bare letter with no indication of whether anything was logged. */}
                     <span className="sr-only">
                       {DAY_NAMES[i]}
-                      {todayIdx === i ? ' (today)' : ''}
+                      {todayIdx === i ? '(today)' : ''}
                       {hasWorkoutByDay[i] ? ': workout logged' : ': no workout'}
                     </span>
                   </li>

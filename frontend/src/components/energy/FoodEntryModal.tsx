@@ -126,6 +126,16 @@ export function FoodEntryModal({ open, onOpenChange, onSave, entry, defaultMealT
   const [isCustomPortion, setIsCustomPortion] = useState(false);
   /** Portion carried in from a "Log again" chip, where macros are already totals. */
   const [directPortion, setDirectPortion] = useState<{ amount: number; unit: string } | null>(null);
+
+  /**
+   * Typing over a value the modal filled in means the entry is no longer that food, so
+   * neither the per-100g basis nor a chip's portion still describes it. Both are dropped
+   * together — clearing only one leaves the other to be written on save.
+   */
+  const clearDerivedPortion = useCallback(() => {
+    setPer100g(null);
+    setDirectPortion(null);
+  }, []);
   const [searchQuery, setSearchQuery] = useState('');
   const [searchResults, setSearchResults] = useState<FoodSearchResult[]>([]);
   const [isSearching, setIsSearching] = useState(false);
@@ -604,7 +614,7 @@ export function FoodEntryModal({ open, onOpenChange, onSave, entry, defaultMealT
             {per100g !== null && (
               <div>
                 <Label htmlFor="portion-select">
-                  Portion{defaultUnit ? ` (${pluralizeUnit(defaultUnit, 2)})` : isLiquid ? ' (ml)' : ' (g)'}
+                  Portion{defaultUnit ? ` (${pluralizeUnit(defaultUnit, 2)})` : isLiquid ? '(ml)' : '(g)'}
                 </Label>
                 <div className="flex gap-2 items-center">
                   <Select
@@ -643,7 +653,7 @@ export function FoodEntryModal({ open, onOpenChange, onSave, entry, defaultMealT
                         <>
                           {[50, 100, 150, 200, 250].map((g) => (
                             <SelectItem key={g} value={String(g)}>
-                              {g}g{g === 100 ? ' (1 portion)' : ''}
+                              {g}g{g === 100 ? '(1 portion)' : ''}
                             </SelectItem>
                           ))}
                           <SelectItem value="custom">Custom</SelectItem>
@@ -703,7 +713,7 @@ export function FoodEntryModal({ open, onOpenChange, onSave, entry, defaultMealT
                 type="number" inputMode="numeric"
                 min={0}
                 {...register('calories', {
-                  onChange: () => setPer100g(null),
+                  onChange: clearDerivedPortion,
                 })}
                 aria-invalid={!!errors.calories}
                 aria-describedby={errors.calories ? 'calories-error' : undefined}
@@ -723,7 +733,7 @@ export function FoodEntryModal({ open, onOpenChange, onSave, entry, defaultMealT
                   type="number" inputMode="decimal"
                   step="0.1"
                   min={0}
-                  {...register('protein', { onChange: () => setPer100g(null) })}
+                  {...register('protein', { onChange: clearDerivedPortion })}
                   aria-invalid={!!errors.protein}
                   aria-describedby={errors.protein ? 'protein-error' : undefined}
                 />
@@ -740,7 +750,7 @@ export function FoodEntryModal({ open, onOpenChange, onSave, entry, defaultMealT
                   type="number" inputMode="decimal"
                   step="0.1"
                   min={0}
-                  {...register('carbs', { onChange: () => setPer100g(null) })}
+                  {...register('carbs', { onChange: clearDerivedPortion })}
                   aria-invalid={!!errors.carbs}
                   aria-describedby={errors.carbs ? 'carbs-error' : undefined}
                 />
@@ -757,7 +767,7 @@ export function FoodEntryModal({ open, onOpenChange, onSave, entry, defaultMealT
                   type="number" inputMode="decimal"
                   step="0.1"
                   min={0}
-                  {...register('fats', { onChange: () => setPer100g(null) })}
+                  {...register('fats', { onChange: clearDerivedPortion })}
                   aria-invalid={!!errors.fats}
                   aria-describedby={errors.fats ? 'fats-error' : undefined}
                 />

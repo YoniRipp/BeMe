@@ -467,7 +467,7 @@ export function BulkFoodEntryModal({ open, onOpenChange, onSave }: BulkFoodEntry
                             <Check className="w-4 h-4 text-success shrink-0" />
                           )}
                           {item.status === 'failed' && (
-                            <AlertCircle className="w-4 h-4 text-gold shrink-0" />
+                            <AlertCircle className="w-4 h-4 text-destructive shrink-0" />
                           )}
                           {item.status === 'pending' && (
                             <Loader2 className="w-4 h-4 animate-spin text-muted-foreground shrink-0" />

@@ -139,28 +139,39 @@ export async function requestAllPages<T>(path: string): Promise<PaginatedRespons
     request<PaginatedResponse<T>>(`${path}${sep}limit=${PAGE_LIMIT}&offset=${offset}`);
 
   const first = await page(0);
-  const total = first.total ?? first.data.length;
 
   if (!first.hasMore || first.data.length === 0) {
-    return { data: first.data, total, limit: first.data.length, offset: 0, hasMore: false };
+    return {
+      data: first.data,
+      total: first.total ?? first.data.length,
+      limit: first.data.length,
+      offset: 0,
+      hasMore: false,
+    };
   }
 
-  const remaining = Math.min(
-    Math.ceil(Math.max(0, total - first.data.length) / PAGE_LIMIT),
-    MAX_PAGES - 1
-  );
-  const rest = await Promise.all(
-    Array.from({ length: remaining }, (_, i) => page((i + 1) * PAGE_LIMIT))
-  );
+  const data = [...first.data];
 
-  const data = [...first.data, ...rest.flatMap((r) => r.data)];
-  return {
-    data,
-    total,
-    limit: data.length,
-    offset: 0,
-    // Truthful when MAX_PAGES capped the walk; `total` being absent must not read as
-    // "everything fetched".
-    hasMore: first.total != null && data.length < first.total,
-  };
+  if (first.total != null) {
+    // `total` is known, so the outstanding pages can all be requested at once.
+    const remaining = Math.min(
+      Math.ceil((first.total - data.length) / PAGE_LIMIT),
+      MAX_PAGES - 1
+    );
+    const rest = await Promise.all(
+      Array.from({ length: remaining }, (_, i) => page((i + 1) * PAGE_LIMIT))
+    );
+    for (const res of rest) data.push(...res.data);
+    return { data, total: first.total, limit: data.length, offset: 0, hasMore: data.length < first.total };
+  }
+
+  // No `total` to plan against — fall back to walking `hasMore` one page at a time.
+  // Slower, but it must not stop at page one and report the result as complete.
+  let more: boolean = first.hasMore;
+  for (let pageIndex = 1; more && pageIndex < MAX_PAGES; pageIndex++) {
+    const res = await page(data.length);
+    data.push(...res.data);
+    more = res.hasMore && res.data.length > 0;
+  }
+  return { data, total: data.length, limit: data.length, offset: 0, hasMore: more };
 }

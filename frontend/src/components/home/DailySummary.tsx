@@ -129,7 +129,7 @@ export function DailySummary() {
             <MacroBar
               label="Fat"
               current={totals.fats}
-              color="bg-destructive"
+              color="bg-chart-3"
               icon={<Droplets className="w-3 h-3" />}
             />
           </div>

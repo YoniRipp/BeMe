@@ -670,10 +670,10 @@ function InvitePanel({
 
 function VoiceTipsCard() {
   const tips = [
-    { cmd: '"Log Guy\'s pull workout: lat pull-down 4 sets of 10 at 60 kg"', label: 'Add workout' },
-    { cmd: '"Edit Guy\'s pull workout, change lat pull-downs to pull-ups at 0 kg"', label: 'Edit exercise' },
-    { cmd: '"Add Guy number 4\'s workout: bench press 3 sets of 10 at 80 kg"', label: 'Disambiguate by number' },
-    { cmd: '"Add Guy Malka\'s lunch: 200g chicken breast"', label: 'Log food by full name' },
+    { cmd: '"Log Guy\'s pull workout: lat pull-down 4 sets of 10 at 60 kg"', label:'Add workout' },
+    { cmd: '"Edit Guy\'s pull workout, change lat pull-downs to pull-ups at 0 kg"', label:'Edit exercise' },
+    { cmd: '"Add Guy number 4\'s workout: bench press 3 sets of 10 at 80 kg"', label:'Disambiguate by number' },
+    { cmd: '"Add Guy Malka\'s lunch: 200g chicken breast"', label:'Log food by full name' },
   ];
   return (
     <Card className="p-4">

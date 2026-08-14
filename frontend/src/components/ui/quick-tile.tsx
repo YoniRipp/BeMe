@@ -25,7 +25,7 @@ export function QuickTile({
       type="button"
       onClick={onClick}
       className={cn(
-        'flex h-[78px] flex-col justify-between rounded-[18px] p-3.5 text-left shadow-card press',
+        'flex h-[78px] flex-col justify-between rounded-2xl p-3.5 text-left shadow-card press',
         primary
           ? 'border border-primary bg-primary text-primary-foreground'
           : 'border border-border bg-card text-foreground hover:border-primary/40',

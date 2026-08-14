@@ -80,7 +80,7 @@ export function Water() {
                 ].join(' ')}
                 aria-pressed={filled}
                 aria-label={
-                  target === glasses - 1 && filled
+                  filled && i === glasses - 1
                     ? `Clear glass ${i + 1}`
                     : `Set water to ${target} ${target === 1 ? 'glass' : 'glasses'}`
                 }
@@ -104,7 +104,7 @@ export function Water() {
           <button
             type="button"
             onClick={() => adjustBy(1)}
-            className="flex h-12 min-w-36 items-center justify-center gap-2 rounded-full bg-info px-5 text-sm font-extrabold text-info-foreground shadow-card-lg disabled:opacity-60 press"
+            className="flex h-12 min-w-36 items-center justify-center gap-2 rounded-full bg-info px-5 text-sm font-extrabold text-info-foreground shadow-card-lg press"
           >
             <Plus className="h-4 w-4" />
             Add glass

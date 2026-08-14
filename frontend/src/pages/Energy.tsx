@@ -398,7 +398,7 @@ export function Energy() {
                 </svg>
                 <div className="absolute inset-0 flex flex-col items-center justify-center">
                   <span className="text-[34px] font-extrabold tabular-nums leading-none tracking-tight">{Math.round(periodTotals.calories)}</span>
-                  <span className="mt-1.5 text-caption leading-none text-muted-foreground">of {calGoalTarget}{caloriePeriod !== 'daily' ? ' / day' : ''} kcal</span>
+                  <span className="mt-1.5 text-caption leading-none text-muted-foreground">of {calGoalTarget}{caloriePeriod !== 'daily' ? '/ day' : ''} kcal</span>
                 </div>
               </div>
             );

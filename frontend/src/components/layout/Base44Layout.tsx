@@ -23,7 +23,7 @@ import {
 import { useApp } from '@/context/AppContext';
 import { useAuth } from '@/context/AuthContext';
 import { useSubscription } from '@/hooks/useSubscription';
-import { useMediaQuery, LG_BREAKPOINT_QUERY } from '@/hooks/useMediaQuery';
+import { useMediaQuery, supportsMediaQueries, LG_BREAKPOINT_QUERY } from '@/hooks/useMediaQuery';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -136,10 +136,16 @@ export function Base44Layout() {
   // Below `lg` the sidebar is a drawer: translated off-screen but still in the DOM, so
   // without `inert` its links stay tabbable while invisible. Set imperatively rather than
   // as a JSX prop so it works the same on React 18 and 19.
+  //
+  // `inert` also blocks pointer events, so a wrong reading here would make the *visible*
+  // desktop sidebar completely dead. It is therefore applied only when the drawer is
+  // positively known to be off-screen — never on a guess, and never where matchMedia is
+  // unavailable to answer.
   useEffect(() => {
     const el = sidebarRef.current;
     if (!el) return;
-    if (!sidebarOpen && !isDesktop) el.setAttribute('inert', '');
+    const isHiddenDrawer = supportsMediaQueries() && !isDesktop && !sidebarOpen;
+    if (isHiddenDrawer) el.setAttribute('inert', '');
     else el.removeAttribute('inert');
   }, [sidebarOpen, isDesktop]);
 

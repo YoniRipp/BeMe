@@ -119,7 +119,7 @@ export function VoiceAgentPanel({ open, onOpenChange }: VoiceAgentPanelProps) {
       }
 
       if (succeeded.length > 0) {
-        toast.success(succeeded.length === 1 ? succeeded[0] : `Done: ${succeeded.join(', ')}`);
+        toast.success(succeeded.length === 1 ? succeeded[0] : `Done: ${succeeded.join(',')}`);
       }
       if (failed.length > 0) {
         setError(failed.join('; '));

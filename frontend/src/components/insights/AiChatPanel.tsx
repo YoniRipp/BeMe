@@ -154,8 +154,9 @@ export function AiChatPanel({ open, onOpenChange }: AiChatPanelProps) {
     let transcript = '';
     try {
       transcript = await dictation.stop();
-    } catch (e) {
-      toast.error(e instanceof Error ? e.message : 'Could not transcribe the recording.');
+    } catch {
+      // Same as start(): stop() sets `error` before throwing, and the effect above is
+      // what reports it. Toasting here too would show the message twice.
       return;
     }
     if (!transcript) {
