@@ -44,6 +44,8 @@ import { ImageLightbox } from '@/components/shared/ImageLightbox';
 import { SetRow, EditableSetValueInput } from './SetRow';
 import { ExercisePickerSheet } from './ExercisePickerSheet';
 import { STARTER_TEMPLATES, type StarterTemplate } from '@/lib/workoutTemplates';
+import { useRestTimer, DEFAULT_REST_SECONDS, type RestTimer as RestTimerState } from '@/hooks/useRestTimer';
+import { haptic } from '@/lib/haptics';
 import { LIMITS } from '@/lib/constants';
 
 export type WorkoutTemplate = Omit<Workout, 'id' | 'date'>;
@@ -87,29 +89,24 @@ function summarizeSets(ex: Exercise, unit: string): string {
   if (sameWeight && sameReps) {
     return `${rows.length}×${rows[0].reps}${rows[0].weight != null ? ` · ${rows[0].weight}${unit}` : ''}`;
   }
-  return rows.map((r) => (r.weight != null ? `${r.weight}${unit}×${r.reps}` : `${r.reps}`)).join(', ');
+  return rows.map((r) => (r.weight != null ? `${r.weight}${unit}×${r.reps}` : `${r.reps}`)).join(',');
 }
 
-/** Lightweight rest timer for the editor — client-side only, not persisted. */
-function RestTimer() {
-  const [remaining, setRemaining] = useState<number | null>(null);
+function fmtRest(s: number) {
+  return `${Math.floor(s / 60)}:${String(s % 60).padStart(2, '0')}`;
+}
 
-  useEffect(() => {
-    if (remaining === null) return;
-    if (remaining <= 0) {
-      toast.success('Rest complete');
-      setRemaining(null);
-      return;
-    }
-    const id = setTimeout(() => setRemaining((r) => (r === null ? null : r - 1)), 1000);
-    return () => clearTimeout(id);
-  }, [remaining]);
-
-  const fmt = (s: number) => `${Math.floor(s / 60)}:${String(s % 60).padStart(2, '0')}`;
+/**
+ * Rest countdown. Presentational — the timer state lives in `useRestTimer` above it, so
+ * ticking a set can start it without the user reaching for a preset.
+ */
+function RestTimer({ timer }: { timer: RestTimerState }) {
+  const { remaining, start, stop } = timer;
+  const fmt = fmtRest;
 
   return (
     <div className="flex items-center gap-2">
-      <span className="inline-flex items-center gap-1 text-[11px] font-bold uppercase tracking-wide text-muted-foreground">
+      <span className="inline-flex items-center gap-1 text-eyebrow font-bold uppercase tracking-wide text-muted-foreground">
         <Timer className="h-3.5 w-3.5" />
         Rest
       </span>
@@ -118,8 +115,8 @@ function RestTimer() {
           <button
             key={s}
             type="button"
-            onClick={() => setRemaining(s)}
-            className="rounded-full border border-border bg-card px-2.5 py-1 text-[11px] font-bold tabular-nums text-muted-foreground transition-colors hover:border-primary hover:text-primary"
+            onClick={() => start(s)}
+            className="inline-flex min-h-11 items-center rounded-full border border-border bg-card px-3.5 text-eyebrow font-bold tabular-nums text-muted-foreground transition-colors hover:border-primary hover:text-primary"
           >
             {fmt(s)}
           </button>
@@ -127,8 +124,8 @@ function RestTimer() {
       ) : (
         <button
           type="button"
-          onClick={() => setRemaining(null)}
-          className="inline-flex items-center gap-1.5 rounded-full bg-primary/10 px-3 py-1 text-sm font-extrabold tabular-nums text-primary"
+          onClick={stop}
+          className="inline-flex min-h-11 items-center gap-1.5 rounded-full bg-primary/10 px-4 text-sm font-extrabold tabular-nums text-primary"
           aria-label={`Rest timer: ${fmt(remaining)} remaining, tap to stop`}
         >
           {fmt(remaining)}
@@ -317,6 +314,7 @@ function WorkoutDetailView({
   getImageUrl,
   getPrevious,
   onEdit,
+  restTimer,
   onLightbox,
   onPersist,
 }: {
@@ -326,7 +324,9 @@ function WorkoutDetailView({
   dateFormat: string;
   getImageUrl: (name: string) => string | undefined;
   getPrevious: (name: string) => { date: Date; exercise: Exercise } | undefined;
-  onEdit: () => void;
+  onEdit: (loggedExercises: Exercise[]) => void;
+  /** Owned by the modal so a running rest survives closing the logger. */
+  restTimer: RestTimerState;
   onLightbox: (img: { src: string; alt: string }) => void;
   onPersist: (updates: Partial<Workout>) => void;
 }) {
@@ -399,11 +399,23 @@ function WorkoutDetailView({
   };
 
   const toggleComplete = (exIdx: number, setIdx: number) => {
+    let markedDone = false;
     updateExercise(exIdx, (ex) => {
       const completedPerSet = [...(ex.completedPerSet ?? [])];
       completedPerSet[setIdx] = !completedPerSet[setIdx];
+      markedDone = completedPerSet[setIdx];
       return { ...ex, completedPerSet };
     });
+
+    if (markedDone) {
+      haptic('light');
+      // Finishing a set is the moment rest begins, so the countdown starts itself —
+      // reaching for a preset chip mid-set is the step Hevy and Strong removed.
+      restTimer.start(DEFAULT_REST_SECONDS);
+    } else {
+      // Un-ticking is a correction, not the end of a set; the rest is no longer running.
+      restTimer.stop();
+    }
   };
 
   const addSet = (exIdx: number) => {
@@ -481,7 +493,7 @@ function WorkoutDetailView({
     <>
       <DialogHeader className="space-y-3 border-b border-border pb-4 text-left">
         <div className="pr-6">
-          <span className={cn('inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider', TYPE_STYLES[workout.type])}>
+          <span className={cn('inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-caption font-bold uppercase tracking-wider', TYPE_STYLES[workout.type])}>
             <Dumbbell className="h-3 w-3" />
             {workout.type}
           </span>
@@ -499,14 +511,14 @@ function WorkoutDetailView({
           {stats.map((s) => (
             <div key={s.label} className="rounded-xl border border-border bg-muted/40 px-3 py-2.5 text-center">
               <p className="text-lg font-extrabold tracking-tight tabular-nums">{s.value}</p>
-              <p className="mt-0.5 text-[10px] font-bold uppercase tracking-wide text-muted-foreground">{s.label}</p>
+              <p className="mt-0.5 text-caption font-bold uppercase tracking-wide text-muted-foreground">{s.label}</p>
             </div>
           ))}
         </div>
 
         {totalSets > 0 && (
           <div>
-            <div className="mb-1 flex items-center justify-between text-[11px] font-bold uppercase tracking-wide text-muted-foreground">
+            <div className="mb-1 flex items-center justify-between text-eyebrow font-bold uppercase tracking-wide text-muted-foreground">
               <span>Progress</span>
               <span className="tabular-nums">{doneSets}/{totalSets} sets</span>
             </div>
@@ -517,7 +529,7 @@ function WorkoutDetailView({
         )}
 
         <div className="flex items-center gap-2 rounded-xl border border-border bg-muted/40 px-3 py-2">
-          <RestTimer />
+          <RestTimer timer={restTimer} />
         </div>
 
         <div className="flex items-center justify-between gap-3">
@@ -528,7 +540,7 @@ function WorkoutDetailView({
             type="button"
             variant="ghost"
             size="sm"
-            onClick={() => { flush(); onEdit(); }}
+            onClick={() => { flush(); onEdit(exercises); }}
             className="shrink-0 gap-1.5 text-muted-foreground hover:text-foreground"
           >
             <Settings2 className="h-4 w-4" />
@@ -561,7 +573,7 @@ function WorkoutDetailView({
                     {exerciseVolume(ex) > 0 ? ` · ${exerciseVolume(ex).toLocaleString()} ${unit}` : ''}
                   </p>
                   {prev && (
-                    <p className="mt-0.5 truncate text-[11px] text-muted-foreground">
+                    <p className="mt-0.5 truncate text-eyebrow text-muted-foreground">
                       <span className="font-bold uppercase tracking-wide">Last</span> {formatDate(prev.date, dateFormat)} · {summarizeSets(prev.exercise, unit)}
                     </p>
                   )}
@@ -628,7 +640,7 @@ function WorkoutDetailView({
               )}
 
               <div className="mt-3">
-                <div className="grid grid-cols-[1.75rem_1fr_1fr_auto] items-center gap-2 px-0.5 pb-1 text-[10px] font-bold uppercase tracking-wider text-muted-foreground">
+                <div className="grid grid-cols-[1.75rem_1fr_1fr_auto] items-center gap-2 px-0.5 pb-1 text-caption font-bold uppercase tracking-wider text-muted-foreground">
                   <span className="text-center">Set</span>
                   <span className="text-center">{unit}</span>
                   <span className="text-center">Reps</span>
@@ -676,7 +688,7 @@ function WorkoutDetailView({
 
         {workout.notes && (
           <div className="rounded-2xl border border-border bg-muted/30 p-3">
-            <p className="mb-1 text-[10px] font-bold uppercase tracking-wider text-muted-foreground">Notes</p>
+            <p className="mb-1 text-caption font-bold uppercase tracking-wider text-muted-foreground">Notes</p>
             <p className="text-sm leading-relaxed text-foreground/90">{workout.notes}</p>
           </div>
         )}
@@ -712,6 +724,12 @@ export function WorkoutModal({ open, onOpenChange, onSave, workout }: WorkoutMod
   const [editorPicker, setEditorPicker] = useState<number | null>(null);
   // Existing workouts open in a read-only view first; new workouts open straight into the editor.
   const [mode, setMode] = useState<'view' | 'edit'>(workout ? 'view' : 'edit');
+  // One rest timer for the whole modal. Owned here rather than in WorkoutDetailView,
+  // which unmounts the moment the user switches to the editor or closes the sheet — the
+  // countdown has to outlive that.
+  const restTimer = useRestTimer();
+  /** Exercises handed up by the logger when the user opens the editor. */
+  const [handoffExercises, setHandoffExercises] = useState<Exercise[] | null>(null);
 
   // Most recent prior performance of each exercise (by name), for the "Last time" hint.
   const previousByName = useMemo(() => {
@@ -846,22 +864,29 @@ export function WorkoutModal({ open, onOpenChange, onSave, workout }: WorkoutMod
     }
   }, [open]);
 
-  // Reset to view/edit mode whenever the modal is (re)opened.
+  // Reset to view/edit mode whenever the modal is (re)opened. Keyed on the id, not the
+  // object: `workout` now follows the react-query cache, so depending on its identity
+  // would throw the user out of the editor every time the logger auto-saves.
   useEffect(() => {
     if (open) setMode(workout ? 'view' : 'edit');
-  }, [open, workout]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [open, workout?.id]);
 
   useEffect(() => {
     if (!open) return;
     if (workout) {
+      // Prefer what the logger handed up. updateWorkout only writes the cache once the
+      // server answers, so the `workout` prop can still be pre-flush at this point —
+      // seeding from it would put the logged sets back to how they were.
+      const sourceExercises = handoffExercises ?? workout.exercises;
       reset({
         title: workout.title,
         type: workout.type,
         date: toLocalDateString(new Date(workout.date)),
         durationMinutes: workout.durationMinutes.toString(),
         notes: workout.notes ?? '',
-        exercises: workout.exercises.length
-          ? workout.exercises.map((e) => {
+        exercises: sourceExercises.length
+          ? sourceExercises.map((e) => {
               const repsPerSet =
                 e.repsPerSet && e.repsPerSet.length === e.sets
                   ? e.repsPerSet
@@ -880,7 +905,17 @@ export function WorkoutModal({ open, onOpenChange, onSave, workout }: WorkoutMod
     } else {
       reset({ ...defaultValues, title: 'Workout', date: toLocalDateString(new Date()) });
     }
-  }, [open, workout, reset]);
+    // Re-seed on open, on a different workout, and on entering the editor — the last of
+    // these is what picks up sets logged in the view mode we just came from. Deliberately
+    // not keyed on `workout` identity: that changes on every cache write, which would
+    // reset the form under the user mid-edit.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [open, workout?.id, mode, handoffExercises, reset]);
+
+  // Consumed — a later background refetch must not re-apply a stale handoff.
+  useEffect(() => {
+    if (mode === 'view' || !open) setHandoffExercises(null);
+  }, [mode, open]);
 
   const addExercise = () =>
     append({
@@ -1019,7 +1054,11 @@ export function WorkoutModal({ open, onOpenChange, onSave, workout }: WorkoutMod
             dateFormat={settings.dateFormat}
             getImageUrl={getImageUrl}
             getPrevious={getPrevious}
-            onEdit={() => setMode('edit')}
+            restTimer={restTimer}
+            onEdit={(loggedExercises) => {
+              setHandoffExercises(loggedExercises);
+              setMode('edit');
+            }}
             onLightbox={setLightboxImage}
             onPersist={(updates) =>
               updateWorkout(workout.id, updates).catch(() => toast.error('Could not save changes. Please try again.'))
@@ -1044,8 +1083,8 @@ export function WorkoutModal({ open, onOpenChange, onSave, workout }: WorkoutMod
                           className="rounded-2xl border border-border bg-card p-3 text-left shadow-card transition-colors hover:border-primary/50 active:bg-muted"
                         >
                           <p className="text-[13px] font-extrabold leading-tight text-foreground">{t.title}</p>
-                          <p className="mt-1 text-[11px] leading-snug text-muted-foreground">{t.description}</p>
-                          <p className="mt-1.5 text-[10px] font-bold uppercase tracking-wider text-primary">
+                          <p className="mt-1 text-eyebrow leading-snug text-muted-foreground">{t.description}</p>
+                          <p className="mt-1.5 text-caption font-bold uppercase tracking-wider text-primary">
                             {t.exercises.length} exercises · {t.durationMinutes} min
                           </p>
                         </button>
@@ -1129,7 +1168,7 @@ export function WorkoutModal({ open, onOpenChange, onSave, workout }: WorkoutMod
                       <Label htmlFor="duration">Duration (min)</Label>
                       <Input
                         id="duration"
-                        type="number"
+                        type="number" inputMode="numeric"
                         {...register('durationMinutes')}
                         aria-invalid={!!errors.durationMinutes}
                         aria-describedby={errors.durationMinutes ? 'duration-error' : undefined}
@@ -1165,7 +1204,7 @@ export function WorkoutModal({ open, onOpenChange, onSave, workout }: WorkoutMod
                     </Button>
                   </div>
                   <div className="mb-3 flex items-center gap-2 rounded-xl border border-border bg-muted/40 px-3 py-2">
-                    <RestTimer />
+                    <RestTimer timer={restTimer} />
                   </div>
                   <div className="space-y-3">
                     {fields.map((field, idx) => {
@@ -1234,14 +1273,14 @@ export function WorkoutModal({ open, onOpenChange, onSave, workout }: WorkoutMod
                             </p>
                           )}
                           {prevForEx && (
-                            <p className="mt-1.5 truncate pl-1 text-[11px] text-muted-foreground">
+                            <p className="mt-1.5 truncate pl-1 text-eyebrow text-muted-foreground">
                               <span className="font-bold uppercase tracking-wide">Last</span> {formatDate(prevForEx.date, settings.dateFormat)} · {summarizeSets(prevForEx.exercise, unit)}
                             </p>
                           )}
 
                           {/* Set grid (Hevy-style): Set | weight | reps | remove */}
                           <div className="mt-3">
-                            <div className="grid grid-cols-[1.75rem_1fr_1fr_2rem] items-center gap-2 px-0.5 pb-1 text-[10px] font-bold uppercase tracking-wider text-muted-foreground">
+                            <div className="grid grid-cols-[1.75rem_1fr_1fr_2rem] items-center gap-2 px-0.5 pb-1 text-caption font-bold uppercase tracking-wider text-muted-foreground">
                               <span className="text-center">Set</span>
                               <span className="text-center">{unit}</span>
                               <span className="text-center">Reps</span>
@@ -1256,7 +1295,7 @@ export function WorkoutModal({ open, onOpenChange, onSave, workout }: WorkoutMod
                                   <div className="flex min-w-0 items-center overflow-hidden rounded-lg border border-border bg-background">
                                     <button
                                       type="button"
-                                      className="flex h-9 w-7 items-center justify-center text-muted-foreground transition-colors hover:bg-muted"
+                                      className="flex h-11 w-9 items-center justify-center text-muted-foreground transition-colors hover:bg-muted"
                                       onClick={() => updateSetWeight(idx, i, Math.max(0, (weightPerSet[i] ?? 0) - 2.5))}
                                       aria-label={`Decrease set ${i + 1} weight by 2.5`}
                                     >
@@ -1270,7 +1309,7 @@ export function WorkoutModal({ open, onOpenChange, onSave, workout }: WorkoutMod
                                     />
                                     <button
                                       type="button"
-                                      className="flex h-9 w-7 items-center justify-center text-muted-foreground transition-colors hover:bg-muted"
+                                      className="flex h-11 w-9 items-center justify-center text-muted-foreground transition-colors hover:bg-muted"
                                       onClick={() => updateSetWeight(idx, i, (weightPerSet[i] ?? 0) + 2.5)}
                                       aria-label={`Increase set ${i + 1} weight by 2.5`}
                                     >
@@ -1282,7 +1321,7 @@ export function WorkoutModal({ open, onOpenChange, onSave, workout }: WorkoutMod
                                   <div className="flex min-w-0 items-center overflow-hidden rounded-lg border border-border bg-background">
                                     <button
                                       type="button"
-                                      className="flex h-9 w-7 items-center justify-center text-muted-foreground transition-colors hover:bg-muted"
+                                      className="flex h-11 w-9 items-center justify-center text-muted-foreground transition-colors hover:bg-muted"
                                       onClick={() => updateSetReps(idx, i, (repsPerSet[i] ?? 0) - 1)}
                                       aria-label={`Decrease set ${i + 1} reps`}
                                     >
@@ -1295,7 +1334,7 @@ export function WorkoutModal({ open, onOpenChange, onSave, workout }: WorkoutMod
                                     />
                                     <button
                                       type="button"
-                                      className="flex h-9 w-7 items-center justify-center text-muted-foreground transition-colors hover:bg-muted"
+                                      className="flex h-11 w-9 items-center justify-center text-muted-foreground transition-colors hover:bg-muted"
                                       onClick={() => updateSetReps(idx, i, (repsPerSet[i] ?? 0) + 1)}
                                       aria-label={`Increase set ${i + 1} reps`}
                                     >

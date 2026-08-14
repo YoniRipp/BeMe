@@ -166,6 +166,54 @@ describe('Body Page', () => {
     });
   });
 
+  // The logger inside the modal persists through the react-query cache. If the page hands
+  // the modal a snapshot taken when the card was tapped, saving from the structural editor
+  // writes that snapshot back and silently reverts everything just logged.
+  describe('logged sets survive a save from the structural editor', () => {
+    it('passes the modal the latest workout, not the one captured on tap', async () => {
+      const user = userEvent.setup();
+      const updateWorkout = vi.fn().mockResolvedValue(undefined);
+      const logged: Workout = {
+        id: 'w1',
+        date: new Date(),
+        title: 'Pull Day',
+        type: 'strength',
+        durationMinutes: 45,
+        completed: false,
+        exercises: [
+          { name: 'Barbell Row', sets: 2, reps: 8, repsPerSet: [8, 8], weightPerSet: [60, 60], weight: 60 },
+        ],
+      };
+      mockUseWorkouts.mockReturnValue({ ...defaultHookReturn, workouts: [logged], updateWorkout });
+
+      const { rerender } = render(<Body />, { wrapper });
+      await user.click(await screen.findByText('Pull Day'));
+
+      // Log a set in the logger view; the debounced commit reaches updateWorkout.
+      await user.click(await screen.findByRole('button', { name: /mark set 1 done/i }));
+      await waitFor(() => expect(updateWorkout).toHaveBeenCalled(), { timeout: 2000 });
+
+      // The cache now holds the logged state, so the page re-renders with it.
+      const [, loggedUpdates] = updateWorkout.mock.calls[updateWorkout.mock.calls.length - 1];
+      mockUseWorkouts.mockReturnValue({
+        ...defaultHookReturn,
+        workouts: [{ ...logged, ...loggedUpdates }],
+        updateWorkout,
+      });
+      rerender(<Body />);
+
+      // Save from the structural editor.
+      await user.click(screen.getByRole('button', { name: /settings/i }));
+      await user.click(screen.getByRole('button', { name: /update workout/i }));
+
+      await waitFor(() =>
+        expect(updateWorkout.mock.calls.length).toBeGreaterThan(1)
+      );
+      const [, saved] = updateWorkout.mock.calls[updateWorkout.mock.calls.length - 1];
+      expect(saved.exercises[0].completedPerSet).toEqual([true, false]);
+    });
+  });
+
   describe('empty states', () => {
     it('invites a first workout when there are none at all', () => {
       render(<Body />, { wrapper });

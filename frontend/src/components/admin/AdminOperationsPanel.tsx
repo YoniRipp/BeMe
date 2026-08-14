@@ -33,7 +33,7 @@ export function AdminOperationsPanel() {
             to={to}
             className="flex min-h-[104px] items-start gap-3 rounded-2xl border border-border bg-muted/20 p-4 transition-colors hover:border-primary/40 hover:bg-muted/40"
           >
-            <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-background text-primary shadow-sm">
+            <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-md bg-background text-primary shadow-sm">
               <Icon className="h-5 w-5" />
             </span>
             <span className="min-w-0">

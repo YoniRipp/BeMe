@@ -8,9 +8,10 @@ import { Card, CardContent } from '@/components/ui/card';
 import {
   Dialog,
   DialogContent,
+  DialogDescription,
+  DialogFooter,
   DialogHeader,
   DialogTitle,
-  DialogFooter,
 } from '@/components/ui/dialog';
 import { UtensilsCrossed, Check, Pencil, Trash2, ChevronLeft, ChevronRight, Sparkles } from 'lucide-react';
 import { toast } from '@/components/shared/ToastProvider';
@@ -50,6 +51,7 @@ function EditFoodDialog({
       <DialogContent className="max-w-md">
         <DialogHeader>
           <DialogTitle>Edit Food</DialogTitle>
+          <DialogDescription>Change the stored nutrition values for this food.</DialogDescription>
         </DialogHeader>
         <div className="space-y-3">
           <div>
@@ -59,19 +61,19 @@ function EditFoodDialog({
           <div className="grid grid-cols-2 gap-3">
             <div>
               <label className="text-sm font-medium text-muted-foreground">Calories</label>
-              <Input type="number" value={calories} onChange={(e) => setCalories(e.target.value)} />
+              <Input type="number" inputMode="numeric" value={calories} onChange={(e) => setCalories(e.target.value)} />
             </div>
             <div>
               <label className="text-sm font-medium text-muted-foreground">Protein (g)</label>
-              <Input type="number" value={protein} onChange={(e) => setProtein(e.target.value)} />
+              <Input type="number" inputMode="numeric" value={protein} onChange={(e) => setProtein(e.target.value)} />
             </div>
             <div>
               <label className="text-sm font-medium text-muted-foreground">Carbs (g)</label>
-              <Input type="number" value={carbs} onChange={(e) => setCarbs(e.target.value)} />
+              <Input type="number" inputMode="numeric" value={carbs} onChange={(e) => setCarbs(e.target.value)} />
             </div>
             <div>
               <label className="text-sm font-medium text-muted-foreground">Fat (g)</label>
-              <Input type="number" value={fat} onChange={(e) => setFat(e.target.value)} />
+              <Input type="number" inputMode="numeric" value={fat} onChange={(e) => setFat(e.target.value)} />
             </div>
           </div>
         </div>
@@ -156,12 +158,12 @@ export default function AdminFoodsPage() {
               <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-2 flex-wrap">
                   <span className="font-medium truncate">{food.name}</span>
-                  <Badge className="text-xs bg-purple-100 text-purple-700 border-purple-200 hover:bg-purple-100 gap-1">
+                  <Badge className="text-xs bg-primary/10 text-primary border-primary/30 hover:bg-primary/20 gap-1">
                     <Sparkles className="w-3 h-3" />
                     Gemini AI
                   </Badge>
                   {food.isLiquid && <Badge variant="outline" className="text-xs">liquid</Badge>}
-                  <Badge variant={food.verified ? 'default' : 'secondary'} className={food.verified ? 'bg-green-100 text-green-700 border-green-200 hover:bg-green-100' : ''}>
+                  <Badge variant={food.verified ? 'default' : 'secondary'} className={food.verified ? 'bg-success/10 text-success border-success/30 hover:bg-success/10' : ''}>
                     {food.verified ? `✓ Verified${food.verifiedAt ? ` ${new Date(food.verifiedAt).toLocaleDateString()}` : ''}` : '⚠ Needs review'}
                   </Badge>
                 </div>
@@ -194,7 +196,7 @@ export default function AdminFoodsPage() {
                 <Button
                   size="sm"
                   variant="outline"
-                  className="text-destructive hover:text-destructive"
+                  className="text-destructive hover:text-destructive/80"
                   onClick={() => setDeletingId(food.id)}
                 >
                   <Trash2 className="h-4 w-4" />
@@ -250,6 +252,7 @@ export default function AdminFoodsPage() {
         <DialogContent className="max-w-sm">
           <DialogHeader>
             <DialogTitle>Delete Food</DialogTitle>
+          <DialogDescription>Remove this food from the shared catalog.</DialogDescription>
           </DialogHeader>
           <p className="text-sm text-muted-foreground">
             Are you sure you want to delete this food? This cannot be undone.

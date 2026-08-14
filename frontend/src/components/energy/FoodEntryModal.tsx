@@ -5,6 +5,8 @@ import { FoodEntry } from '@/types/energy';
 import { foodEntryFormSchema, type FoodEntryFormValues } from '@/schemas/foodEntry';
 import { useDebounce } from '@/hooks/useDebounce';
 import { searchFoods, lookupOrCreateFood, type FoodSearchResult } from '@/features/energy/api';
+import { type RecentFood } from '@/hooks/useRecentFoods';
+import { RecentFoodsSection } from './RecentFoodsStrip';
 import { lookupBarcode } from '@/features/energy/barcodeLookup';
 import { BarcodeScanner } from '@/components/energy/BarcodeScanner';
 import {
@@ -69,6 +71,11 @@ interface FoodEntryModalProps {
   onSave: (entry: Omit<FoodEntry, 'id'>) => void;
   entry?: FoodEntry;
   defaultMealType?: MealTypeOption;
+  /**
+   * Show "Log again" suggestions built from the signed-in user's own history. Off for
+   * trainers logging on a client's behalf, where that history is the wrong data.
+   */
+  showRecentFoods?: boolean;
 }
 
 const MIN_SEARCH_LENGTH = 2;
@@ -106,7 +113,7 @@ const defaultValues: FoodEntryFormValues = {
   fats: '',
 };
 
-export function FoodEntryModal({ open, onOpenChange, onSave, entry, defaultMealType }: FoodEntryModalProps) {
+export function FoodEntryModal({ open, onOpenChange, onSave, entry, defaultMealType, showRecentFoods = true }: FoodEntryModalProps) {
   const [selectedMealType, setSelectedMealType] = useState<MealTypeOption>(defaultMealType ?? getCurrentMealType());
   const [portionGrams, setPortionGrams] = useState(DEFAULT_REFERENCE_GRAMS);
   const [per100g, setPer100g] = useState<Per100g | null>(null);
@@ -117,6 +124,18 @@ export function FoodEntryModal({ open, onOpenChange, onSave, entry, defaultMealT
   const [unitWeightGrams, setUnitWeightGrams] = useState<number | null>(null);
   const [unitCount, setUnitCount] = useState(1);
   const [isCustomPortion, setIsCustomPortion] = useState(false);
+  /** Portion carried in from a "Log again" chip, where macros are already totals. */
+  const [directPortion, setDirectPortion] = useState<{ amount: number; unit: string } | null>(null);
+
+  /**
+   * Typing over a value the modal filled in means the entry is no longer that food, so
+   * neither the per-100g basis nor a chip's portion still describes it. Both are dropped
+   * together — clearing only one leaves the other to be written on save.
+   */
+  const clearDerivedPortion = useCallback(() => {
+    setPer100g(null);
+    setDirectPortion(null);
+  }, []);
   const [searchQuery, setSearchQuery] = useState('');
   const [searchResults, setSearchResults] = useState<FoodSearchResult[]>([]);
   const [isSearching, setIsSearching] = useState(false);
@@ -142,6 +161,43 @@ export function FoodEntryModal({ open, onOpenChange, onSave, entry, defaultMealT
     mode: 'onChange',
   });
 
+  const handleSelectRecent = useCallback(
+    (food: RecentFood) => {
+      setValue('name', food.name, { shouldValidate: true });
+      setValue('calories', String(food.calories), { shouldValidate: true });
+      setValue('protein', String(food.protein), { shouldValidate: true });
+      setValue('carbs', String(food.carbs), { shouldValidate: true });
+      setValue('fats', String(food.fats), { shouldValidate: true });
+
+      // The chip's macros are already totals for the portion that was logged, so the
+      // per-100g scaling path must not run over them again. Every piece of state that
+      // path owns is cleared — leaving any of it behind would carry the previous food's
+      // portion (its unit, its liquid-ness, its serving size) onto this one.
+      setPer100g(null);
+      setPortionGrams(DEFAULT_REFERENCE_GRAMS);
+      setIsLiquid(false);
+      setServingSizesMl(null);
+      setServingType('');
+      setDefaultUnit(null);
+      setUnitWeightGrams(null);
+      setUnitCount(1);
+      setIsCustomPortion(false);
+      // The portion travels with the suggestion instead, so re-logging "Oats · 120 g"
+      // saves 120 g rather than dropping the portion the chip advertised.
+      setDirectPortion(
+        food.portionAmount != null
+          ? { amount: food.portionAmount, unit: food.portionUnit ?? 'g' }
+          : null
+      );
+
+      setSearchQuery('');
+      setSearchResults([]);
+      setDropdownOpen(false);
+      void trigger();
+    },
+    [setValue, trigger]
+  );
+
   useEffect(() => {
     if (!open) return;
     if (entry) {
@@ -164,6 +220,7 @@ export function FoodEntryModal({ open, onOpenChange, onSave, entry, defaultMealT
     setUnitWeightGrams(null);
     setUnitCount(1);
     setIsCustomPortion(false);
+    setDirectPortion(null);
     setSearchQuery('');
     setSearchResults([]);
     setSearchError(null);
@@ -370,6 +427,10 @@ export function FoodEntryModal({ open, onOpenChange, onSave, entry, defaultMealT
         portionUnit: defaultUnit ? defaultUnit : (isLiquid ? ('ml' as const) : ('g' as const)),
         ...(isLiquid && !defaultUnit && servingType && servingType !== 'other' && { servingType }),
       }),
+      ...(per100g == null && directPortion != null && {
+        portionAmount: directPortion.amount,
+        portionUnit: directPortion.unit,
+      }),
       startTime: entry?.startTime ?? MEAL_START_TIMES[selectedMealType],
       ...(entry?.endTime != null && { endTime: entry.endTime }),
       mealType: selectedMealType,
@@ -416,6 +477,16 @@ export function FoodEntryModal({ open, onOpenChange, onSave, entry, defaultMealT
                 </button>
               ))}
             </div>
+
+            {/* Above search on purpose: re-logging a usual meal should not start with
+                typing its name again. */}
+            {showRecentFoods && (
+              <RecentFoodsSection
+                mealType={selectedMealType}
+                excludeName={entry?.name}
+                onSelect={handleSelectRecent}
+              />
+            )}
 
             <div ref={searchContainerRef} className="relative">
               <Label htmlFor="food-search">Search food (optional)</Label>
@@ -543,7 +614,7 @@ export function FoodEntryModal({ open, onOpenChange, onSave, entry, defaultMealT
             {per100g !== null && (
               <div>
                 <Label htmlFor="portion-select">
-                  Portion{defaultUnit ? ` (${pluralizeUnit(defaultUnit, 2)})` : isLiquid ? ' (ml)' : ' (g)'}
+                  Portion{defaultUnit ? ` (${pluralizeUnit(defaultUnit, 2)})` : isLiquid ? '(ml)' : '(g)'}
                 </Label>
                 <div className="flex gap-2 items-center">
                   <Select
@@ -582,7 +653,7 @@ export function FoodEntryModal({ open, onOpenChange, onSave, entry, defaultMealT
                         <>
                           {[50, 100, 150, 200, 250].map((g) => (
                             <SelectItem key={g} value={String(g)}>
-                              {g}g{g === 100 ? ' (1 portion)' : ''}
+                              {g}g{g === 100 ? '(1 portion)' : ''}
                             </SelectItem>
                           ))}
                           <SelectItem value="custom">Custom</SelectItem>
@@ -595,7 +666,7 @@ export function FoodEntryModal({ open, onOpenChange, onSave, entry, defaultMealT
                   <div className="mt-2">
                     <Input
                       id="portion-amount"
-                      type="number"
+                      type="number" inputMode="numeric"
                       min={1}
                       value={defaultUnit ? unitCount : portionGrams}
                       onChange={(e) => {
@@ -639,10 +710,10 @@ export function FoodEntryModal({ open, onOpenChange, onSave, entry, defaultMealT
               <Label htmlFor="calories">Calories</Label>
               <Input
                 id="calories"
-                type="number"
+                type="number" inputMode="numeric"
                 min={0}
                 {...register('calories', {
-                  onChange: () => setPer100g(null),
+                  onChange: clearDerivedPortion,
                 })}
                 aria-invalid={!!errors.calories}
                 aria-describedby={errors.calories ? 'calories-error' : undefined}
@@ -659,10 +730,10 @@ export function FoodEntryModal({ open, onOpenChange, onSave, entry, defaultMealT
                 <Label htmlFor="protein">Protein (g)</Label>
                 <Input
                   id="protein"
-                  type="number"
+                  type="number" inputMode="decimal"
                   step="0.1"
                   min={0}
-                  {...register('protein', { onChange: () => setPer100g(null) })}
+                  {...register('protein', { onChange: clearDerivedPortion })}
                   aria-invalid={!!errors.protein}
                   aria-describedby={errors.protein ? 'protein-error' : undefined}
                 />
@@ -676,10 +747,10 @@ export function FoodEntryModal({ open, onOpenChange, onSave, entry, defaultMealT
                 <Label htmlFor="carbs">Carbs (g)</Label>
                 <Input
                   id="carbs"
-                  type="number"
+                  type="number" inputMode="decimal"
                   step="0.1"
                   min={0}
-                  {...register('carbs', { onChange: () => setPer100g(null) })}
+                  {...register('carbs', { onChange: clearDerivedPortion })}
                   aria-invalid={!!errors.carbs}
                   aria-describedby={errors.carbs ? 'carbs-error' : undefined}
                 />
@@ -693,10 +764,10 @@ export function FoodEntryModal({ open, onOpenChange, onSave, entry, defaultMealT
                 <Label htmlFor="fats">Fats (g)</Label>
                 <Input
                   id="fats"
-                  type="number"
+                  type="number" inputMode="decimal"
                   step="0.1"
                   min={0}
-                  {...register('fats', { onChange: () => setPer100g(null) })}
+                  {...register('fats', { onChange: clearDerivedPortion })}
                   aria-invalid={!!errors.fats}
                   aria-describedby={errors.fats ? 'fats-error' : undefined}
                 />

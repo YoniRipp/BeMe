@@ -25,7 +25,23 @@ Shadows come from the scale, not ad-hoc values:
 shadow-xs · shadow-card · shadow-card-md · shadow-card-lg
 ```
 
-Radius derives from `--radius`: `rounded-sm|md|lg|2xl|3xl`. Cards use `rounded-2xl` or larger.
+Every radius derives from `--radius` (0.875rem), so the scale moves as one:
+
+| token | value |
+|---|---|
+| `rounded-sm` | 10px |
+| `rounded-md` | 12px |
+| `rounded-lg` | 14px |
+| `rounded-xl` | 18px |
+| `rounded-2xl` | 22px |
+| `rounded-3xl` | 30px |
+
+Cards use `rounded-2xl` or larger. Never write a bracket value — `rounded-[22px]` is
+`rounded-2xl`, and a radius that isn't on the scale is a new scale step, not a one-off.
+
+Pick by element size, not just by role: at 18px, `rounded-xl` is half the height of a 36px
+control, so a small icon button rendered with it is a circle. Below ~44px, use `rounded-md`
+or `rounded-full` and mean it.
 
 - Prefer an existing `components/ui/` primitive (shadcn) over a new styled div.
 - New colors go in `index.css` as tokens first, then get used — a one-off color in a component is a bug.

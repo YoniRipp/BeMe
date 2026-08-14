@@ -66,7 +66,7 @@ function CalorieRing({ consumed, goal }: { consumed: number; goal: number }) {
       </div>
       <div className="text-center">
         {over ? (
-          <p className="text-xs text-red-500 font-medium">{(consumed - goal).toLocaleString()} over</p>
+          <p className="text-xs text-destructive font-medium">{(consumed - goal).toLocaleString()} over</p>
         ) : (
           <p className="text-xs text-muted-foreground">{remaining.toLocaleString()} left</p>
         )}
@@ -117,19 +117,19 @@ export function DailySummary() {
             <MacroBar
               label="Protein"
               current={totals.protein}
-              color="bg-blue-500"
+              color="bg-info"
               icon={<Beef className="w-3 h-3" />}
             />
             <MacroBar
               label="Carbs"
               current={totals.carbs}
-              color="bg-amber-500"
+              color="bg-gold"
               icon={<Wheat className="w-3 h-3" />}
             />
             <MacroBar
               label="Fat"
               current={totals.fats}
-              color="bg-rose-500"
+              color="bg-chart-3"
               icon={<Droplets className="w-3 h-3" />}
             />
           </div>

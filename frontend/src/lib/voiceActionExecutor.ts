@@ -1,5 +1,5 @@
 /**
- * Shared voice action executor. Used by VoiceAgentPanel and VoiceAgentButton.
+ * Shared voice action executor. Used by VoiceAgentPanel.
  */
 import type { VoiceAction } from '@/lib/voiceApi';
 import type { Workout, WorkoutType } from '@/types/workout';

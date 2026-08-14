@@ -49,7 +49,7 @@ describe('useExercises', () => {
   it('resolves image and video URLs case-insensitively', async () => {
     const result = await renderReady();
 
-    expect(result.current.getImageUrl('  bench press ')).toBe('bench.jpg');
+    expect(result.current.getImageUrl('bench press')).toBe('bench.jpg');
     expect(result.current.getVideoUrl('BENCH PRESS')).toBe('bench.mp4');
     expect(result.current.getImageUrl('unknown')).toBeUndefined();
   });

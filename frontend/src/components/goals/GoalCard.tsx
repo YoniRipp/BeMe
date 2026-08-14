@@ -50,7 +50,7 @@ export function GoalCard({ goal, onEdit }: GoalCardProps) {
 
   return (
     <>
-      <Card className={cn('p-4 rounded-[22px] pulse-card-glow', achieved && 'border-success/40')}>
+      <Card className={cn('p-4 rounded-2xl pulse-card-glow', achieved && 'border-success/40')}>
         <div className="flex items-center gap-3.5">
           <div className="relative shrink-0">
             <svg width="64" height="64" viewBox="0 0 64 64" className="-rotate-90">
@@ -73,7 +73,7 @@ export function GoalCard({ goal, onEdit }: GoalCardProps) {
             </div>
           </div>
           <div className="flex-1 min-w-0">
-            <p className="text-[11px] font-bold uppercase tracking-[0.12em] text-muted-foreground">{goal.period}</p>
+            <p className="text-eyebrow font-bold uppercase tracking-[0.12em] text-muted-foreground">{goal.period}</p>
             <h4 className="text-base font-extrabold mt-0.5 capitalize">{goal.type} goal</h4>
             <p className="text-sm text-muted-foreground tabular-nums mt-1">
               <span className={cn('font-bold', style.color)}>{formatGoalValue(goal.type, progress.current)}</span>

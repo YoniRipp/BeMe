@@ -20,8 +20,12 @@ Ships as a web app, a PWA (`src/sw.ts`), and a Capacitor native shell.
   `Contact`, `Privacy`, `Terms`, `NotFound`.
 - `src/components/` — UI organized by domain: `layout/`, `home/`, `body/`, `energy/`,
   `goals/`, `insights/`, `chat/`, `voice/`, `trainer/`, `admin/`, `onboarding/`,
-  `subscription/`, `marketing/`, `settings/`, `pwa/`, `pulse/`, `shared/`, `ui/`
-  (shadcn primitives), `auth/`
+  `subscription/`, `marketing/`, `settings/`, `pwa/`, `shared/`, `ui/`, `auth/`
+- `src/components/ui/` is **the** design system — shadcn primitives (`dialog`, `sheet`,
+  `input`, `select`, …) plus the app's own (`card`, `page`, `progress-ring`, `quick-tile`,
+  `audio-wave`). Reach for one of these before writing a styled div. `shared/` is for
+  composite helpers (`EmptyState`, `ContentWithLoading`, `ImagePlaceholder`), not for a
+  second set of primitives.
 - `src/hooks/` — React Query data hooks (`useWorkouts`, `useGoals`, `useEnergy`,
   `useWater`, `useWeight`, `useCycle`, `useStreaks`, `useTrainer`, `useSubscription`, …)
   plus device hooks (`useSpeechRecognition`, `useNativeSpeech`, `useIsMobile`, …)

@@ -34,7 +34,7 @@ function MacroRing({
 
   return (
     <div className="flex flex-col items-center gap-2 flex-1">
-      <p className="text-[10px] font-semibold tracking-[0.15em] uppercase" style={{ color }}>{label}</p>
+      <p className="text-caption font-semibold tracking-[0.15em] uppercase" style={{ color }}>{label}</p>
       <div className="relative w-[108px] h-[108px]">
         <svg className="w-[108px] h-[108px] -rotate-90" viewBox="0 0 96 96">
           <defs>
@@ -62,7 +62,7 @@ function MacroRing({
         </svg>
         <div className="absolute inset-0 flex flex-col items-center justify-center">
           <span className="font-display text-2xl font-medium leading-none tabular-nums animate-count-up">{Math.round(current)}</span>
-          <span className="text-[11px] text-muted-foreground leading-none mt-1 tabular-nums">/ {goal}g</span>
+          <span className="text-eyebrow text-muted-foreground leading-none mt-1 tabular-nums">/ {goal}g</span>
         </div>
       </div>
     </div>

@@ -49,7 +49,7 @@ export function Pricing() {
             <ul className="space-y-2">
               {FREE_FEATURES.map((f) => (
                 <li key={f} className="flex items-start gap-2 text-sm">
-                  <Check className="mt-0.5 h-4 w-4 shrink-0 text-green-600" />
+                  <Check className="mt-0.5 h-4 w-4 shrink-0 text-success" />
                   {f}
                 </li>
               ))}
@@ -70,7 +70,7 @@ export function Pricing() {
             <ul className="space-y-2">
               {PRO_FEATURES.map((f) => (
                 <li key={f} className="flex items-start gap-2 text-sm">
-                  <Sparkles className="mt-0.5 h-4 w-4 shrink-0 text-amber-500" />
+                  <Sparkles className="mt-0.5 h-4 w-4 shrink-0 text-gold" />
                   {f}
                 </li>
               ))}
@@ -111,7 +111,7 @@ export function Pricing() {
             <ul className="space-y-2">
               {PRO_FEATURES.map((f) => (
                 <li key={f} className="flex items-start gap-2 text-sm">
-                  <Sparkles className="mt-0.5 h-4 w-4 shrink-0 text-amber-500" />
+                  <Sparkles className="mt-0.5 h-4 w-4 shrink-0 text-gold" />
                   {f}
                 </li>
               ))}

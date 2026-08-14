@@ -32,7 +32,7 @@ export function FitnessInsightsSection({
   return (
     <div className="space-y-4">
       <h2 className="text-xl font-semibold flex items-center gap-2">
-        <Dumbbell className="w-5 h-5 text-blue-600" />
+        <Dumbbell className="w-5 h-5 text-info" />
         Fitness Insights
       </h2>
       <InsightsSectionCarousel
@@ -53,7 +53,7 @@ export function FitnessInsightsSection({
                       <XAxis dataKey="week" />
                       <YAxis />
                       <Tooltip />
-                      <Bar dataKey="count" fill="#3b82f6" />
+                      <Bar dataKey="count" fill='hsl(var(--chart-4))' />
                     </BarChart>
                   </ResponsiveContainer>
                 </CardContent>
@@ -77,7 +77,7 @@ export function FitnessInsightsSection({
                         labelLine={false}
                         label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
                         outerRadius={80}
-                        fill="#8884d8"
+                        fill='hsl(var(--chart-1))'
                         dataKey="value"
                       >
                         {workoutTypePieData.map((entry, index) => (

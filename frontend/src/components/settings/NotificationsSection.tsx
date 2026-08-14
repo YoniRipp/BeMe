@@ -96,7 +96,7 @@ export function NotificationsSection() {
                   {preferences.logFoodReminder && (
                     <div className="grid grid-cols-2 gap-2">
                       <Input
-                        type="number"
+                        type="number" inputMode="numeric"
                         min="0"
                         max="23"
                         value={preferences.logFoodReminderTime.hours}
@@ -111,7 +111,7 @@ export function NotificationsSection() {
                         placeholder="Hour"
                       />
                       <Input
-                        type="number"
+                        type="number" inputMode="numeric"
                         min="0"
                         max="59"
                         value={preferences.logFoodReminderTime.minutes}
@@ -143,7 +143,7 @@ export function NotificationsSection() {
                   {preferences.logSleepReminder && (
                     <div className="grid grid-cols-2 gap-2">
                       <Input
-                        type="number"
+                        type="number" inputMode="numeric"
                         min="0"
                         max="23"
                         value={preferences.logSleepReminderTime.hours}
@@ -158,7 +158,7 @@ export function NotificationsSection() {
                         placeholder="Hour"
                       />
                       <Input
-                        type="number"
+                        type="number" inputMode="numeric"
                         min="0"
                         max="59"
                         value={preferences.logSleepReminderTime.minutes}

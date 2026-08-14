@@ -1,8 +1,9 @@
 import { FoodEntry } from '@/types/energy';
 import { FoodCard } from '@/components/energy/FoodCard';
-import { PulseCard } from '@/components/pulse/PulseUI';
+
 import { CloudSun, Cookie, Mic, Plus, Sun, Sunset } from 'lucide-react';
 import { groupByMeal, type MealType, type MealGroup } from '@/features/energy/mealType';
+import { Card } from '@/components/ui/card';
 
 // Re-exported for existing importers (e.g. Energy page).
 export { groupByMeal };
@@ -39,7 +40,7 @@ function MealGroupHeader({
       </div>
       <div className="text-right">
         <p className="text-sm font-bold text-primary tabular-nums">{totalCal} kcal</p>
-        <span className="text-[10px] text-muted-foreground tabular-nums hidden sm:inline">
+        <span className="text-caption text-muted-foreground tabular-nums hidden sm:inline">
           P {totalProtein}g - C {totalCarbs}g - F {totalFats}g
         </span>
       </div>
@@ -63,7 +64,7 @@ export function MealJournalCard({
   const hasEntries = group.entries.length > 0;
 
   return (
-    <PulseCard className="overflow-hidden p-4 sm:p-5">
+    <Card className="overflow-hidden p-4 sm:p-5">
       <MealGroupHeader
         meal={group.meal}
         totalCal={group.totalCal}
@@ -108,6 +109,6 @@ export function MealJournalCard({
           Add
         </button>
       </div>
-    </PulseCard>
+    </Card>
   );
 }

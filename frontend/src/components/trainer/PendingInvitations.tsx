@@ -4,8 +4,9 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Loader2, UserCheck, UserPlus } from 'lucide-react';
 import { usePendingTrainerInvitations, useAcceptInvitation, useMyTrainer } from '@/hooks/useTrainer';
-import { PulseCard } from '@/components/pulse/PulseUI';
+
 import { toast } from '@/components/shared/ToastProvider';
+import { Card } from '@/components/ui/card';
 
 export function PendingInvitations() {
   const { data: invitations = [], isLoading: loadingInvitations } = usePendingTrainerInvitations();
@@ -46,12 +47,12 @@ export function PendingInvitations() {
   };
 
   return (
-    <PulseCard className="overflow-hidden p-0">
+    <Card className="overflow-hidden p-0">
       <div className="px-5 py-4 border-b border-border flex items-center gap-2">
         {trainer
           ? <UserCheck className="h-4 w-4 text-primary" />
           : <UserPlus className="h-4 w-4 text-muted-foreground" />}
-        <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-muted-foreground">
+        <p className="text-eyebrow font-bold uppercase tracking-[0.18em] text-muted-foreground">
           My trainer
         </p>
       </div>
@@ -66,7 +67,7 @@ export function PendingInvitations() {
             <div className="min-w-0">
               <p className="font-semibold truncate">{trainer.trainerName}</p>
               <p className="text-xs text-muted-foreground truncate">{trainer.trainerEmail}</p>
-              <p className="mt-0.5 text-[11px] text-muted-foreground">
+              <p className="mt-0.5 text-eyebrow text-muted-foreground">
                 Trainee since {new Date(trainer.connectedAt).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' })}
               </p>
             </div>
@@ -125,6 +126,6 @@ export function PendingInvitations() {
           </>
         )}
       </div>
-    </PulseCard>
+    </Card>
   );
 }

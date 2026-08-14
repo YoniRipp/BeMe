@@ -1,6 +1,6 @@
 import { Flame, Dumbbell, UtensilsCrossed, Droplets, Trophy } from 'lucide-react';
 import { useStreaks } from '@/hooks/useStreaks';
-import { PulseCard } from '@/components/pulse/PulseUI';
+import { Card } from '@/components/ui/card';
 
 const STREAK_CONFIG = {
   workout: { label: 'Workout', icon: Dumbbell, color: 'text-info', bg: 'bg-info/10' },
@@ -22,7 +22,7 @@ export function StreakCard() {
   if (isLoading || !hasAnyStreak) return null;
 
   return (
-    <PulseCard className="overflow-hidden p-5">
+    <Card className="overflow-hidden p-5">
         <div className="flex items-center gap-2 mb-4">
           <Flame className="h-4 w-4 text-gold animate-flame-pulse" />
           <h3 className="text-base font-bold tracking-tight">Streaks</h3>
@@ -37,7 +37,7 @@ export function StreakCard() {
                   <Icon className={`h-5 w-5 ${color}`} />
                 </div>
                 <div className="text-2xl font-extrabold leading-none tabular-nums text-gold">{streak.currentCount}</div>
-                <div className="text-[10px] text-muted-foreground font-medium uppercase tracking-wider mt-1">{label}</div>
+                <div className="text-caption text-muted-foreground font-medium uppercase tracking-wider mt-1">{label}</div>
                 {isPersonalBest ? (
                   <div className="flex items-center justify-center gap-0.5 mt-1.5">
                     <Trophy className="h-3 w-3 text-gold" />
@@ -53,6 +53,6 @@ export function StreakCard() {
             );
           })}
         </div>
-    </PulseCard>
+    </Card>
   );
 }

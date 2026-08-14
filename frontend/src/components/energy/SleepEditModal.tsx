@@ -2,9 +2,10 @@ import { useState, useEffect } from 'react';
 import {
   Dialog,
   DialogContent,
+  DialogDescription,
+  DialogFooter,
   DialogHeader,
   DialogTitle,
-  DialogFooter,
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -52,6 +53,7 @@ export function SleepEditModal({
       <DialogContent>
         <DialogHeader>
           <DialogTitle>{checkIn ? 'Edit Sleep' : 'Log Sleep'}</DialogTitle>
+          <DialogDescription>Record how many hours you slept.</DialogDescription>
         </DialogHeader>
         <form onSubmit={handleSubmit}>
           <div className="space-y-4">
@@ -67,7 +69,7 @@ export function SleepEditModal({
               <Label htmlFor="hours">Sleep Hours</Label>
               <Input
                 id="hours"
-                type="number"
+                type="number" inputMode="decimal"
                 step="0.5"
                 min="0"
                 max="24"

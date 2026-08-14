@@ -1,9 +1,15 @@
 import { Toaster } from 'sonner';
+import { useIsMobile } from '@/hooks/useIsMobile';
 
 export function ToastProvider() {
+  // Sonner renders above everything, and the bottom nav sits at z-30 — a bottom-anchored
+  // toast covers the navigation and the AI button for its whole lifetime. Top-center is
+  // also where phones put transient banners.
+  const isMobile = useIsMobile();
+
   return (
     <Toaster
-      position="bottom-right"
+      position={isMobile ? 'top-center' : 'bottom-right'}
       toastOptions={{
         className: 'toast',
         style: {

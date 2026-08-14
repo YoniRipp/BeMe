@@ -50,7 +50,7 @@ export const EnergyChart = memo(function EnergyChart({ checkIns, dataKey, title 
             <Line 
               type="monotone" 
               dataKey="value" 
-              stroke="#8b5cf6" 
+              stroke="hsl(var(--chart-1))" 
               strokeWidth={2}
             />
           </LineChart>

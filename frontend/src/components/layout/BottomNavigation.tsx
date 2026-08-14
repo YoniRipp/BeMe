@@ -27,7 +27,7 @@ export function BottomNavigation({ items, currentPath, onCenterPress }: BottomNa
       <Link
         key={item.path}
         to={item.path}
-        className={`flex-1 flex flex-col items-center justify-center gap-1 text-[10px] font-bold uppercase tracking-[0.06em] py-2 transition-colors press min-h-[48px]
+        className={`flex-1 flex flex-col items-center justify-center gap-1 text-caption font-bold uppercase tracking-[0.06em] py-2 transition-colors press min-h-[48px]
           ${isActive ? 'text-primary' : 'text-muted-foreground hover:text-foreground'}`}
         aria-current={isActive ? 'page' : undefined}
       >
@@ -45,7 +45,7 @@ export function BottomNavigation({ items, currentPath, onCenterPress }: BottomNa
       aria-label="Main navigation"
     >
       <div className="absolute inset-x-0 bottom-0 h-32 bg-gradient-to-t from-background via-background/90 to-transparent pointer-events-none" />
-      <div className="relative mx-3.5 mb-3.5 h-16 rounded-[22px] border border-border bg-card/95 flex items-center justify-around shadow-card-lg pointer-events-auto backdrop-blur-xl">
+      <div className="relative mx-3.5 mb-3.5 h-16 rounded-2xl border border-border bg-card/95 flex items-center justify-around shadow-card-lg pointer-events-auto backdrop-blur-xl">
         {leftItems.map(renderItem)}
         <div className="w-16" />
         {rightItems.map(renderItem)}

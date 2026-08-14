@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Sheet, SheetContent } from '@/components/ui/sheet';
 import { useAgent } from '@/hooks/useAgent';
 import { useSpeechRecognition } from '@/hooks/useSpeechRecognition';
-import { PulseWave } from '@/components/pulse/PulseUI';
+import { AudioWave } from '@/components/ui/audio-wave';
 import { cn } from '@/lib/utils';
 import type { AgentResponse, PlanProposal } from '@/core/api/chat';
 import { toast } from '@/components/shared/ToastProvider';
@@ -170,7 +170,7 @@ export function ChatAgentPanel({ open, onOpenChange }: ChatAgentPanelProps) {
           <Button
             variant="ghost"
             size="icon"
-            className="h-10 w-10 shrink-0 text-destructive hover:text-destructive"
+            className="h-10 w-10 shrink-0 text-destructive hover:text-destructive/80"
             onClick={handleClearHistory}
             aria-label="Clear chat history"
           >
@@ -238,7 +238,7 @@ export function ChatAgentPanel({ open, onOpenChange }: ChatAgentPanelProps) {
                   <p className="whitespace-pre-wrap text-start">{msg.content}</p>
                 </div>
                 {tsLabel && (
-                  <span className="px-1 text-[10px] tabular-nums text-muted-foreground">{tsLabel}</span>
+                  <span className="px-1 text-caption tabular-nums text-muted-foreground">{tsLabel}</span>
                 )}
               </div>
             );
@@ -253,8 +253,8 @@ export function ChatAgentPanel({ open, onOpenChange }: ChatAgentPanelProps) {
                   className={cn(
                     'flex items-center gap-2 rounded-lg px-3 py-1.5 text-xs',
                     action.success
-                      ? 'bg-green-50 text-green-700 dark:bg-green-950 dark:text-green-300'
-                      : 'bg-red-50 text-red-700 dark:bg-red-950 dark:text-red-300'
+                      ? 'bg-success/10 text-success'
+                      : 'bg-destructive/10 text-destructive'
                   )}
                 >
                   {action.success ? (
@@ -287,7 +287,7 @@ export function ChatAgentPanel({ open, onOpenChange }: ChatAgentPanelProps) {
 
                 {workoutCount > 0 && (
                   <div className="mt-3 space-y-1.5">
-                    <div className="flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-wider text-muted-foreground">
+                    <div className="flex items-center gap-1.5 text-caption font-bold uppercase tracking-wider text-muted-foreground">
                       <Dumbbell className="h-3 w-3" />
                       <span>{workoutCount} workout{workoutCount === 1 ? '' : 's'}</span>
                     </div>
@@ -298,7 +298,7 @@ export function ChatAgentPanel({ open, onOpenChange }: ChatAgentPanelProps) {
                           <span className="text-muted-foreground tabular-nums">{w.date ?? '—'}</span>
                         </div>
                         {w.exercises && w.exercises.length > 0 && (
-                          <ul className="mt-1 space-y-0.5 text-[11px] text-muted-foreground">
+                          <ul className="mt-1 space-y-0.5 text-eyebrow text-muted-foreground">
                             {w.exercises.slice(0, 6).map((e, j) => (
                               <li key={j}>
                                 {e.name} — {e.sets}×{e.reps}
@@ -313,14 +313,14 @@ export function ChatAgentPanel({ open, onOpenChange }: ChatAgentPanelProps) {
                       </div>
                     ))}
                     {workoutCount > 6 && (
-                      <div className="text-[11px] italic text-muted-foreground">+{workoutCount - 6} more sessions</div>
+                      <div className="text-eyebrow italic text-muted-foreground">+{workoutCount - 6} more sessions</div>
                     )}
                   </div>
                 )}
 
                 {foodCount > 0 && (
                   <div className="mt-3 space-y-1.5">
-                    <div className="flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-wider text-muted-foreground">
+                    <div className="flex items-center gap-1.5 text-caption font-bold uppercase tracking-wider text-muted-foreground">
                       <UtensilsCrossed className="h-3 w-3" />
                       <span>{foodCount} food item{foodCount === 1 ? '' : 's'}</span>
                     </div>
@@ -333,7 +333,7 @@ export function ChatAgentPanel({ open, onOpenChange }: ChatAgentPanelProps) {
                       </div>
                     ))}
                     {foodCount > 8 && (
-                      <div className="text-[11px] italic text-muted-foreground">+{foodCount - 8} more items</div>
+                      <div className="text-eyebrow italic text-muted-foreground">+{foodCount - 8} more items</div>
                     )}
                   </div>
                 )}
@@ -409,7 +409,7 @@ export function ChatAgentPanel({ open, onOpenChange }: ChatAgentPanelProps) {
         <div className="border-t px-4 py-3 pb-[max(0.75rem,env(safe-area-inset-bottom))]">
           {isVoiceMode ? (
             <div className="flex flex-col items-center gap-4 py-2">
-              {isListening && <PulseWave className="-mb-1" />}
+              {isListening && <AudioWave className="-mb-1" />}
 
               <button
                 type="button"

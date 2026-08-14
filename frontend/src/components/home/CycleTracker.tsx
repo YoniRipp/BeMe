@@ -34,7 +34,7 @@ export function CycleTracker() {
     <Card className="overflow-hidden">
       <CardContent className="p-5">
         <div className="flex items-center gap-2 mb-3">
-          <Heart className="w-4 h-4 text-pink-500" />
+          <Heart className="w-4 h-4 text-chart-2" />
           <h3 className="text-sm font-medium">Cycle</h3>
         </div>
 

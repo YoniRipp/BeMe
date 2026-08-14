@@ -5,7 +5,7 @@ import { useExercises } from '@/hooks/useExercises';
 import { useSettings } from '@/hooks/useSettings';
 import { getWeightUnit } from '@/lib/utils';
 import { Play, X } from 'lucide-react';
-import { Dialog, DialogContent } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogDescription, DialogTitle } from '@/components/ui/dialog';
 
 interface ExerciseListProps {
   exercises: Exercise[];
@@ -47,10 +47,10 @@ export function ExerciseList({ exercises }: ExerciseListProps) {
                       e.stopPropagation();
                       setVideoModal({ name: exercise.name, url: videoUrl });
                     }}
-                    className="absolute inset-0 flex items-center justify-center bg-black/30 rounded-lg"
+                    className="absolute inset-0 flex items-center justify-center rounded-lg bg-scrim/40"
                     aria-label={`Play video for ${exercise.name}`}
                   >
-                    <Play className="w-4 h-4 text-white fill-white" />
+                    <Play className="w-4 h-4 text-scrim-foreground fill-current" />
                   </button>
                 )}
               </div>
@@ -70,13 +70,23 @@ export function ExerciseList({ exercises }: ExerciseListProps) {
         <DialogContent className="max-w-lg p-0 overflow-hidden">
           {videoModal && (
             <div>
-              <div className="flex items-center justify-between p-3 border-b">
-                <p className="font-medium text-sm">{videoModal.name}</p>
-                <button onClick={() => setVideoModal(null)} aria-label="Close video">
+              <div className="flex items-center justify-between gap-2 p-3 border-b">
+                {/* Doubles as the dialog's accessible name, so it is a DialogTitle
+                    rather than a styled paragraph. */}
+                <DialogTitle className="text-sm font-medium">{videoModal.name}</DialogTitle>
+                <DialogDescription className="sr-only">
+                  Demonstration video for {videoModal.name}.
+                </DialogDescription>
+                <button
+                  type="button"
+                  onClick={() => setVideoModal(null)}
+                  aria-label="Close video"
+                  className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+                >
                   <X className="w-4 h-4" />
                 </button>
               </div>
-              <div className="aspect-video bg-black">
+              <div className="aspect-video bg-scrim">
                 {isYouTubeUrl(videoModal.url) ? (
                   <iframe
                     src={getYouTubeEmbedUrl(videoModal.url)}

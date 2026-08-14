@@ -3,7 +3,7 @@ import { useWeight } from '@/hooks/useWeight';
 import { useProfile } from '@/hooks/useProfile';
 import { Scale, TrendingDown, TrendingUp, Minus, Plus } from 'lucide-react';
 import { WeightLogModal } from './WeightLogModal';
-import { PulseCard } from '@/components/pulse/PulseUI';
+import { Card } from '@/components/ui/card';
 
 export function WeightProgress() {
   const { weightEntries, latestWeight } = useWeight();
@@ -21,7 +21,7 @@ export function WeightProgress() {
 
   return (
     <>
-      <PulseCard
+      <Card
         className="overflow-hidden cursor-pointer p-5 hover:border-primary/30 transition-colors press focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/70"
         onClick={() => setModalOpen(true)}
         role="button"
@@ -110,7 +110,7 @@ export function WeightProgress() {
               </span>
             </div>
           )}
-      </PulseCard>
+      </Card>
 
       <WeightLogModal open={modalOpen} onOpenChange={setModalOpen} />
     </>

@@ -4,10 +4,11 @@ import { useGoals } from '@/hooks/useGoals';
 import { GoalCard } from '@/components/goals/GoalCard';
 import { GoalModal } from '@/components/goals/GoalModal';
 import { ContentWithLoading } from '@/components/shared/ContentWithLoading';
-import { EmptyStateCard } from '@/components/shared/EmptyStateCard';
+import { EmptyState } from '@/components/shared/EmptyState';
+import { Target } from 'lucide-react';
 import { AddAnotherCard } from '@/components/shared/AddAnotherCard';
 import type { Goal } from '@/types/goals';
-import { PulseHeader, PulsePage } from '@/components/pulse/PulseUI';
+import { Page, PageHeader } from '@/components/ui/page';
 
 export function Goals() {
   const { goals, goalsLoading, goalsError, addGoal, updateGoal } = useGoals();
@@ -35,19 +36,21 @@ export function Goals() {
   };
 
   return (
-    <PulsePage>
-      <PulseHeader kicker="Goals" title="Stay on target" subtitle="Set targets that guide your week." />
+    <Page>
+      <PageHeader kicker="Goals" title="Stay on target" subtitle="Set targets that guide your week." />
 
       <ContentWithLoading loading={goalsLoading} loadingText="Loading goals..." error={goalsError}>
         <div className="space-y-3">
           {goals.length === 0 ? (
-            <EmptyStateCard
-              onClick={() => {
+            <EmptyState
+              icon={Target}
+              title="Add your first goal"
+              description="Set a target for workouts, calories, or sleep to stay on track."
+              actionLabel="Add a goal"
+              onAction={() => {
                 setEditingGoal(undefined);
                 setGoalModalOpen(true);
               }}
-              title="Add your first goal"
-              description="Set a target for workouts, calories, or sleep to stay on track."
             />
           ) : (
             <>
@@ -72,6 +75,6 @@ export function Goals() {
         onSave={handleGoalSave}
         goal={editingGoal}
       />
-    </PulsePage>
+    </Page>
   );
 }

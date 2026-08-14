@@ -2,9 +2,10 @@ import { useState, useEffect } from 'react';
 import {
   Dialog,
   DialogContent,
+  DialogDescription,
+  DialogFooter,
   DialogHeader,
   DialogTitle,
-  DialogFooter,
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -48,13 +49,14 @@ export function MacroGoalModal({ open, onOpenChange, goals, onSave }: MacroGoalM
       <DialogContent>
         <DialogHeader>
           <DialogTitle>Edit Macro Goals</DialogTitle>
+          <DialogDescription>Set your daily protein, carb and fat targets.</DialogDescription>
         </DialogHeader>
         <div className="space-y-4">
           <div>
             <Label htmlFor="macro-carbs">Carbs (g)</Label>
             <Input
               id="macro-carbs"
-              type="number"
+              type="number" inputMode="numeric"
               min={1}
               value={carbs}
               onChange={(e) => setCarbs(parseInt(e.target.value, 10) || 0)}
@@ -64,7 +66,7 @@ export function MacroGoalModal({ open, onOpenChange, goals, onSave }: MacroGoalM
             <Label htmlFor="macro-fat">Fat (g)</Label>
             <Input
               id="macro-fat"
-              type="number"
+              type="number" inputMode="numeric"
               min={1}
               value={fat}
               onChange={(e) => setFat(parseInt(e.target.value, 10) || 0)}
@@ -74,7 +76,7 @@ export function MacroGoalModal({ open, onOpenChange, goals, onSave }: MacroGoalM
             <Label htmlFor="macro-protein">Protein (g)</Label>
             <Input
               id="macro-protein"
-              type="number"
+              type="number" inputMode="numeric"
               min={1}
               value={protein}
               onChange={(e) => setProtein(parseInt(e.target.value, 10) || 0)}

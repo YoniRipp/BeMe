@@ -14,7 +14,7 @@ import { executeVoiceAction } from '@/lib/voiceActionExecutor';
 import { queryKeys } from '@/lib/queryClient';
 import { toast } from '@/components/shared/ToastProvider';
 import { LocalErrorBoundary } from '@/components/shared/LocalErrorBoundary';
-import { PulseWave } from '@/components/pulse/PulseUI';
+import { AudioWave } from '@/components/ui/audio-wave';
 
 interface VoiceAgentPanelProps {
   open: boolean;
@@ -119,7 +119,7 @@ export function VoiceAgentPanel({ open, onOpenChange }: VoiceAgentPanelProps) {
       }
 
       if (succeeded.length > 0) {
-        toast.success(succeeded.length === 1 ? succeeded[0] : `Done: ${succeeded.join(', ')}`);
+        toast.success(succeeded.length === 1 ? succeeded[0] : `Done: ${succeeded.join(',')}`);
       }
       if (failed.length > 0) {
         setError(failed.join('; '));
@@ -174,7 +174,7 @@ export function VoiceAgentPanel({ open, onOpenChange }: VoiceAgentPanelProps) {
                 </p>
               )}
 
-              {isListening && <PulseWave className="-mb-1" />}
+              {isListening && <AudioWave className="-mb-1" />}
 
               <button
                 type="button"

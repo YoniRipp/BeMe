@@ -129,8 +129,8 @@ export class ErrorBoundary extends Component<Props, State> {
             </div>
 
             {import.meta.env.DEV && (
-              <div className="mt-4 p-3 bg-yellow-50 dark:bg-yellow-900/20 rounded-lg border border-yellow-200 dark:border-yellow-800">
-                <p className="text-xs text-yellow-800 dark:text-yellow-200">
+              <div className="mt-4 p-3 bg-warning/10 rounded-lg border border-warning/30">
+                <p className="text-xs text-warning">
                   <strong>Development Mode:</strong> Error details are shown above. 
                   In production, users will only see the error message.
                 </p>

@@ -2,9 +2,10 @@ import { useState, useCallback, useRef } from 'react';
 import {
   Dialog,
   DialogContent,
+  DialogDescription,
+  DialogFooter,
   DialogHeader,
   DialogTitle,
-  DialogFooter,
 } from '@/components/ui/dialog';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
@@ -307,6 +308,7 @@ export function BulkFoodEntryModal({ open, onOpenChange, onSave }: BulkFoodEntry
       <DialogContent className="max-h-[90dvh] overflow-y-auto sm:max-w-lg">
         <DialogHeader>
           <DialogTitle>Add Daily Menu</DialogTitle>
+          <DialogDescription>Paste or dictate a whole day of meals and log them in one go.</DialogDescription>
         </DialogHeader>
 
         {phase === 'input' && (
@@ -462,10 +464,10 @@ export function BulkFoodEntryModal({ open, onOpenChange, onSave }: BulkFoodEntry
                             <Loader2 className="w-4 h-4 animate-spin text-primary shrink-0" />
                           )}
                           {item.status === 'resolved' && (
-                            <Check className="w-4 h-4 text-green-600 shrink-0" />
+                            <Check className="w-4 h-4 text-success shrink-0" />
                           )}
                           {item.status === 'failed' && (
-                            <AlertCircle className="w-4 h-4 text-amber-500 shrink-0" />
+                            <AlertCircle className="w-4 h-4 text-destructive shrink-0" />
                           )}
                           {item.status === 'pending' && (
                             <Loader2 className="w-4 h-4 animate-spin text-muted-foreground shrink-0" />
@@ -490,7 +492,7 @@ export function BulkFoodEntryModal({ open, onOpenChange, onSave }: BulkFoodEntry
                           <div>
                             <label className="text-xs text-muted-foreground">Cal</label>
                             <Input
-                              type="number"
+                              type="number" inputMode="numeric"
                               min={0}
                               value={item.calories}
                               onChange={(e) => updateItem(item.id, 'calories', parseFloat(e.target.value) || 0)}
@@ -501,7 +503,7 @@ export function BulkFoodEntryModal({ open, onOpenChange, onSave }: BulkFoodEntry
                           <div>
                             <label className="text-xs text-muted-foreground">Protein</label>
                             <Input
-                              type="number"
+                              type="number" inputMode="decimal"
                               min={0}
                               step={0.1}
                               value={item.protein}
@@ -513,7 +515,7 @@ export function BulkFoodEntryModal({ open, onOpenChange, onSave }: BulkFoodEntry
                           <div>
                             <label className="text-xs text-muted-foreground">Carbs</label>
                             <Input
-                              type="number"
+                              type="number" inputMode="decimal"
                               min={0}
                               step={0.1}
                               value={item.carbs}
@@ -525,7 +527,7 @@ export function BulkFoodEntryModal({ open, onOpenChange, onSave }: BulkFoodEntry
                           <div>
                             <label className="text-xs text-muted-foreground">Fats</label>
                             <Input
-                              type="number"
+                              type="number" inputMode="decimal"
                               min={0}
                               step={0.1}
                               value={item.fats}

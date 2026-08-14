@@ -16,8 +16,8 @@ export function WellnessCard({ label, value, icon: Icon, subtitle, onEdit }: Wel
     <Card className="p-4">
       <div className="flex items-start justify-between">
         <div className="flex items-start gap-3 flex-1">
-          <div className="p-2 rounded-lg bg-purple-100">
-            <Icon className="w-5 h-5 text-purple-600" />
+          <div className="p-2 rounded-lg bg-primary/10">
+            <Icon className="w-5 h-5 text-primary" />
           </div>
           <div>
             <p className="text-sm text-muted-foreground">{label}</p>

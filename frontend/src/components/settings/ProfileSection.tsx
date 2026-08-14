@@ -91,15 +91,15 @@ export function ProfileSection() {
         <div className="grid grid-cols-3 gap-3">
           <div>
             <Label className="text-xs">Height (cm)</Label>
-            <Input type="number" className="h-9" value={form.heightCm} onChange={(e) => setForm({ ...form, heightCm: e.target.value })} min={50} max={300} />
+            <Input type="number" inputMode="numeric" className="h-9" value={form.heightCm} onChange={(e) => setForm({ ...form, heightCm: e.target.value })} min={50} max={300} />
           </div>
           <div>
             <Label className="text-xs">Weight (kg)</Label>
-            <Input type="number" className="h-9" value={form.currentWeight} onChange={(e) => setForm({ ...form, currentWeight: e.target.value })} min={10} max={500} step={0.1} />
+            <Input type="number" inputMode="numeric" className="h-9" value={form.currentWeight} onChange={(e) => setForm({ ...form, currentWeight: e.target.value })} min={10} max={500} step={0.1} />
           </div>
           <div>
             <Label className="text-xs">Target (kg)</Label>
-            <Input type="number" className="h-9" value={form.targetWeight} onChange={(e) => setForm({ ...form, targetWeight: e.target.value })} min={10} max={500} step={0.1} />
+            <Input type="number" inputMode="numeric" className="h-9" value={form.targetWeight} onChange={(e) => setForm({ ...form, targetWeight: e.target.value })} min={10} max={500} step={0.1} />
           </div>
         </div>
 
@@ -119,7 +119,7 @@ export function ProfileSection() {
           </div>
           <div>
             <Label className="text-xs">Water Goal (glasses)</Label>
-            <Input type="number" className="h-9" value={form.waterGoalGlasses} onChange={(e) => setForm({ ...form, waterGoalGlasses: e.target.value })} min={1} max={30} />
+            <Input type="number" inputMode="numeric" className="h-9" value={form.waterGoalGlasses} onChange={(e) => setForm({ ...form, waterGoalGlasses: e.target.value })} min={1} max={30} />
           </div>
         </div>
 

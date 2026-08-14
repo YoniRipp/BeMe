@@ -369,7 +369,7 @@ function ExerciseCatalogTab() {
                   <Button
                     variant="ghost"
                     size="icon"
-                    className="h-8 w-8 text-orange-500"
+                    className="h-8 w-8 text-warning"
                     onClick={() => handleRemoveImage(ex.id)}
                     title="Remove image"
                   >
@@ -390,7 +390,7 @@ function ExerciseCatalogTab() {
               {/* Video URL indicator */}
               {ex.videoUrl && (
                 <div className="flex items-center gap-2 ml-14 text-xs">
-                  <Play className="w-3 h-3 text-green-600" />
+                  <Play className="w-3 h-3 text-success" />
                   <span className="text-muted-foreground truncate flex-1">{ex.videoUrl}</span>
                   <Button
                     variant="ghost"

@@ -60,7 +60,7 @@ export function ClientList({ clients, onRemove, removing }: ClientListProps) {
                   onClick={() => onRemove(client.clientId)}
                   disabled={removing}
                   title="Remove client"
-                  className="text-destructive hover:text-destructive"
+                  className="text-destructive hover:text-destructive/80"
                 >
                   <Trash2 className="w-4 h-4" />
                 </Button>

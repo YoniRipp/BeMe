@@ -78,6 +78,12 @@ const MAX_BROWSER_RESTARTS = 8;
 
 interface UseVoiceDictationOptions {
   language?: string;
+  /**
+   * Called when the engine ends the session on its own — a silence gap past
+   * MAX_BROWSER_RESTARTS, or a recognition error — rather than because `stop()` was
+   * called. Without it the words already recognised have nowhere to go and are dropped.
+   */
+  onAutoEnd?: (transcript: string) => void;
 }
 
 /**
@@ -86,8 +92,13 @@ interface UseVoiceDictationOptions {
  * this never parses the speech into app actions — it only returns words.
  */
 export function useVoiceDictation(options: UseVoiceDictationOptions = {}): UseVoiceDictationReturn {
-  const { language } = options;
+  const { language, onAutoEnd } = options;
   const lang = language || (typeof navigator !== 'undefined' ? navigator.language : '') || 'en-US';
+
+  // Held in a ref so startRecognition — memoised on [lang, stopTimer] — always reaches the
+  // caller's current callback without tearing down and rebuilding the recogniser.
+  const onAutoEndRef = useRef(onAutoEnd);
+  onAutoEndRef.current = onAutoEnd;
 
   const [isRecording, setIsRecording] = useState(false);
   const [isTranscribing, setIsTranscribing] = useState(false);
@@ -230,7 +241,14 @@ export function useVoiceDictation(options: UseVoiceDictationOptions = {}): UseVo
       if (isMountedRef.current) setIsRecording(false);
       const resolve = resolveStopRef.current;
       resolveStopRef.current = null;
-      resolve?.(finalTranscriptRef.current.trim());
+      const transcript = finalTranscriptRef.current.trim();
+      if (resolve) {
+        resolve(transcript);
+        return;
+      }
+      // The engine ended by itself, so nobody is waiting on stop(). Hand the words to the
+      // caller rather than dropping them — the user still said them.
+      if (transcript) onAutoEndRef.current?.(transcript);
     };
 
     recognitionRef.current = recognition;

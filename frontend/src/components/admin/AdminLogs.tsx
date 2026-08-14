@@ -84,20 +84,20 @@ function PayloadDetails({ payload }: { payload: Record<string, unknown> | null }
       {Object.keys(topFields).length > 0 && (
         <div className="flex flex-wrap gap-2">
           {Object.entries(topFields).map(([k, v]) => (
-            <span key={k} className="inline-flex items-center gap-1 text-[11px] bg-muted rounded px-2 py-0.5">
+            <span key={k} className="inline-flex items-center gap-1 text-eyebrow bg-muted rounded px-2 py-0.5">
               <span className="text-muted-foreground font-medium">{k}:</span>
               <span className="font-mono truncate max-w-[140px]" title={String(v)}>
-                {Array.isArray(v) ? v.join(', ') : String(v)}
+                {Array.isArray(v) ? v.join(',') : String(v)}
               </span>
             </span>
           ))}
         </div>
       )}
       <details className="group">
-        <summary className="text-[11px] text-muted-foreground cursor-pointer hover:text-foreground select-none">
+        <summary className="text-eyebrow text-muted-foreground cursor-pointer hover:text-foreground select-none">
           Raw payload
         </summary>
-        <pre className="mt-1.5 text-[11px] bg-muted/50 rounded p-2 overflow-x-auto whitespace-pre-wrap break-words text-muted-foreground max-h-48 overflow-y-auto">
+        <pre className="mt-1.5 text-eyebrow bg-muted/50 rounded p-2 overflow-x-auto whitespace-pre-wrap break-words text-muted-foreground max-h-48 overflow-y-auto">
           {JSON.stringify(payload, null, 2)}
         </pre>
       </details>
@@ -245,7 +245,7 @@ export function AdminLogs() {
           return (
             <button
               type="button"
-              className="flex items-center gap-1 text-xs text-blue-600 hover:text-blue-800 dark:text-blue-400"
+              className="flex items-center gap-1 text-xs text-info hover:text-info/80"
               onClick={(e) => {
                 e.stopPropagation();
                 setExpandedRowId(isExpanded ? null : r.id);
@@ -452,7 +452,7 @@ export function AdminLogs() {
                           ))}
                         </TableRow>
                         {isExpanded && (
-                          <TableRow key={`${row.id}-expanded`} className="bg-muted/20 hover:bg-muted/20">
+                          <TableRow key={`${row.id}-expanded`} className="bg-muted/20 hover:bg-muted/30">
                             <TableCell colSpan={5} className="py-3 px-4">
                               <PayloadDetails payload={event.payload} />
                             </TableCell>

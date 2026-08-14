@@ -393,5 +393,74 @@ describe('WorkoutModal', () => {
       expect(saved.exercises[0].notes).toBe('Belt on for the second set');
       expect(saved.exercises[0].completedPerSet).toEqual([true, false]);
     });
+
+    // The `workout` prop now follows the react-query cache, so its identity changes on
+    // every background refetch and on the logger's own optimistic echo. The editor must
+    // not re-seed from those, or it wipes whatever the user is part-way through typing.
+    it('keeps in-progress editor edits when the workout refetches underneath it', async () => {
+      const user = userEvent.setup();
+      const workout: Workout = {
+        id: 'w5',
+        date: new Date(2025, 0, 22),
+        title: 'Pull Day',
+        type: 'strength',
+        durationMinutes: 45,
+        completed: false,
+        exercises: [
+          { name: 'Barbell Row', sets: 2, reps: 8, repsPerSet: [8, 8], weightPerSet: [60, 60], weight: 60 },
+        ],
+      };
+
+      const { rerender } = render(
+        <WorkoutModal open={true} onOpenChange={vi.fn()} onSave={vi.fn()} workout={workout} />
+      );
+
+      await user.click(screen.getByRole('button', { name: /settings/i }));
+      const titleInput = screen.getByDisplayValue('Pull Day');
+      await user.clear(titleInput);
+      await user.type(titleInput, 'Pull Day A');
+
+      // A refetch lands a structurally identical but brand-new object.
+      rerender(
+        <WorkoutModal open={true} onOpenChange={vi.fn()} onSave={vi.fn()} workout={{ ...workout }} />
+      );
+
+      expect(screen.getByDisplayValue('Pull Day A')).toBeInTheDocument();
+      expect(screen.queryByDisplayValue('Pull Day')).not.toBeInTheDocument();
+    });
+
+    // updateWorkout only writes the cache once the server answers, so tapping Settings
+    // inside the logger's 700ms debounce used to seed the editor from pre-flush data —
+    // and saving put the ticked set back to how it was.
+    it('carries a just-ticked set into the editor without waiting for the save', async () => {
+      const user = userEvent.setup();
+      const onSave = vi.fn();
+      // Never resolves: the cache can never catch up, so only the direct handoff can work.
+      updateWorkoutMock.mockImplementation(() => new Promise(() => {}));
+
+      const workout: Workout = {
+        id: 'w6',
+        date: new Date(2025, 0, 23),
+        title: 'Leg Day',
+        type: 'strength',
+        durationMinutes: 45,
+        completed: false,
+        exercises: [
+          { name: 'Squat', sets: 2, reps: 5, repsPerSet: [5, 5], weightPerSet: [100, 100], weight: 100 },
+        ],
+      };
+
+      render(
+        <WorkoutModal open={true} onOpenChange={vi.fn()} onSave={onSave} workout={workout} />
+      );
+
+      await user.click(screen.getByRole('button', { name: /mark set 1 done/i }));
+      // Straight to the editor, without waiting for the debounce or the request.
+      await user.click(screen.getByRole('button', { name: /settings/i }));
+      await user.click(screen.getByRole('button', { name: /update workout/i }));
+
+      await waitFor(() => expect(onSave).toHaveBeenCalled());
+      expect(onSave.mock.calls[0][0].exercises[0].completedPerSet).toEqual([true, false]);
+    });
   });
 });

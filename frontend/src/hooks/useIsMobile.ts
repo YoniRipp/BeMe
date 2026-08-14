@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 
+// Kept as a named hook because it reads better at call sites than a raw query string.
 const MOBILE_BREAKPOINT = 768;
 
 export function useIsMobile(): boolean {

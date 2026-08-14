@@ -114,7 +114,7 @@ export function GoalModal({ open, onOpenChange, onSave, goal }: GoalModalProps) 
               <Label htmlFor="target">Target</Label>
               <Input
                 id="target"
-                type="number"
+                type="number" inputMode="numeric"
                 min="1"
                 required
                 value={formData.target}

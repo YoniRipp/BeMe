@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react';
-import { useNavigate, useOutletContext } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import { useWorkouts } from '@/hooks/useWorkouts';
 import { useEnergy } from '@/hooks/useEnergy';
 import { useGoals } from '@/hooks/useGoals';
@@ -13,7 +13,7 @@ import { FoodEntryModal } from '@/components/energy/FoodEntryModal';
 import { WorkoutModal } from '@/components/body/WorkoutModal';
 import { GoalModal } from '@/components/goals/GoalModal';
 import { ContentWithLoading } from '@/components/shared/ContentWithLoading';
-import { VoiceMicHero } from '@/components/voice/VoiceMicHero';
+import { Skeleton } from '@/components/shared/Skeleton';
 import { WaterTracker } from '@/components/home/WaterTracker';
 import { WeightProgress } from '@/components/home/WeightProgress';
 import { WeightLogModal } from '@/components/home/WeightLogModal';
@@ -27,22 +27,17 @@ import { Apple, ChevronRight, Dumbbell, Moon, Pencil, Scale, UtensilsCrossed, Us
 import { isSameDay, format } from 'date-fns';
 import { toast } from '@/components/shared/ToastProvider';
 import { cn } from '@/lib/utils';
-import {
-  PulseCard,
-  PulseHeader,
-  PulsePage,
-  PulseQuickTile,
-  PulseRing,
-  PulseSectionHeader,
-} from '@/components/pulse/PulseUI';
+import { Page, PageHeader, SectionHeader } from '@/components/ui/page';
+import { ProgressRing } from '@/components/ui/progress-ring';
+import { QuickTile } from '@/components/ui/quick-tile';
+import { Card } from '@/components/ui/card';
 
 export function Home() {
   // Hooks
   const navigate = useNavigate();
-  const { openVoiceAgent } = useOutletContext<{ openVoiceAgent?: () => void }>() ?? {};
   const { workouts, workoutsLoading, addWorkout } = useWorkouts();
   const { checkIns, foodEntries, addCheckIn, updateCheckIn, addFoodEntry, getCheckInByDate, energyLoading } = useEnergy();
-  const { addGoal, updateGoal, goalsLoading } = useGoals();
+  const { addGoal, updateGoal } = useGoals();
   const { macroGoals, setMacroGoals, calorieGoal } = useMacroGoals();
   const { profile, profileLoading } = useProfile();
   const { weightEntries } = useWeight();
@@ -156,8 +151,8 @@ export function Home() {
   }
 
   return (
-    <PulsePage>
-      <PulseHeader
+    <Page>
+      <PageHeader
         kicker={todayDate}
         title={<>Hey {firstName}</>}
         subtitle={progressMessage}
@@ -173,19 +168,33 @@ export function Home() {
         }
       />
 
-      <ContentWithLoading loading={workoutsLoading || energyLoading || goalsLoading} loadingText="Loading dashboard...">
         <div className="space-y-5">
 
-          {/* Today's fuel */}
-          <PulseCard className="relative overflow-hidden p-5" data-onboarding="dashboard">
-            <div className="relative z-10 mb-4 flex items-center justify-between text-[11px] font-bold uppercase tracking-[0.18em] text-muted-foreground">
+          {/* Today's fuel. Gated on food entries alone — it is the reason people open the
+              app, so it must not wait on the workouts query behind it. */}
+          <ContentWithLoading
+            loading={energyLoading}
+            skeleton={
+              <Card className="p-5">
+                <Skeleton variant="text" width="55%" height="0.75rem" />
+                <div className="mt-4 flex items-center gap-5">
+                  <Skeleton variant="circular" width={132} height={132} />
+                  <div className="flex-1 space-y-3">
+                    <Skeleton variant="text" lines={3} height="h-6" />
+                  </div>
+                </div>
+              </Card>
+            }
+          >
+          <Card className="relative overflow-hidden p-5" data-onboarding="dashboard">
+            <div className="relative z-10 mb-4 flex items-center justify-between text-eyebrow font-bold uppercase tracking-[0.18em] text-muted-foreground">
               <span className="text-primary">Today's fuel</span>
               <div className="flex items-center gap-2">
                 <span>{Math.round(todaySummary.totalCal)} / {calorieGoal} kcal</span>
                 <button
                   type="button"
                   onClick={() => setMacroGoalModalOpen(true)}
-                  className="flex h-8 w-8 items-center justify-center rounded-full border border-primary/30 bg-primary/10 text-primary transition-colors hover:bg-primary hover:text-primary-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/70"
+                  className="flex h-11 w-11 items-center justify-center rounded-full border border-primary/30 bg-primary/10 text-primary transition-colors hover:bg-primary hover:text-primary-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/70"
                   aria-label="Edit macro goals"
                   title="Edit macros"
                 >
@@ -194,14 +203,18 @@ export function Home() {
               </div>
             </div>
             <div className="relative z-10 flex items-center gap-5">
-              <PulseRing pct={calPct}>
+              <ProgressRing
+                pct={calPct}
+                label="Calories today"
+                valueText={`${Math.round(todaySummary.totalCal)} of ${calorieGoal} kcal`}
+              >
                 <span className="text-[34px] font-extrabold tabular-nums leading-none tracking-tight">
                   {Math.round(todaySummary.totalCal)}
                 </span>
-                <span className="mt-1 text-[10px] font-bold uppercase tracking-[0.16em] text-muted-foreground">
+                <span className="mt-1 text-caption font-bold uppercase tracking-[0.16em] text-muted-foreground">
                   kcal in
                 </span>
-              </PulseRing>
+              </ProgressRing>
               <div className="flex-1 space-y-3">
                 {macroRows.map((row) => {
                   const pct = row.goal > 0 ? Math.min(row.current / row.goal, 1) : 0;
@@ -225,27 +238,25 @@ export function Home() {
                 })}
               </div>
             </div>
-          </PulseCard>
-
-          {/* Voice */}
-          <VoiceMicHero onOpenAgent={() => openVoiceAgent?.()} />
+          </Card>
+          </ContentWithLoading>
 
           <StreakCard />
 
           {/* Quick log */}
-          <PulseSectionHeader title="Quick log" eyebrow="Today" />
+          <SectionHeader title="Quick log" eyebrow="Today" />
           {/* 2x2 so no tile is ever orphaned on a half row, and every action stays
               reachable after it has been logged (the pill shows today's value). */}
           <div className="grid grid-cols-2 gap-2.5">
-            <PulseQuickTile icon={Apple} label="Log food" onClick={() => setFoodModalOpen(true)} />
-            <PulseQuickTile icon={Dumbbell} label="Log workout" onClick={() => setWorkoutModalOpen(true)} />
-            <PulseQuickTile
+            <QuickTile icon={Apple} label="Log food" onClick={() => setFoodModalOpen(true)} />
+            <QuickTile icon={Dumbbell} label="Log workout" onClick={() => setWorkoutModalOpen(true)} />
+            <QuickTile
               icon={Moon}
               label="Log sleep"
               pill={sleepHours > 0 ? `${sleepHours}h` : undefined}
               onClick={() => setSleepModalOpen(true)}
             />
-            <PulseQuickTile
+            <QuickTile
               icon={Scale}
               label="Log weight"
               pill={todaysWeight ? `${todaysWeight.weight}kg` : undefined}
@@ -261,9 +272,16 @@ export function Home() {
 
           {profile.cycleTrackingEnabled && <CycleTracker />}
 
-          {/* Recent activity */}
-          {recentActivity.length > 0 && (
-            <PulseCard className="overflow-hidden p-5">
+          {/* Recent activity — the one section that genuinely needs both queries. */}
+          {(workoutsLoading || energyLoading) ? (
+            <Card className="p-5 space-y-3">
+              <Skeleton variant="text" width="35%" height="1rem" />
+              {[0, 1, 2].map((i) => (
+                <Skeleton key={i} height="2.5rem" className="rounded-xl" />
+              ))}
+            </Card>
+          ) : recentActivity.length > 0 && (
+            <Card className="overflow-hidden p-5">
               <h3 className="mb-4 text-base font-bold tracking-tight">Recent activity</h3>
               <div className="space-y-1">
                 {recentActivity.map((item) => (
@@ -290,11 +308,10 @@ export function Home() {
                   </button>
                 ))}
               </div>
-            </PulseCard>
+            </Card>
           )}
 
         </div>
-      </ContentWithLoading>
 
       {/* Modals */}
       <GoalModal
@@ -326,6 +343,6 @@ export function Home() {
         onSave={setMacroGoals}
       />
       <WeightLogModal open={weightModalOpen} onOpenChange={setWeightModalOpen} />
-    </PulsePage>
+    </Page>
   );
 }

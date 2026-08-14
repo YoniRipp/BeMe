@@ -1,5 +1,5 @@
 import { describe, it, expect, vi } from 'vitest';
-import { render, screen } from '@testing-library/react';
+import { render, screen, waitFor } from '@testing-library/react';
 import { BrowserRouter } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { Insights } from './Insights';
@@ -11,12 +11,35 @@ vi.mock('@/context/AuthContext', () => ({
     authLoading: false,
   }),
 }));
+// vi.mock is hoisted above module scope, so the fixtures it closes over must be too.
+const { sampleWorkout, sampleFood } = vi.hoisted(() => ({
+  sampleWorkout: {
+    id: 'w1',
+    date: new Date().toISOString(),
+    title: 'Push Day',
+    type: 'strength',
+    durationMinutes: 45,
+    completed: true,
+    exercises: [{ name: 'Bench Press', sets: 3, reps: 8, weight: 80 }],
+  },
+  sampleFood: {
+    id: 'f1',
+    date: new Date().toISOString(),
+    name: 'Oats',
+    calories: 350,
+    protein: 12,
+    carbs: 60,
+    fats: 6,
+    mealType: 'breakfast',
+  },
+}));
+
 vi.mock('@/features/body/api', () => ({
-  workoutsApi: { list: vi.fn().mockResolvedValue([]), add: vi.fn(), update: vi.fn(), delete: vi.fn() },
+  workoutsApi: { list: vi.fn().mockResolvedValue({ data: [sampleWorkout], hasMore: false }), add: vi.fn(), update: vi.fn(), delete: vi.fn() },
 }));
 vi.mock('@/features/energy/api', () => ({
-  foodEntriesApi: { list: vi.fn().mockResolvedValue([]), add: vi.fn(), update: vi.fn(), delete: vi.fn() },
-  dailyCheckInsApi: { list: vi.fn().mockResolvedValue([]), add: vi.fn(), update: vi.fn(), delete: vi.fn() },
+  foodEntriesApi: { list: vi.fn().mockResolvedValue({ data: [sampleFood], hasMore: false }), add: vi.fn(), update: vi.fn(), delete: vi.fn() },
+  dailyCheckInsApi: { list: vi.fn().mockResolvedValue({ data: [], hasMore: false }), add: vi.fn(), update: vi.fn(), delete: vi.fn() },
   searchFoods: vi.fn().mockResolvedValue([]),
 }));
 
@@ -41,6 +64,20 @@ const queryClient = new QueryClient({
   defaultOptions: { queries: { retry: false }, mutations: { retry: false } },
 });
 
+/** A wrapper with its own cache, for tests that need different seeded data. */
+function freshWrapper() {
+  const client = new QueryClient({
+    defaultOptions: { queries: { retry: false }, mutations: { retry: false } },
+  });
+  return ({ children }: { children: React.ReactNode }) => (
+    <BrowserRouter>
+      <QueryClientProvider client={client}>
+        <AppProvider>{children}</AppProvider>
+      </QueryClientProvider>
+    </BrowserRouter>
+  );
+}
+
 const wrapper = ({ children }: { children: React.ReactNode }) => (
   <BrowserRouter>
     <QueryClientProvider client={queryClient}>
@@ -52,25 +89,35 @@ const wrapper = ({ children }: { children: React.ReactNode }) => (
 );
 
 describe('Insights Page', () => {
-it('displays fitness insights section', () => {
+it('displays fitness insights section', async () => {
     render(<Insights />, { wrapper });
-    expect(screen.getByRole('heading', { name: /fitness insights/i })).toBeInTheDocument();
+    await waitFor(() => expect(screen.getByRole('heading', { name: /fitness insights/i })).toBeInTheDocument());
   });
 
-  it('displays health insights section', () => {
+  it('displays health insights section', async () => {
     render(<Insights />, { wrapper });
-    expect(screen.getByRole('heading', { name: /health insights/i })).toBeInTheDocument();
+    await waitFor(() => expect(screen.getByRole('heading', { name: /health insights/i })).toBeInTheDocument());
   });
 
-it('displays workout frequency', () => {
+it('displays workout frequency', async () => {
     render(<Insights />, { wrapper });
-    const elements = screen.getAllByText(/workout frequency/i);
-    expect(elements.length).toBeGreaterThanOrEqual(1);
+    await waitFor(() => expect(screen.getAllByText(/workout frequency/i).length).toBeGreaterThanOrEqual(1));
   });
 
-  it('displays calorie trend', () => {
+  it('displays calorie trend', async () => {
     render(<Insights />, { wrapper });
-    const elements = screen.getAllByText(/calorie trend/i);
-    expect(elements.length).toBeGreaterThanOrEqual(1);
+    await waitFor(() => expect(screen.getAllByText(/calorie trend/i).length).toBeGreaterThanOrEqual(1));
+  });
+
+  it('invites a first log instead of drawing charts full of zeros', async () => {
+    const { workoutsApi } = await import('@/features/body/api');
+    const { foodEntriesApi } = await import('@/features/energy/api');
+    vi.mocked(workoutsApi.list).mockResolvedValueOnce({ data: [], hasMore: false } as never);
+    vi.mocked(foodEntriesApi.list).mockResolvedValueOnce({ data: [], hasMore: false } as never);
+
+    render(<Insights />, { wrapper: freshWrapper() });
+
+    await waitFor(() => expect(screen.getByText(/no patterns yet/i)).toBeInTheDocument());
+    expect(screen.queryByRole('heading', { name: /fitness insights/i })).not.toBeInTheDocument();
   });
 });

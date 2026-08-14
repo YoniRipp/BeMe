@@ -9,6 +9,16 @@ export default {
   ],
   theme: {
     extend: {
+      fontSize: {
+        // The two sizes that were written as text-[11px] / text-[10px] 64 times between
+        // them. They are a real part of the scale — the uppercase label above a value,
+        // and the caption under it — so they get names rather than magic numbers.
+        // Size only, no paired line-height or weight: these replace bare arbitrary values,
+        // and a bundled lineHeight/fontWeight would silently override the font-* and
+        // leading-* utilities already sitting alongside them at every call site.
+        eyebrow: '0.6875rem',
+        caption: '0.625rem',
+      },
       fontFamily: {
         sans: ['Inter', 'ui-sans-serif', 'system-ui', '-apple-system', 'Segoe UI', 'Roboto', 'Helvetica Neue', 'Arial', 'sans-serif'],
         serif: ['Fraunces', 'Georgia', 'Times New Roman', 'serif'],
@@ -102,24 +112,40 @@ export default {
           50: "hsl(var(--sage-50))",
           100: "hsl(var(--sage-100))",
         },
-        cream: "hsl(var(--cream))",
-        "cream-warm": "hsl(var(--cream-warm))",
         terracotta: {
           DEFAULT: "hsl(var(--terracotta))",
           light: "hsl(var(--terracotta-light))",
         },
-        gold: "hsl(var(--gold))",
-        charcoal: "hsl(var(--charcoal))",
-        stone: "hsl(var(--stone))",
-        mist: "hsl(var(--mist))",
-        success: "hsl(var(--success))",
-        info: "hsl(var(--info))",
-        warning: "hsl(var(--warning))",
+        gold: {
+          DEFAULT: "hsl(var(--gold))",
+          foreground: "hsl(var(--gold-foreground))",
+        },
+        success: {
+          DEFAULT: "hsl(var(--success))",
+          foreground: "hsl(var(--success-foreground))",
+        },
+        info: {
+          DEFAULT: "hsl(var(--info))",
+          foreground: "hsl(var(--info-foreground))",
+        },
+        warning: {
+          DEFAULT: "hsl(var(--warning))",
+          foreground: "hsl(var(--warning-foreground))",
+        },
+        scrim: {
+          DEFAULT: "hsl(var(--scrim))",
+          foreground: "hsl(var(--scrim-foreground))",
+        },
       },
+      // Every step derives from --radius, so the scale stays ordered and moves together.
+      // `xl` was previously left undefined and fell through to Tailwind's own 0.75rem —
+      // 12px, which made it *smaller* than `lg` and identical to `md`.
+      //   sm 10 · md 12 · lg 14 · xl 18 · 2xl 22 · 3xl 30
       borderRadius: {
-        lg: "var(--radius)",
-        md: "calc(var(--radius) - 2px)",
         sm: "calc(var(--radius) - 4px)",
+        md: "calc(var(--radius) - 2px)",
+        lg: "var(--radius)",
+        xl: "calc(var(--radius) + 4px)",
         '2xl': "calc(var(--radius) + 8px)",
         '3xl': "calc(var(--radius) + 16px)",
       },

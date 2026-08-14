@@ -32,7 +32,7 @@ function PeriodSelector({ value, onChange }: { value: number; onChange: (days: n
           className={cn(
             'px-3 py-1 rounded-full text-xs font-medium transition-colors',
             value === opt.days
-              ? 'bg-violet-100 text-violet-700 dark:bg-violet-900/30 dark:text-violet-300'
+              ? 'bg-primary/10 text-primary'
               : 'bg-muted text-muted-foreground hover:bg-muted/80'
           )}
         >
@@ -49,12 +49,12 @@ function ScoreRing({ score }: { score: number }) {
   const radius = 40;
   const circumference = 2 * Math.PI * radius;
   const offset = circumference - (score / 100) * circumference;
-  const color = score >= 75 ? '#10b981' : score >= 50 ? '#f59e0b' : '#ef4444';
+  const color = score >= 75 ? 'hsl(var(--chart-1))' : score >= 50 ? 'hsl(var(--chart-3))' : 'hsl(var(--destructive))';
 
   return (
     <div className="flex flex-col items-center gap-1">
       <svg width="100" height="100" viewBox="0 0 100 100">
-        <circle cx="50" cy="50" r={radius} fill="none" stroke="#e5e7eb" strokeWidth="10" />
+        <circle cx="50" cy="50" r={radius} fill="none" stroke="hsl(var(--muted))" strokeWidth="10" />
         <circle
           cx="50"
           cy="50"
@@ -185,7 +185,7 @@ function TodayRecommendations() {
     <Card>
       <CardHeader>
         <CardTitle className="flex items-center gap-2 text-base">
-          <Lightbulb className="w-4 h-4 text-amber-500" />
+          <Lightbulb className="w-4 h-4 text-gold" />
           Today's Recommendations
         </CardTitle>
       </CardHeader>
@@ -193,7 +193,7 @@ function TodayRecommendations() {
         {isLoading ? (
           <div className="space-y-3">
             <p className="text-xs text-muted-foreground flex items-center gap-1">
-              <Lightbulb className="w-3.5 h-3.5 text-amber-500 animate-pulse" />
+              <Lightbulb className="w-3.5 h-3.5 text-gold animate-pulse" />
               <span>
                 Generating recommendations
                 <span className="animate-thinking-dots inline">
@@ -307,7 +307,7 @@ export function AiInsightsSection() {
     <div className="space-y-4">
       <div className="flex items-center justify-between gap-4 flex-wrap">
         <h2 className="text-xl font-semibold flex items-center gap-2">
-          <Sparkles className="w-5 h-5 text-violet-500" />
+          <Sparkles className="w-5 h-5 text-primary" />
           AI-Powered Insights
         </h2>
         <div className="flex items-center gap-2">
@@ -332,7 +332,7 @@ export function AiInsightsSection() {
           {isLoading || refreshMutation.isPending ? (
             <div className="space-y-4">
               <p className="text-sm text-muted-foreground flex items-center gap-1">
-                <Sparkles className="w-4 h-4 text-violet-500 animate-pulse" />
+                <Sparkles className="w-4 h-4 text-primary animate-pulse" />
                 <span>
                   Analyzing your data
                   <span className="animate-thinking-dots inline">
@@ -391,7 +391,7 @@ export function AiInsightsSection() {
             <Card className="overflow-hidden">
               <CardHeader>
                 <CardTitle className="flex items-center gap-2 text-base">
-                  <TrendingUp className="w-4 h-4 text-green-500" />
+                  <TrendingUp className="w-4 h-4 text-success" />
                   Highlights
                 </CardTitle>
               </CardHeader>
@@ -399,7 +399,7 @@ export function AiInsightsSection() {
                 <ul className="space-y-3">
                   {data.highlights.map((h, i) => (
                     <li key={i} className="text-sm flex gap-2.5 leading-relaxed">
-                      <span className="text-green-500 mt-0.5 shrink-0">✓</span>
+                      <span className="text-success mt-0.5 shrink-0">✓</span>
                       <span>{h.replace(/\*\*(.*?)\*\*/g, '$1')}</span>
                     </li>
                   ))}
@@ -412,7 +412,7 @@ export function AiInsightsSection() {
             <Card className="overflow-hidden">
               <CardHeader>
                 <CardTitle className="flex items-center gap-2 text-base">
-                  <Lightbulb className="w-4 h-4 text-amber-500" />
+                  <Lightbulb className="w-4 h-4 text-gold" />
                   Suggestions
                 </CardTitle>
               </CardHeader>
@@ -420,7 +420,7 @@ export function AiInsightsSection() {
                 <ul className="space-y-3">
                   {data.suggestions.map((s, i) => (
                     <li key={i} className="text-sm flex gap-2.5 leading-relaxed">
-                      <span className="text-amber-500 mt-0.5 shrink-0">→</span>
+                      <span className="text-gold mt-0.5 shrink-0">→</span>
                       <span>{s.replace(/\*\*(.*?)\*\*/g, '$1')}</span>
                     </li>
                   ))}
@@ -432,12 +432,12 @@ export function AiInsightsSection() {
       )}
 
       {/* AI Coach Chat Button */}
-      <Card className="bg-gradient-to-r from-violet-50 to-indigo-50 dark:from-violet-950/20 dark:to-indigo-950/20 border-violet-200 dark:border-violet-800">
+      <Card className="bg-primary/5 border-primary/20">
         <CardContent className="pt-6">
           <div className="flex items-center justify-between gap-4">
             <div className="flex-1 min-w-0">
               <h3 className="font-semibold text-sm flex items-center gap-2">
-                <MessageCircle className="w-4 h-4 text-violet-600" />
+                <MessageCircle className="w-4 h-4 text-primary" />
                 AI Fitness Coach
               </h3>
               <p className="text-xs text-muted-foreground mt-1">
@@ -446,7 +446,7 @@ export function AiInsightsSection() {
             </div>
             <Button
               onClick={() => setChatOpen(true)}
-              className="bg-violet-600 hover:bg-violet-700 text-white shrink-0"
+              className="bg-primary hover:bg-primary/90 text-primary-foreground shrink-0"
               size="sm"
             >
               Chat Now
