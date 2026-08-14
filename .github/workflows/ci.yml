@@ -119,6 +119,26 @@ jobs:
           NODE_ENV: test
           DATABASE_URL: postgresql://trackvibe:trackvibe_test_password@localhost:5432/trackvibe_test
           DB_SSL: 'false'
+      # migrations/ and src/db/schema.ts are independent bootstrap paths -- production uses
+      # the first, dev machines the second. When they drift, the symptom is a runtime
+      # "column does not exist" from whichever model selects it, so compare them here.
+      - name: Bootstrap a second database from initSchema
+        run: |
+          PGPASSWORD=trackvibe_test_password createdb -h localhost -U trackvibe trackvibe_initschema
+          npm run schema:init
+        working-directory: backend
+        env:
+          NODE_ENV: development
+          PORT: '3000'
+          JWT_SECRET: ci-schema-drift-check
+          DATABASE_URL: postgresql://trackvibe:trackvibe_test_password@localhost:5432/trackvibe_initschema
+          DB_SSL: 'false'
+      - name: Check the two bootstrap paths agree
+        run: npm run check:schema-drift
+        working-directory: backend
+        env:
+          MIGRATED_DATABASE_URL: postgresql://trackvibe:trackvibe_test_password@localhost:5432/trackvibe_test
+          INIT_DATABASE_URL: postgresql://trackvibe:trackvibe_test_password@localhost:5432/trackvibe_initschema
 
   security-audit:
     runs-on: ubuntu-latest
