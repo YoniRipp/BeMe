@@ -393,5 +393,40 @@ describe('WorkoutModal', () => {
       expect(saved.exercises[0].notes).toBe('Belt on for the second set');
       expect(saved.exercises[0].completedPerSet).toEqual([true, false]);
     });
+
+    // The `workout` prop now follows the react-query cache, so its identity changes on
+    // every background refetch and on the logger's own optimistic echo. The editor must
+    // not re-seed from those, or it wipes whatever the user is part-way through typing.
+    it('keeps in-progress editor edits when the workout refetches underneath it', async () => {
+      const user = userEvent.setup();
+      const workout: Workout = {
+        id: 'w5',
+        date: new Date(2025, 0, 22),
+        title: 'Pull Day',
+        type: 'strength',
+        durationMinutes: 45,
+        completed: false,
+        exercises: [
+          { name: 'Barbell Row', sets: 2, reps: 8, repsPerSet: [8, 8], weightPerSet: [60, 60], weight: 60 },
+        ],
+      };
+
+      const { rerender } = render(
+        <WorkoutModal open={true} onOpenChange={vi.fn()} onSave={vi.fn()} workout={workout} />
+      );
+
+      await user.click(screen.getByRole('button', { name: /settings/i }));
+      const titleInput = screen.getByDisplayValue('Pull Day');
+      await user.clear(titleInput);
+      await user.type(titleInput, 'Pull Day A');
+
+      // A refetch lands a structurally identical but brand-new object.
+      rerender(
+        <WorkoutModal open={true} onOpenChange={vi.fn()} onSave={vi.fn()} workout={{ ...workout }} />
+      );
+
+      expect(screen.getByDisplayValue('Pull Day A')).toBeInTheDocument();
+      expect(screen.queryByDisplayValue('Pull Day')).not.toBeInTheDocument();
+    });
   });
 });

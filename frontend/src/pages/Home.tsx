@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react';
-import { useNavigate, useOutletContext } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import { useWorkouts } from '@/hooks/useWorkouts';
 import { useEnergy } from '@/hooks/useEnergy';
 import { useGoals } from '@/hooks/useGoals';
@@ -13,7 +13,6 @@ import { FoodEntryModal } from '@/components/energy/FoodEntryModal';
 import { WorkoutModal } from '@/components/body/WorkoutModal';
 import { GoalModal } from '@/components/goals/GoalModal';
 import { ContentWithLoading } from '@/components/shared/ContentWithLoading';
-import { VoiceMicHero } from '@/components/voice/VoiceMicHero';
 import { WaterTracker } from '@/components/home/WaterTracker';
 import { WeightProgress } from '@/components/home/WeightProgress';
 import { WeightLogModal } from '@/components/home/WeightLogModal';
@@ -39,7 +38,6 @@ import {
 export function Home() {
   // Hooks
   const navigate = useNavigate();
-  const { openVoiceAgent } = useOutletContext<{ openVoiceAgent?: () => void }>() ?? {};
   const { workouts, workoutsLoading, addWorkout } = useWorkouts();
   const { checkIns, foodEntries, addCheckIn, updateCheckIn, addFoodEntry, getCheckInByDate, energyLoading } = useEnergy();
   const { addGoal, updateGoal, goalsLoading } = useGoals();
@@ -226,9 +224,6 @@ export function Home() {
               </div>
             </div>
           </PulseCard>
-
-          {/* Voice */}
-          <VoiceMicHero onOpenAgent={() => openVoiceAgent?.()} />
 
           <StreakCard />
 

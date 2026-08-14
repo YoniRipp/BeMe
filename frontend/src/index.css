@@ -34,17 +34,18 @@
     --terracotta: 14 58% 54%;
     --terracotta-light: 14 60% 92%;
     --gold: 38 70% 50%;
-    --cream: 36 40% 97%;
-    --cream-warm: 34 32% 94%;
-    --charcoal: var(--ink);
-    --stone: var(--ink-3);
-    --mist: var(--paper-2);
-    --border-base44: var(--hairline);
 
-    /* Semantic status */
+    /* Semantic status. The -foreground pairs are what goes *on* the color — never
+       a literal white, which fails once the dark palette lightens these. */
     --success: 150 45% 38%;
+    --success-foreground: 36 40% 98%;
     --info: 212 58% 48%;
+    --info-foreground: 36 40% 98%;
     --warning: 32 80% 48%;
+
+    /* Modal/drawer backdrop. Deliberately not derived from --ink or --foreground:
+       those inverse in dark mode and would paint a white wash over the app. */
+    --scrim: 20 14% 8%;
 
     /* shadcn semantic tokens */
     --background: var(--paper);
@@ -114,16 +115,15 @@
     --terracotta: 18 100% 61%;
     --terracotta-light: 18 38% 20%;
     --gold: 43 100% 64%;
-    --cream: var(--paper);
-    --cream-warm: var(--paper-2);
-    --charcoal: var(--ink);
-    --stone: var(--ink-3);
-    --mist: var(--paper-2);
-    --border-base44: var(--hairline);
 
     --success: 150 40% 54%;
+    --success-foreground: 12 10% 5%;
     --info: 206 100% 68%;
+    --info-foreground: 12 10% 5%;
     --warning: 43 100% 64%;
+
+    /* Stays dark — a scrim dims the app in both themes. */
+    --scrim: 0 0% 0%;
 
     --background: var(--paper);
     --foreground: var(--ink);

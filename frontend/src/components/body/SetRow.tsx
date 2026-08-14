@@ -178,7 +178,7 @@ export function SetRow({
             className={cn(
               'flex h-9 w-9 items-center justify-center rounded-lg border transition-colors',
               completed
-                ? 'border-success bg-success text-white'
+                ? 'border-success bg-success text-success-foreground'
                 : 'border-border bg-background text-muted-foreground hover:border-success hover:text-success',
             )}
           >

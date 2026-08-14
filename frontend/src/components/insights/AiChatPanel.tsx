@@ -119,13 +119,27 @@ export function AiChatPanel({ open, onOpenChange }: AiChatPanelProps) {
 
   // ─── Voice input ──────────────────────────────────────────────────────────
 
-  const dictation = useVoiceDictation();
-  const { isRecording, cancel: cancelDictation } = dictation;
+  const appendTranscript = useCallback((transcript: string) => {
+    setInput((prev) => (prev.trim() ? `${prev.trim()} ${transcript}` : transcript));
+    inputRef.current?.focus();
+  }, []);
+
+  // onAutoEnd catches the case where the browser ends recognition itself — a long silence
+  // or a network drop. Nobody is awaiting stop() then, so without this the words are lost.
+  const dictation = useVoiceDictation({ onAutoEnd: appendTranscript });
+  const { isRecording, cancel: cancelDictation, error: dictationError } = dictation;
 
   // Never keep the mic open once the panel is dismissed.
   useEffect(() => {
     if (!open && isRecording) cancelDictation();
   }, [open, isRecording, cancelDictation]);
+
+  // VoiceRecorderBar renders the error, but it unmounts the instant recording stops —
+  // which is exactly when recognition failures surface. Mirror it to a toast so the user
+  // gets told why the recorder vanished.
+  useEffect(() => {
+    if (dictationError) toast.error(dictationError);
+  }, [dictationError]);
 
   const handleStartRecording = useCallback(async () => {
     try {
@@ -147,9 +161,8 @@ export function AiChatPanel({ open, onOpenChange }: AiChatPanelProps) {
       toast.error('Nothing was recorded. Try again.');
       return;
     }
-    setInput((prev) => (prev.trim() ? `${prev.trim()} ${transcript}` : transcript));
-    inputRef.current?.focus();
-  }, [dictation]);
+    appendTranscript(transcript);
+  }, [dictation, appendTranscript]);
 
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>

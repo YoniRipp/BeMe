@@ -42,7 +42,10 @@ function groupWorkoutsByDate(workouts: Workout[], ascending = false): { date: st
 export function Body() {
   const { workouts, workoutsLoading, addWorkout, updateWorkout, deleteWorkout, toggleWorkoutCompleted } = useWorkouts();
   const [modalOpen, setModalOpen] = useState(false);
-  const [editingWorkout, setEditingWorkout] = useState<Workout | undefined>(undefined);
+  // Hold the id, not the object. The logger persists through the react-query cache, so a
+  // snapshot taken at handleEdit goes stale the moment a set is logged — and the editor
+  // would then save those stale exercises back over everything just recorded.
+  const [editingWorkoutId, setEditingWorkoutId] = useState<string | undefined>(undefined);
   const [searchQuery, setSearchQuery] = useState('');
   const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null);
   const [filter, setFilter] = useState<'All' | 'Strength' | 'Cardio' | 'Flexibility'>('All');
@@ -52,6 +55,13 @@ export function Body() {
   useEffect(() => {
     setEarlierVisible(EARLIER_PAGE_SIZE);
   }, [searchQuery, filter]);
+
+  // Derived from the live list so the modal always sees the latest persisted state,
+  // including sets logged in the logger view a moment ago.
+  const editingWorkout = useMemo(
+    () => workouts.find((w) => w.id === editingWorkoutId),
+    [workouts, editingWorkoutId]
+  );
 
   const filteredWorkouts = useMemo(() => {
     let filtered = workouts;
@@ -125,23 +135,23 @@ export function Body() {
   const weekCircumference = 2 * Math.PI * 28;
 
   const handleSave = (workout: Omit<Workout, 'id'>) => {
-    if (editingWorkout) {
-      updateWorkout(editingWorkout.id, workout);
+    if (editingWorkoutId) {
+      updateWorkout(editingWorkoutId, workout);
       toast.success('Workout updated');
     } else {
       addWorkout(workout);
       toast.success('Workout added');
     }
-    setEditingWorkout(undefined);
+    setEditingWorkoutId(undefined);
   };
 
   const handleEdit = (workout: Workout) => {
-    setEditingWorkout(workout);
+    setEditingWorkoutId(workout.id);
     setModalOpen(true);
   };
 
   const handleAddNew = () => {
-    setEditingWorkout(undefined);
+    setEditingWorkoutId(undefined);
     setModalOpen(true);
   };
 

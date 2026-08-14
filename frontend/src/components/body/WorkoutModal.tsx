@@ -846,10 +846,13 @@ export function WorkoutModal({ open, onOpenChange, onSave, workout }: WorkoutMod
     }
   }, [open]);
 
-  // Reset to view/edit mode whenever the modal is (re)opened.
+  // Reset to view/edit mode whenever the modal is (re)opened. Keyed on the id, not the
+  // object: `workout` now follows the react-query cache, so depending on its identity
+  // would throw the user out of the editor every time the logger auto-saves.
   useEffect(() => {
     if (open) setMode(workout ? 'view' : 'edit');
-  }, [open, workout]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [open, workout?.id]);
 
   useEffect(() => {
     if (!open) return;
@@ -880,7 +883,12 @@ export function WorkoutModal({ open, onOpenChange, onSave, workout }: WorkoutMod
     } else {
       reset({ ...defaultValues, title: 'Workout', date: toLocalDateString(new Date()) });
     }
-  }, [open, workout, reset]);
+    // Re-seed on open, on a different workout, and on entering the editor — the last of
+    // these is what picks up sets logged in the view mode we just came from. Deliberately
+    // not keyed on `workout` identity: that changes on every cache write, which would
+    // reset the form under the user mid-edit.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [open, workout?.id, mode, reset]);
 
   const addExercise = () =>
     append({

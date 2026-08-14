@@ -26,10 +26,6 @@ vi.mock('../voice/VoiceAgentPanel', () => ({
   VoiceAgentPanel: () => null,
 }));
 
-vi.mock('../shared/QuickAddMenu', () => ({
-  QuickAddMenu: () => null,
-}));
-
 function renderLayout() {
   render(
     <MemoryRouter initialEntries={['/']} future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>

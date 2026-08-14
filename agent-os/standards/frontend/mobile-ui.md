@@ -21,7 +21,9 @@ Anything pinned above the bottom nav offsets from it:
 
 ## Navigation
 
-`BottomNavigation` is fixed to the bottom, icon + label, thumb-reachable. The global Voice Agent FAB appears on every page **except Home**.
+`BottomNavigation` is fixed to the bottom, icon + label, thumb-reachable, with a centre mic that opens the Voice Agent.
+
+**One voice entry point per viewport.** On mobile that is the bottom nav's centre mic; on desktop, where the bottom nav is hidden, it is the Voice Agent FAB — which appears on every page **including Home**. Don't add a second control to a screen that already has one: Home used to carry a mic hero card above the nav mic, and the card's own subtitle had to explain that the two did the same thing.
 
 ## Card anatomy
 

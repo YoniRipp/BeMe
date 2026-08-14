@@ -33,7 +33,6 @@ import {
 import { Button } from '@/components/ui/button';
 import { AiChatPanel } from '../insights/AiChatPanel';
 import { VoiceAgentPanel } from '../voice/VoiceAgentPanel';
-import { QuickAddMenu } from '../shared/QuickAddMenu';
 import { BottomNavigation } from './BottomNavigation';
 
 const ROUTE_TO_TITLE: Record<string, string> = {
@@ -64,17 +63,12 @@ const BOTTOM_NAV_BASE = [
   { name: 'Goals', path: '/goals', icon: Target },
 ];
 
-function getBottomNav(role?: string) {
-  if (role === 'trainer' || role === 'admin') {
-    return [
-      { name: 'Home', path: '/', icon: Home },
-      { name: 'Body', path: '/body', icon: Dumbbell },
-      { name: 'Clients', path: '/trainer', icon: Users },
-      { name: 'Goals', path: '/goals', icon: Target },
-    ];
-  }
-  return BOTTOM_NAV_BASE;
-}
+const BOTTOM_NAV_TRAINER = [
+  { name: 'Home', path: '/', icon: Home },
+  { name: 'Body', path: '/body', icon: Dumbbell },
+  { name: 'Clients', path: '/trainer', icon: Users },
+  { name: 'Goals', path: '/goals', icon: Target },
+];
 
 function getSidebarNav(isAdmin: boolean, isTrainer: boolean) {
   const nav = [...SIDEBAR_NAV_BASE];
@@ -100,7 +94,6 @@ export function Base44Layout() {
   const navigate = useNavigate();
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
-  const [quickAddOpen, setQuickAddOpen] = useState(false);
   const [aiChatOpen, setAiChatOpen] = useState(false);
   const [voicePanelOpen, setVoicePanelOpen] = useState(false);
   const { user } = useApp();
@@ -113,12 +106,7 @@ export function Base44Layout() {
   };
   const trainerAccess = hasTrainerAccess(user);
   const sidebarNav = useMemo(() => getSidebarNav(user?.role === 'admin', trainerAccess), [user?.role, trainerAccess]);
-  const bottomNavItems = useMemo(() => trainerAccess ? [
-    { name: 'Home', path: '/', icon: Home },
-    { name: 'Body', path: '/body', icon: Dumbbell },
-    { name: 'Clients', path: '/trainer', icon: Users },
-    { name: 'Goals', path: '/goals', icon: Target },
-  ] : getBottomNav(user?.role), [trainerAccess, user?.role]);
+  const bottomNavItems = trainerAccess ? BOTTOM_NAV_TRAINER : BOTTOM_NAV_BASE;
 
   const pageTitle = getPageTitle(pathname);
 
@@ -143,7 +131,7 @@ export function Base44Layout() {
       {/* Mobile overlay */}
       {sidebarOpen && (
         <div
-          className="fixed inset-0 bg-charcoal/40 backdrop-blur-sm z-40 lg:hidden"
+          className="fixed inset-0 bg-scrim/50 backdrop-blur-sm z-40 lg:hidden"
           aria-hidden
           onClick={() => setSidebarOpen(false)}
         />
@@ -292,7 +280,7 @@ export function Base44Layout() {
 
         <main className="px-4 sm:px-6 lg:px-8 pb-32 lg:pb-10 pt-5 lg:pt-3 animate-fade-up">
           <div className="mx-auto max-w-[700px] xl:max-w-none">
-            <Outlet context={{ openVoiceAgent: () => setVoicePanelOpen(true) }} />
+            <Outlet />
           </div>
         </main>
       </div>
@@ -304,19 +292,18 @@ export function Base44Layout() {
         onCenterPress={() => setVoicePanelOpen((prev) => !prev)}
       />
 
-      <QuickAddMenu open={quickAddOpen} onOpenChange={setQuickAddOpen} />
       <VoiceAgentPanel open={voicePanelOpen} onOpenChange={setVoicePanelOpen} />
 
-      {pathname !== '/' && (
-        <Button
-          size="icon"
-          onClick={() => setVoicePanelOpen((prev) => !prev)}
-          className="fixed right-4 z-40 hidden h-12 w-12 rounded-full bg-primary text-primary-foreground shadow-card-lg hover:bg-primary/90 md:right-6 lg:bottom-6 lg:flex"
-          aria-label={voicePanelOpen ? 'Close voice panel' : 'Open voice'}
-        >
-          <Mic className="h-5 w-5" />
-        </Button>
-      )}
+      {/* Desktop voice button. Shown on every page including Home — on desktop the bottom
+          nav (and its centre mic) is hidden, so this is the only voice entry point there. */}
+      <Button
+        size="icon"
+        onClick={() => setVoicePanelOpen((prev) => !prev)}
+        className="fixed right-4 z-40 hidden h-12 w-12 rounded-full bg-primary text-primary-foreground shadow-card-lg hover:bg-primary/90 md:right-6 lg:bottom-6 lg:flex"
+        aria-label={voicePanelOpen ? 'Close voice panel' : 'Open voice'}
+      >
+        <Mic className="h-5 w-5" />
+      </Button>
 
       {/* AI Chat FAB — bottom-right, above mobile nav */}
       {hasAiAccess && pathname !== '/insights' && (

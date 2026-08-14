@@ -134,12 +134,19 @@ describe('Home Page', () => {
     expect(screen.getByRole('button', { name: /log food/i })).toBeInTheDocument();
   });
 
-it('replaces dashboard stats with voice hero and quick log', () => {
+  it('replaces dashboard stats with the quick log grid', () => {
     render(<Home />, { wrapper });
     expect(screen.queryByText(/this week/i)).not.toBeInTheDocument();
     expect(screen.queryByText(/last night/i)).not.toBeInTheDocument();
-    expect(screen.getByText(/tap to log by voice/i)).toBeInTheDocument();
     expect(screen.getByText(/quick log/i)).toBeInTheDocument();
+  });
+
+  // Voice has one entry point per viewport — the bottom nav's centre mic on mobile, the
+  // FAB on desktop. Home used to duplicate it with a hero card that opened the same panel.
+  it('does not duplicate the voice control the layout already provides', () => {
+    render(<Home />, { wrapper });
+    expect(screen.queryByText(/tap to log by voice/i)).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: /open voice agent/i })).not.toBeInTheDocument();
   });
 
   it('displays calories and sleep stats', () => {

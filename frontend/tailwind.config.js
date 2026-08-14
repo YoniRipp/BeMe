@@ -102,19 +102,21 @@ export default {
           50: "hsl(var(--sage-50))",
           100: "hsl(var(--sage-100))",
         },
-        cream: "hsl(var(--cream))",
-        "cream-warm": "hsl(var(--cream-warm))",
         terracotta: {
           DEFAULT: "hsl(var(--terracotta))",
           light: "hsl(var(--terracotta-light))",
         },
         gold: "hsl(var(--gold))",
-        charcoal: "hsl(var(--charcoal))",
-        stone: "hsl(var(--stone))",
-        mist: "hsl(var(--mist))",
-        success: "hsl(var(--success))",
-        info: "hsl(var(--info))",
+        success: {
+          DEFAULT: "hsl(var(--success))",
+          foreground: "hsl(var(--success-foreground))",
+        },
+        info: {
+          DEFAULT: "hsl(var(--info))",
+          foreground: "hsl(var(--info-foreground))",
+        },
         warning: "hsl(var(--warning))",
+        scrim: "hsl(var(--scrim))",
       },
       borderRadius: {
         lg: "var(--radius)",
