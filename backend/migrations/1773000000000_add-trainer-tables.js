@@ -4,7 +4,7 @@ export const up = (pgm) => {
   pgm.sql("ALTER TABLE users ADD CONSTRAINT users_role_check CHECK (role IN ('admin', 'user', 'trainer'))");
 
   pgm.sql(`
-    CREATE TABLE trainer_clients (
+    CREATE TABLE IF NOT EXISTS trainer_clients (
       id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
       trainer_id uuid NOT NULL REFERENCES users(id) ON DELETE CASCADE,
       client_id uuid NOT NULL REFERENCES users(id) ON DELETE CASCADE,
@@ -14,11 +14,11 @@ export const up = (pgm) => {
       UNIQUE (trainer_id, client_id)
     )
   `);
-  pgm.sql("CREATE INDEX idx_trainer_clients_trainer ON trainer_clients(trainer_id, status)");
-  pgm.sql("CREATE INDEX idx_trainer_clients_client ON trainer_clients(client_id, status)");
+  pgm.sql("CREATE INDEX IF NOT EXISTS idx_trainer_clients_trainer ON trainer_clients(trainer_id, status)");
+  pgm.sql("CREATE INDEX IF NOT EXISTS idx_trainer_clients_client ON trainer_clients(client_id, status)");
 
   pgm.sql(`
-    CREATE TABLE trainer_invitations (
+    CREATE TABLE IF NOT EXISTS trainer_invitations (
       id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
       trainer_id uuid NOT NULL REFERENCES users(id) ON DELETE CASCADE,
       email text,
@@ -28,8 +28,8 @@ export const up = (pgm) => {
       created_at timestamptz DEFAULT now()
     )
   `);
-  pgm.sql("CREATE INDEX idx_trainer_invitations_code ON trainer_invitations(invite_code) WHERE status = 'pending'");
-  pgm.sql("CREATE INDEX idx_trainer_invitations_email ON trainer_invitations(email, status)");
+  pgm.sql("CREATE INDEX IF NOT EXISTS idx_trainer_invitations_code ON trainer_invitations(invite_code) WHERE status = 'pending'");
+  pgm.sql("CREATE INDEX IF NOT EXISTS idx_trainer_invitations_email ON trainer_invitations(email, status)");
 };
 
 export const down = (pgm) => {
