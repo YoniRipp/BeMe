@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, useRef } from 'react';
 import { Link, Outlet, useLocation, useNavigate } from 'react-router-dom';
 import {
   Home,
@@ -23,6 +23,7 @@ import {
 import { useApp } from '@/context/AppContext';
 import { useAuth } from '@/context/AuthContext';
 import { useSubscription } from '@/hooks/useSubscription';
+import { useMediaQuery, LG_BREAKPOINT_QUERY } from '@/hooks/useMediaQuery';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -96,6 +97,8 @@ export function Base44Layout() {
   const [scrolled, setScrolled] = useState(false);
   const [aiChatOpen, setAiChatOpen] = useState(false);
   const [voicePanelOpen, setVoicePanelOpen] = useState(false);
+  const sidebarRef = useRef<HTMLElement>(null);
+  const isDesktop = useMediaQuery(LG_BREAKPOINT_QUERY);
   const { user } = useApp();
   const { logout } = useAuth();
   const { hasAiAccess } = useSubscription();
@@ -120,6 +123,26 @@ export function Base44Layout() {
     setSidebarOpen(false);
   }, [pathname]);
 
+  // Escape closes the drawer, matching every other dismissible surface in the app.
+  useEffect(() => {
+    if (!sidebarOpen) return;
+    const onKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') setSidebarOpen(false);
+    };
+    window.addEventListener('keydown', onKeyDown);
+    return () => window.removeEventListener('keydown', onKeyDown);
+  }, [sidebarOpen]);
+
+  // Below `lg` the sidebar is a drawer: translated off-screen but still in the DOM, so
+  // without `inert` its links stay tabbable while invisible. Set imperatively rather than
+  // as a JSX prop so it works the same on React 18 and 19.
+  useEffect(() => {
+    const el = sidebarRef.current;
+    if (!el) return;
+    if (!sidebarOpen && !isDesktop) el.setAttribute('inert', '');
+    else el.removeAttribute('inert');
+  }, [sidebarOpen, isDesktop]);
+
   const dateStr = new Date().toLocaleDateString('en-US', {
     weekday: 'long',
     month: 'short',
@@ -137,8 +160,11 @@ export function Base44Layout() {
         />
       )}
 
-      {/* Sidebar */}
+      {/* Sidebar. Below `lg` it is a drawer: translated off-screen but still in the DOM,
+          so it needs `inert` when closed or its links stay in the tab order — invisible
+          controls a keyboard or switch user lands on. Above `lg` it is always visible. */}
       <aside
+        ref={sidebarRef}
         className={`fixed top-0 left-0 h-full w-72 bg-sidebar border-r border-sidebar-border z-50
           transform transition-transform duration-300 ease-out
           ${sidebarOpen ? 'translate-x-0' : '-translate-x-full'} lg:translate-x-0`}

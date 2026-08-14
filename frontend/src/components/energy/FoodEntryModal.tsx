@@ -595,7 +595,7 @@ export function FoodEntryModal({ open, onOpenChange, onSave, entry, defaultMealT
                   <div className="mt-2">
                     <Input
                       id="portion-amount"
-                      type="number"
+                      type="number" inputMode="numeric"
                       min={1}
                       value={defaultUnit ? unitCount : portionGrams}
                       onChange={(e) => {
@@ -639,7 +639,7 @@ export function FoodEntryModal({ open, onOpenChange, onSave, entry, defaultMealT
               <Label htmlFor="calories">Calories</Label>
               <Input
                 id="calories"
-                type="number"
+                type="number" inputMode="numeric"
                 min={0}
                 {...register('calories', {
                   onChange: () => setPer100g(null),
@@ -659,7 +659,7 @@ export function FoodEntryModal({ open, onOpenChange, onSave, entry, defaultMealT
                 <Label htmlFor="protein">Protein (g)</Label>
                 <Input
                   id="protein"
-                  type="number"
+                  type="number" inputMode="decimal"
                   step="0.1"
                   min={0}
                   {...register('protein', { onChange: () => setPer100g(null) })}
@@ -676,7 +676,7 @@ export function FoodEntryModal({ open, onOpenChange, onSave, entry, defaultMealT
                 <Label htmlFor="carbs">Carbs (g)</Label>
                 <Input
                   id="carbs"
-                  type="number"
+                  type="number" inputMode="decimal"
                   step="0.1"
                   min={0}
                   {...register('carbs', { onChange: () => setPer100g(null) })}
@@ -693,7 +693,7 @@ export function FoodEntryModal({ open, onOpenChange, onSave, entry, defaultMealT
                 <Label htmlFor="fats">Fats (g)</Label>
                 <Input
                   id="fats"
-                  type="number"
+                  type="number" inputMode="decimal"
                   step="0.1"
                   min={0}
                   {...register('fats', { onChange: () => setPer100g(null) })}

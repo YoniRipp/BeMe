@@ -1,6 +1,7 @@
 /// <reference types="@testing-library/jest-dom" />
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { render, screen } from '@testing-library/react';
+import { render, screen, waitFor } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
 import { MemoryRouter, Route, Routes } from 'react-router-dom';
 import { Base44Layout } from './Base44Layout';
 
@@ -81,5 +82,51 @@ describe('Base44Layout trainer navigation', () => {
     renderLayout();
 
     expect(screen.queryByText('Clients')).not.toBeInTheDocument();
+  });
+});
+
+describe('Base44Layout sidebar drawer', () => {
+  beforeEach(() => {
+    mockUser.mockReturnValue({
+      id: 'user-1',
+      name: 'Test User',
+      email: 'test@example.com',
+      role: 'user',
+      subscriptionStatus: 'free',
+    });
+  });
+
+  // Below `lg` the sidebar is translated off-screen but stays in the DOM. Without `inert`
+  // its links remain in the tab order, so a keyboard or switch user lands on controls
+  // they cannot see.
+  it('takes the closed drawer out of the tab order', async () => {
+    renderLayout();
+    const sidebar = document.querySelector('aside');
+    expect(sidebar).not.toBeNull();
+    await waitFor(() => expect(sidebar).toHaveAttribute('inert'));
+  });
+
+  it('puts the drawer back in the tab order once opened', async () => {
+    const user = userEvent.setup();
+    renderLayout();
+    const sidebar = document.querySelector('aside')!;
+    await waitFor(() => expect(sidebar).toHaveAttribute('inert'));
+
+    await user.click(screen.getByRole('button', { name: /toggle menu/i }));
+
+    await waitFor(() => expect(sidebar).not.toHaveAttribute('inert'));
+  });
+
+  it('closes the drawer on Escape', async () => {
+    const user = userEvent.setup();
+    renderLayout();
+    const sidebar = document.querySelector('aside')!;
+
+    await user.click(screen.getByRole('button', { name: /toggle menu/i }));
+    await waitFor(() => expect(sidebar).not.toHaveAttribute('inert'));
+
+    await user.keyboard('{Escape}');
+
+    await waitFor(() => expect(sidebar).toHaveAttribute('inert'));
   });
 });

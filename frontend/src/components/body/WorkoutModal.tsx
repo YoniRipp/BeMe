@@ -119,7 +119,7 @@ function RestTimer() {
             key={s}
             type="button"
             onClick={() => setRemaining(s)}
-            className="rounded-full border border-border bg-card px-2.5 py-1 text-eyebrow font-bold tabular-nums text-muted-foreground transition-colors hover:border-primary hover:text-primary"
+            className="inline-flex min-h-11 items-center rounded-full border border-border bg-card px-3.5 text-eyebrow font-bold tabular-nums text-muted-foreground transition-colors hover:border-primary hover:text-primary"
           >
             {fmt(s)}
           </button>
@@ -128,7 +128,7 @@ function RestTimer() {
         <button
           type="button"
           onClick={() => setRemaining(null)}
-          className="inline-flex items-center gap-1.5 rounded-full bg-primary/10 px-3 py-1 text-sm font-extrabold tabular-nums text-primary"
+          className="inline-flex min-h-11 items-center gap-1.5 rounded-full bg-primary/10 px-4 text-sm font-extrabold tabular-nums text-primary"
           aria-label={`Rest timer: ${fmt(remaining)} remaining, tap to stop`}
         >
           {fmt(remaining)}
@@ -1137,7 +1137,7 @@ export function WorkoutModal({ open, onOpenChange, onSave, workout }: WorkoutMod
                       <Label htmlFor="duration">Duration (min)</Label>
                       <Input
                         id="duration"
-                        type="number"
+                        type="number" inputMode="numeric"
                         {...register('durationMinutes')}
                         aria-invalid={!!errors.durationMinutes}
                         aria-describedby={errors.durationMinutes ? 'duration-error' : undefined}
@@ -1264,7 +1264,7 @@ export function WorkoutModal({ open, onOpenChange, onSave, workout }: WorkoutMod
                                   <div className="flex min-w-0 items-center overflow-hidden rounded-lg border border-border bg-background">
                                     <button
                                       type="button"
-                                      className="flex h-9 w-7 items-center justify-center text-muted-foreground transition-colors hover:bg-muted"
+                                      className="flex h-11 w-9 items-center justify-center text-muted-foreground transition-colors hover:bg-muted"
                                       onClick={() => updateSetWeight(idx, i, Math.max(0, (weightPerSet[i] ?? 0) - 2.5))}
                                       aria-label={`Decrease set ${i + 1} weight by 2.5`}
                                     >
@@ -1278,7 +1278,7 @@ export function WorkoutModal({ open, onOpenChange, onSave, workout }: WorkoutMod
                                     />
                                     <button
                                       type="button"
-                                      className="flex h-9 w-7 items-center justify-center text-muted-foreground transition-colors hover:bg-muted"
+                                      className="flex h-11 w-9 items-center justify-center text-muted-foreground transition-colors hover:bg-muted"
                                       onClick={() => updateSetWeight(idx, i, (weightPerSet[i] ?? 0) + 2.5)}
                                       aria-label={`Increase set ${i + 1} weight by 2.5`}
                                     >
@@ -1290,7 +1290,7 @@ export function WorkoutModal({ open, onOpenChange, onSave, workout }: WorkoutMod
                                   <div className="flex min-w-0 items-center overflow-hidden rounded-lg border border-border bg-background">
                                     <button
                                       type="button"
-                                      className="flex h-9 w-7 items-center justify-center text-muted-foreground transition-colors hover:bg-muted"
+                                      className="flex h-11 w-9 items-center justify-center text-muted-foreground transition-colors hover:bg-muted"
                                       onClick={() => updateSetReps(idx, i, (repsPerSet[i] ?? 0) - 1)}
                                       aria-label={`Decrease set ${i + 1} reps`}
                                     >
@@ -1303,7 +1303,7 @@ export function WorkoutModal({ open, onOpenChange, onSave, workout }: WorkoutMod
                                     />
                                     <button
                                       type="button"
-                                      className="flex h-9 w-7 items-center justify-center text-muted-foreground transition-colors hover:bg-muted"
+                                      className="flex h-11 w-9 items-center justify-center text-muted-foreground transition-colors hover:bg-muted"
                                       onClick={() => updateSetReps(idx, i, (repsPerSet[i] ?? 0) + 1)}
                                       aria-label={`Increase set ${i + 1} reps`}
                                     >

@@ -71,7 +71,7 @@ export function DailyCheckInModal({ open, onOpenChange, onSave, checkIn }: Daily
               <Label htmlFor="sleepHours">Sleep Hours</Label>
               <Input
                 id="sleepHours"
-                type="number"
+                type="number" inputMode="decimal"
                 step="0.5"
                 min="0"
                 max="24"

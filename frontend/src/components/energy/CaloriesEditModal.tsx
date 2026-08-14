@@ -2,9 +2,10 @@ import { useState } from 'react';
 import {
   Dialog,
   DialogContent,
+  DialogDescription,
+  DialogFooter,
   DialogHeader,
   DialogTitle,
-  DialogFooter,
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -39,6 +40,7 @@ export function CaloriesEditModal({
       <DialogContent>
         <DialogHeader>
           <DialogTitle>Edit Calories</DialogTitle>
+          <DialogDescription>Adjust the calorie total recorded for this entry.</DialogDescription>
         </DialogHeader>
         <form onSubmit={handleSubmit}>
           <div className="space-y-4">
@@ -46,7 +48,7 @@ export function CaloriesEditModal({
               <Label htmlFor="consumed">Calories Consumed</Label>
               <Input
                 id="consumed"
-                type="number"
+                type="number" inputMode="numeric"
                 min="0"
                 required
                 value={consumed}
@@ -58,7 +60,7 @@ export function CaloriesEditModal({
               <Label htmlFor="burned">Calories Burned</Label>
               <Input
                 id="burned"
-                type="number"
+                type="number" inputMode="numeric"
                 min="0"
                 required
                 value={burned}

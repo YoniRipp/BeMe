@@ -59,7 +59,7 @@ export function EditableSetValueInput({
         setDraft(String(normalized));
         onValueChange(normalized);
       }}
-      className="h-9 w-full min-w-0 border-0 bg-transparent px-1 text-center text-sm font-extrabold tabular-nums text-foreground shadow-none focus-visible:ring-1 focus-visible:ring-primary"
+      className="h-11 w-full min-w-0 border-0 bg-transparent px-1 text-center text-sm font-extrabold tabular-nums text-foreground shadow-none focus-visible:ring-1 focus-visible:ring-primary"
       aria-label={ariaLabel}
     />
   );
@@ -120,7 +120,7 @@ export function SetRow({
       <div className="flex min-w-0 items-center overflow-hidden rounded-lg border border-border bg-background">
         <button
           type="button"
-          className="flex h-9 w-7 items-center justify-center text-muted-foreground transition-colors hover:bg-muted"
+          className="flex h-11 w-9 items-center justify-center text-muted-foreground transition-colors hover:bg-muted"
           onClick={() => onWeightChange(Math.max(0, (weight ?? 0) - weightStep))}
           aria-label={`Decrease set ${setNumber} weight by ${weightStep}`}
         >
@@ -134,7 +134,7 @@ export function SetRow({
         />
         <button
           type="button"
-          className="flex h-9 w-7 items-center justify-center text-muted-foreground transition-colors hover:bg-muted"
+          className="flex h-11 w-9 items-center justify-center text-muted-foreground transition-colors hover:bg-muted"
           onClick={() => onWeightChange((weight ?? 0) + weightStep)}
           aria-label={`Increase set ${setNumber} weight by ${weightStep}`}
         >
@@ -146,7 +146,7 @@ export function SetRow({
       <div className="flex min-w-0 items-center overflow-hidden rounded-lg border border-border bg-background">
         <button
           type="button"
-          className="flex h-9 w-7 items-center justify-center text-muted-foreground transition-colors hover:bg-muted"
+          className="flex h-11 w-9 items-center justify-center text-muted-foreground transition-colors hover:bg-muted"
           onClick={() => onRepsChange(Math.max(0, (reps ?? 0) - repsStep))}
           aria-label={`Decrease set ${setNumber} reps`}
         >
@@ -159,7 +159,7 @@ export function SetRow({
         />
         <button
           type="button"
-          className="flex h-9 w-7 items-center justify-center text-muted-foreground transition-colors hover:bg-muted"
+          className="flex h-11 w-9 items-center justify-center text-muted-foreground transition-colors hover:bg-muted"
           onClick={() => onRepsChange((reps ?? 0) + repsStep)}
           aria-label={`Increase set ${setNumber} reps`}
         >
@@ -176,7 +176,10 @@ export function SetRow({
             aria-label={completed ? `Mark set ${setNumber} not done` : `Mark set ${setNumber} done`}
             aria-pressed={completed}
             className={cn(
-              'flex h-9 w-9 items-center justify-center rounded-lg border transition-colors',
+              // The most-tapped control in the gym — full 44px, unlike the secondary
+              // remove button beside it, which stays smaller partly to make a
+              // destructive mis-tap less likely and partly to fit the row on a phone.
+              'flex h-11 w-11 items-center justify-center rounded-lg border transition-colors',
               completed
                 ? 'border-success bg-success text-success-foreground'
                 : 'border-border bg-background text-muted-foreground hover:border-success hover:text-success',

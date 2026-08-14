@@ -140,7 +140,7 @@ export function SetupWizard({ onComplete }: SetupWizardProps) {
                 <div>
                   <Label>Height (cm)</Label>
                   <Input
-                    type="number"
+                    type="number" inputMode="numeric"
                     placeholder="170"
                     value={formData.heightCm}
                     onChange={(e) => setFormData({ ...formData, heightCm: e.target.value })}
@@ -151,7 +151,7 @@ export function SetupWizard({ onComplete }: SetupWizardProps) {
                 <div>
                   <Label>Current Weight (kg)</Label>
                   <Input
-                    type="number"
+                    type="number" inputMode="numeric"
                     placeholder="70"
                     value={formData.currentWeight}
                     onChange={(e) => setFormData({ ...formData, currentWeight: e.target.value })}
@@ -163,7 +163,7 @@ export function SetupWizard({ onComplete }: SetupWizardProps) {
                 <div>
                   <Label>Target Weight (kg)</Label>
                   <Input
-                    type="number"
+                    type="number" inputMode="numeric"
                     placeholder="65"
                     value={formData.targetWeight}
                     onChange={(e) => setFormData({ ...formData, targetWeight: e.target.value })}
@@ -232,7 +232,7 @@ export function SetupWizard({ onComplete }: SetupWizardProps) {
                     <div className="mt-3">
                       <Label>Average Cycle Length (days)</Label>
                       <Input
-                        type="number"
+                        type="number" inputMode="numeric"
                         value={formData.averageCycleLength}
                         onChange={(e) => setFormData({ ...formData, averageCycleLength: e.target.value })}
                         min={15}

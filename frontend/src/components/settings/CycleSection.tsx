@@ -67,7 +67,7 @@ export function CycleSection() {
               <Label className="text-xs">Average Cycle Length (days)</Label>
               <div className="flex gap-2 mt-1">
                 <Input
-                  type="number"
+                  type="number" inputMode="numeric"
                   className="h-9"
                   value={cycleLength}
                   onChange={(e) => setCycleLength(e.target.value)}

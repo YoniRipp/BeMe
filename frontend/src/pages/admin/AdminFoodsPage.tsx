@@ -8,9 +8,10 @@ import { Card, CardContent } from '@/components/ui/card';
 import {
   Dialog,
   DialogContent,
+  DialogDescription,
+  DialogFooter,
   DialogHeader,
   DialogTitle,
-  DialogFooter,
 } from '@/components/ui/dialog';
 import { UtensilsCrossed, Check, Pencil, Trash2, ChevronLeft, ChevronRight, Sparkles } from 'lucide-react';
 import { toast } from '@/components/shared/ToastProvider';
@@ -50,6 +51,7 @@ function EditFoodDialog({
       <DialogContent className="max-w-md">
         <DialogHeader>
           <DialogTitle>Edit Food</DialogTitle>
+          <DialogDescription>Change the stored nutrition values for this food.</DialogDescription>
         </DialogHeader>
         <div className="space-y-3">
           <div>
@@ -59,19 +61,19 @@ function EditFoodDialog({
           <div className="grid grid-cols-2 gap-3">
             <div>
               <label className="text-sm font-medium text-muted-foreground">Calories</label>
-              <Input type="number" value={calories} onChange={(e) => setCalories(e.target.value)} />
+              <Input type="number" inputMode="numeric" value={calories} onChange={(e) => setCalories(e.target.value)} />
             </div>
             <div>
               <label className="text-sm font-medium text-muted-foreground">Protein (g)</label>
-              <Input type="number" value={protein} onChange={(e) => setProtein(e.target.value)} />
+              <Input type="number" inputMode="numeric" value={protein} onChange={(e) => setProtein(e.target.value)} />
             </div>
             <div>
               <label className="text-sm font-medium text-muted-foreground">Carbs (g)</label>
-              <Input type="number" value={carbs} onChange={(e) => setCarbs(e.target.value)} />
+              <Input type="number" inputMode="numeric" value={carbs} onChange={(e) => setCarbs(e.target.value)} />
             </div>
             <div>
               <label className="text-sm font-medium text-muted-foreground">Fat (g)</label>
-              <Input type="number" value={fat} onChange={(e) => setFat(e.target.value)} />
+              <Input type="number" inputMode="numeric" value={fat} onChange={(e) => setFat(e.target.value)} />
             </div>
           </div>
         </div>
@@ -250,6 +252,7 @@ export default function AdminFoodsPage() {
         <DialogContent className="max-w-sm">
           <DialogHeader>
             <DialogTitle>Delete Food</DialogTitle>
+          <DialogDescription>Remove this food from the shared catalog.</DialogDescription>
           </DialogHeader>
           <p className="text-sm text-muted-foreground">
             Are you sure you want to delete this food? This cannot be undone.

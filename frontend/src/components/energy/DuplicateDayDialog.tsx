@@ -2,9 +2,10 @@ import { useState } from 'react';
 import {
   Dialog,
   DialogContent,
+  DialogDescription,
+  DialogFooter,
   DialogHeader,
   DialogTitle,
-  DialogFooter,
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -54,6 +55,7 @@ export function DuplicateDayDialog({
       <DialogContent>
         <DialogHeader>
           <DialogTitle>Copy Day&apos;s Food</DialogTitle>
+          <DialogDescription>Copy every food entry from one day onto another.</DialogDescription>
         </DialogHeader>
 
         <div className="space-y-4 py-2">

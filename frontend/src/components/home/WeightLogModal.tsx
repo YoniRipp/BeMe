@@ -1,6 +1,12 @@
 import { useEffect, useState } from 'react';
 import { isSameDay } from 'date-fns';
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -57,12 +63,13 @@ export function WeightLogModal({ open, onOpenChange }: WeightLogModalProps) {
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
           <DialogTitle>Log Weight</DialogTitle>
+          <DialogDescription>Record today's weight to keep your trend up to date.</DialogDescription>
         </DialogHeader>
         <div className="space-y-4 py-2">
           <div>
             <Label>Weight (kg)</Label>
             <Input
-              type="number"
+              type="number" inputMode="numeric"
               placeholder="70.0"
               value={weight}
               onChange={(e) => setWeight(e.target.value)}

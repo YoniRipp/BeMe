@@ -13,6 +13,7 @@ import { toast } from '@/components/shared/ToastProvider';
 import { format, isToday, isYesterday, parseISO, isWithinInterval, subWeeks } from 'date-fns';
 import { getPeriodRange } from '@/lib/dateRanges';
 import { Page, PageHeader } from '@/components/ui/page';
+import { ProgressRing } from '@/components/ui/progress-ring';
 import { Card } from '@/components/ui/card';
 
 /** How many "Earlier" workouts to reveal per tap. Histories run to hundreds of cards. */
@@ -117,6 +118,7 @@ export function Body() {
   );
   const weeklyGoal = 4;
   const weekDays = ['M', 'T', 'W', 'T', 'F', 'S', 'S'];
+  const DAY_NAMES = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
   const hasWorkoutByDay = useMemo(() => {
     const flags = [false, false, false, false, false, false, false];
     workouts.forEach((w) => {
@@ -133,7 +135,6 @@ export function Body() {
     return day === 0 ? 6 : day - 1;
   })();
   const weekPct = Math.min(workoutsThisWeek.length / weeklyGoal, 1);
-  const weekCircumference = 2 * Math.PI * 28;
 
   const handleSave = (workout: Omit<Workout, 'id'>) => {
     if (editingWorkoutId) {
@@ -213,31 +214,44 @@ export function Body() {
                     <span className="text-muted-foreground">/{weeklyGoal}</span>
                   </p>
                 </div>
-                <div className="relative h-[72px] w-[72px]">
-                  <svg viewBox="0 0 72 72" className="-rotate-90">
-                    <circle cx="36" cy="36" r="28" fill="none" stroke="hsl(var(--muted))" strokeWidth="7" />
-                    <circle cx="36" cy="36" r="28" fill="none" stroke="hsl(var(--primary))" strokeWidth="7" strokeLinecap="round" strokeDasharray={weekCircumference} strokeDashoffset={weekCircumference * (1 - weekPct)} />
-                  </svg>
-                </div>
+                <ProgressRing
+                  pct={weekPct}
+                  label="Workouts this week"
+                  valueText={`${workoutsThisWeek.length} of ${weeklyGoal}`}
+                  size={72}
+                  stroke={10}
+                />
               </div>
-              <div className="flex justify-between gap-1">
+              <ul className="flex justify-between gap-1" aria-label="Workouts logged each day this week">
                 {weekDays.map((day, i) => (
-                  <div key={`${day}-${i}`} className="flex flex-col items-center gap-1.5">
-                    <span className="text-caption font-bold text-muted-foreground">{day}</span>
+                  <li key={`${DAY_NAMES[i]}`} className="flex flex-col items-center gap-1.5">
+                    <span className="text-caption font-bold text-muted-foreground" aria-hidden="true">{day}</span>
                     <div className={`w-8 h-8 rounded-sm flex items-center justify-center ${hasWorkoutByDay[i] ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground'} ${todayIdx === i ? 'ring-2 ring-foreground ring-offset-1 ring-offset-background' : ''}`}>
-                      {hasWorkoutByDay[i] && <Check className="w-4 h-4" strokeWidth={2.6} />}
+                      {hasWorkoutByDay[i] && <Check className="w-4 h-4" strokeWidth={2.6} aria-hidden="true" />}
                     </div>
-                  </div>
+                    {/* The tick is the only visual cue; without this the day reads as a
+                        bare letter with no indication of whether anything was logged. */}
+                    <span className="sr-only">
+                      {DAY_NAMES[i]}
+                      {todayIdx === i ? ' (today)' : ''}
+                      {hasWorkoutByDay[i] ? ': workout logged' : ': no workout'}
+                    </span>
+                  </li>
                 ))}
-              </div>
+              </ul>
             </Card>
 
-            <div className="flex gap-2 overflow-x-auto no-scrollbar">
+            {/* A toggle group, so each chip reports its own pressed state — otherwise a
+                screen reader announces four unrelated buttons with no sense of which
+                filter is active. */}
+            <div className="flex gap-2 overflow-x-auto no-scrollbar" role="group" aria-label="Filter workouts by type">
               {(['All', 'Strength', 'Cardio', 'Flexibility'] as const).map((f) => (
                 <button
                   key={f}
+                  type="button"
                   onClick={() => setFilter(f)}
-                  className={`px-3.5 py-2 rounded-full text-xs font-bold whitespace-nowrap press border transition-colors ${filter === f ? 'bg-primary text-primary-foreground border-primary' : 'border-border bg-card text-muted-foreground hover:border-primary/40'}`}
+                  aria-pressed={filter === f}
+                  className={`inline-flex min-h-11 items-center px-4 rounded-full text-xs font-bold whitespace-nowrap press border transition-colors ${filter === f ? 'bg-primary text-primary-foreground border-primary' : 'border-border bg-card text-muted-foreground hover:border-primary/40'}`}
                 >
                   {f}
                 </button>
