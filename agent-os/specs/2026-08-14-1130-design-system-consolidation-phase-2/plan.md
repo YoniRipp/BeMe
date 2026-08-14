@@ -55,7 +55,12 @@ Status: implemented. Net −547 lines across 43 files.
 - [x] `npm run build` — clean
 - [x] No `Pulse*` references remain anywhere in `src/`
 - [x] New tokens verified present in `dist/assets/*.css`
-- [ ] `npx playwright test` — not run here; no browser/server in this container
+- [x] `npx playwright test` — run against the branch (chromium): 8 passed, 35 failed.
+      Every failure is pre-existing, not a regression — the suite targets `/money`,
+      `/schedule` and `/groups`, routes this app does not have, expects `/welcome`
+      redirects where the app sends users to `/login`, and looks for landing copy
+      that does not exist on `main` either. No CI workflow runs Playwright, which is
+      how it drifted. Rewriting it is its own piece of work.
 - [ ] Visual pass: the empty states on Body / Energy / Goals, and the two progress rings
 
 ## Resolved after review
