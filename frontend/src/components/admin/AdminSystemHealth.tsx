@@ -25,9 +25,9 @@ export function AdminSystemHealth() {
       <CardContent className="space-y-4">
         <div className="flex items-center gap-3">
           {hasErrors ? (
-            <AlertTriangle className="h-5 w-5 text-red-500" />
+            <AlertTriangle className="h-5 w-5 text-destructive" />
           ) : (
-            <CheckCircle className="h-5 w-5 text-green-500" />
+            <CheckCircle className="h-5 w-5 text-success" />
           )}
           <div className="flex-1">
             <div className="flex items-center gap-2">

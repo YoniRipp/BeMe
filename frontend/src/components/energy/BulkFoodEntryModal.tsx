@@ -462,10 +462,10 @@ export function BulkFoodEntryModal({ open, onOpenChange, onSave }: BulkFoodEntry
                             <Loader2 className="w-4 h-4 animate-spin text-primary shrink-0" />
                           )}
                           {item.status === 'resolved' && (
-                            <Check className="w-4 h-4 text-green-600 shrink-0" />
+                            <Check className="w-4 h-4 text-success shrink-0" />
                           )}
                           {item.status === 'failed' && (
-                            <AlertCircle className="w-4 h-4 text-amber-500 shrink-0" />
+                            <AlertCircle className="w-4 h-4 text-gold shrink-0" />
                           )}
                           {item.status === 'pending' && (
                             <Loader2 className="w-4 h-4 animate-spin text-muted-foreground shrink-0" />

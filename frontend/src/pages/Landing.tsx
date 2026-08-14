@@ -424,7 +424,7 @@ export function Landing() {
               <ul className="space-y-2" role="list">
                 {FREE_FEATURES.map((f) => (
                   <li key={f} className="flex items-start gap-2 text-sm">
-                    <Check className="mt-0.5 h-4 w-4 shrink-0 text-green-600" aria-hidden="true" />
+                    <Check className="mt-0.5 h-4 w-4 shrink-0 text-success" aria-hidden="true" />
                     {f}
                   </li>
                 ))}
@@ -448,7 +448,7 @@ export function Landing() {
               <ul className="space-y-2" role="list">
                 {PRO_FEATURES.map((f) => (
                   <li key={f} className="flex items-start gap-2 text-sm">
-                    <Sparkles className="mt-0.5 h-4 w-4 shrink-0 text-amber-500" aria-hidden="true" />
+                    <Sparkles className="mt-0.5 h-4 w-4 shrink-0 text-gold" aria-hidden="true" />
                     {f}
                   </li>
                 ))}
@@ -483,7 +483,7 @@ export function Landing() {
               <ul className="space-y-2" role="list">
                 {PRO_FEATURES.map((f) => (
                   <li key={f} className="flex items-start gap-2 text-sm">
-                    <Sparkles className="mt-0.5 h-4 w-4 shrink-0 text-amber-500" aria-hidden="true" />
+                    <Sparkles className="mt-0.5 h-4 w-4 shrink-0 text-gold" aria-hidden="true" />
                     {f}
                   </li>
                 ))}

@@ -65,7 +65,7 @@ export function AdminCharts() {
               <XAxis dataKey="date" tick={{ fontSize: 12 }} />
               <YAxis allowDecimals={false} tick={{ fontSize: 12 }} />
               <Tooltip />
-              <Area type="monotone" dataKey="signups" stroke="#3b82f6" fill="#3b82f6" fillOpacity={0.2} />
+              <Area type="monotone" dataKey="signups" stroke="hsl(var(--chart-4))" fill="hsl(var(--chart-4))" fillOpacity={0.2} />
             </AreaChart>
           </ResponsiveContainer>
         </CardContent>
@@ -82,12 +82,12 @@ export function AdminCharts() {
               <XAxis dataKey="date" tick={{ fontSize: 12 }} />
               <YAxis allowDecimals={false} tick={{ fontSize: 12 }} />
               <Tooltip />
-              <Bar dataKey="calls" fill="#8b5cf6" />
+              <Bar dataKey="calls" fill="hsl(var(--chart-1))" />
               <ReferenceLine
                 y={VOICE_HEAVY_THRESHOLD}
-                stroke="#ef4444"
+                stroke="hsl(var(--destructive))"
                 strokeDasharray="3 3"
-                label={{ value: 'Heavy use', position: 'right', fill: '#ef4444', fontSize: 11 }}
+                label={{ value: 'Heavy use', position: 'right', fill: 'hsl(var(--destructive))', fontSize: 11 }}
               />
             </BarChart>
           </ResponsiveContainer>
@@ -105,7 +105,7 @@ export function AdminCharts() {
               <XAxis type="number" allowDecimals={false} tick={{ fontSize: 12 }} />
               <YAxis dataKey="label" type="category" width={112} tick={{ fontSize: 12 }} />
               <Tooltip />
-              <Bar dataKey="count" fill="#10b981" radius={[0, 8, 8, 0]} />
+              <Bar dataKey="count" fill="hsl(var(--chart-1))" radius={[0, 8, 8, 0]} />
             </BarChart>
           </ResponsiveContainer>
         </CardContent>
@@ -122,8 +122,8 @@ export function AdminCharts() {
               <XAxis dataKey="date" tick={{ fontSize: 12 }} />
               <YAxis allowDecimals={false} tick={{ fontSize: 12 }} />
               <Tooltip />
-              <Bar dataKey="trainers" name="New trainers" fill="#6366f1" radius={[8, 8, 0, 0]} />
-              <Bar dataKey="trainees" name="New trainees" fill="#06b6d4" radius={[8, 8, 0, 0]} />
+              <Bar dataKey="trainers" name="New trainers" fill="hsl(var(--chart-4))" radius={[8, 8, 0, 0]} />
+              <Bar dataKey="trainees" name="New trainees" fill="hsl(var(--chart-2))" radius={[8, 8, 0, 0]} />
             </BarChart>
           </ResponsiveContainer>
         </CardContent>

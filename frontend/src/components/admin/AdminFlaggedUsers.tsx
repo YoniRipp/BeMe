@@ -52,7 +52,7 @@ export function AdminFlaggedUsers() {
               {users.map((u) => (
                 <tr
                   key={u.id}
-                  className={`border-b last:border-0 ${u.voiceCalls >= VOICE_HEAVY_THRESHOLD ? 'bg-red-50 dark:bg-red-950/20' : ''}`}
+                  className={`border-b last:border-0 ${u.voiceCalls >= VOICE_HEAVY_THRESHOLD ? 'bg-destructive/10 ' : ''}`}
                 >
                   <td className="py-2">
                     <div className="font-medium">{u.name || 'No name'}</div>

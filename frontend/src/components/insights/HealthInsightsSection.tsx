@@ -21,7 +21,7 @@ export function HealthInsightsSection({ calorieTrend, weightProgress, healthInsi
   return (
     <div className="space-y-4">
       <h2 className="text-xl font-semibold flex items-center gap-2">
-        <Zap className="w-5 h-5 text-purple-600" />
+        <Zap className="w-5 h-5 text-primary" />
         Health Insights
       </h2>
       <InsightsSectionCarousel

@@ -174,7 +174,7 @@ export function AiChatPanel({ open, onOpenChange }: AiChatPanelProps) {
         <SheetHeader className="px-4 py-3 border-b shrink-0">
           <div className="flex items-center justify-between">
             <SheetTitle className="flex items-center gap-2 text-base">
-              <MessageCircle className="w-4 h-4 text-violet-600" />
+              <MessageCircle className="w-4 h-4 text-primary" />
               AI Fitness Coach
             </SheetTitle>
             {messages.length > 0 && (
@@ -200,8 +200,8 @@ export function AiChatPanel({ open, onOpenChange }: AiChatPanelProps) {
             </div>
           ) : messages.length === 0 && !sendMutation.isPending ? (
             <div className="flex flex-col items-center justify-center py-12 text-center px-6">
-              <div className="w-12 h-12 rounded-full bg-violet-100 dark:bg-violet-900/30 flex items-center justify-center mb-3">
-                <MessageCircle className="w-6 h-6 text-violet-600" />
+              <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center mb-3">
+                <MessageCircle className="w-6 h-6 text-primary" />
               </div>
               <h3 className="font-semibold text-sm mb-1">Your AI Fitness Agent</h3>
               <p className="text-xs text-muted-foreground max-w-[280px]">
@@ -248,8 +248,8 @@ export function AiChatPanel({ open, onOpenChange }: AiChatPanelProps) {
                     }}
                   />
                   <div className="flex gap-2 items-start">
-                    <div className="w-7 h-7 rounded-full bg-violet-100 dark:bg-violet-900/30 flex items-center justify-center shrink-0">
-                      <MessageCircle className="w-3.5 h-3.5 text-violet-600" />
+                    <div className="w-7 h-7 rounded-full bg-primary/10 flex items-center justify-center shrink-0">
+                      <MessageCircle className="w-3.5 h-3.5 text-primary" />
                     </div>
                     <div className="bg-muted rounded-2xl rounded-tl-sm px-3 py-2">
                       <Loader2 className="w-4 h-4 animate-spin text-muted-foreground" />
@@ -293,7 +293,7 @@ export function AiChatPanel({ open, onOpenChange }: AiChatPanelProps) {
                 rows={1}
                 className={cn(
                   'flex-1 resize-none rounded-xl border px-3 py-2 text-sm',
-                  'focus:outline-none focus:ring-2 focus:ring-violet-500/50',
+                  'focus:outline-none focus:ring-2 focus:ring-primary/50/50',
                   'max-h-[120px] min-h-[40px]',
                   'bg-background'
                 )}
@@ -321,7 +321,7 @@ export function AiChatPanel({ open, onOpenChange }: AiChatPanelProps) {
                 type="submit"
                 size="sm"
                 disabled={!input.trim() || sendMutation.isPending}
-                className="bg-violet-600 hover:bg-violet-700 text-white h-10 w-10 p-0 rounded-xl shrink-0"
+                className="bg-primary hover:bg-primary/90 text-white h-10 w-10 p-0 rounded-xl shrink-0"
                 aria-label="Send message"
               >
                 <Send className="w-4 h-4" />
@@ -342,15 +342,15 @@ function MessageBubble({ message }: { message: ChatMessage }) {
   return (
     <div className={cn('flex gap-2 items-start', isUser && 'flex-row-reverse')}>
       {!isUser && (
-        <div className="w-7 h-7 rounded-full bg-violet-100 dark:bg-violet-900/30 flex items-center justify-center shrink-0">
-          <MessageCircle className="w-3.5 h-3.5 text-violet-600" />
+        <div className="w-7 h-7 rounded-full bg-primary/10 flex items-center justify-center shrink-0">
+          <MessageCircle className="w-3.5 h-3.5 text-primary" />
         </div>
       )}
       <div
         className={cn(
           'max-w-[85%] rounded-2xl px-3 py-2 text-sm whitespace-pre-wrap',
           isUser
-            ? 'bg-violet-600 text-white rounded-tr-sm'
+            ? 'bg-primary text-white rounded-tr-sm'
             : 'bg-muted rounded-tl-sm'
         )}
       >

@@ -170,7 +170,7 @@ export function ChatAgentPanel({ open, onOpenChange }: ChatAgentPanelProps) {
           <Button
             variant="ghost"
             size="icon"
-            className="h-10 w-10 shrink-0 text-destructive hover:text-destructive"
+            className="h-10 w-10 shrink-0 text-destructive hover:text-destructive/80"
             onClick={handleClearHistory}
             aria-label="Clear chat history"
           >
@@ -253,8 +253,8 @@ export function ChatAgentPanel({ open, onOpenChange }: ChatAgentPanelProps) {
                   className={cn(
                     'flex items-center gap-2 rounded-lg px-3 py-1.5 text-xs',
                     action.success
-                      ? 'bg-green-50 text-green-700 dark:bg-green-950 dark:text-green-300'
-                      : 'bg-red-50 text-red-700 dark:bg-red-950 dark:text-red-300'
+                      ? 'bg-success/10 text-success  '
+                      : 'bg-destructive/10 text-destructive  '
                   )}
                 >
                   {action.success ? (

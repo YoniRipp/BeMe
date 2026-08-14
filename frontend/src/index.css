@@ -97,29 +97,34 @@
     --shadow-lg: 0 6px 16px -4px hsl(28 20% 20% / 0.08), 0 12px 32px -8px hsl(28 20% 20% / 0.08);
   }
 
-  /* Dark mode — PULSE deep-ink palette */
+  /* Dark mode — the same palette on a dark ground, not a second identity.
+     The neutral ramp previously ran across three unrelated hues (12° paper, 138° ink,
+     200° surfaces); it is now one warm family, matching the light theme's. */
   .dark {
-    --paper: 12 10% 5%;
-    --paper-2: 200 7% 9%;
-    --ink: 138 10% 96%;
-    --ink-2: 138 8% 68%;
-    --ink-3: 138 5% 44%;
-    --hairline: 200 8% 15%;
+    --paper: 30 8% 6%;            /* app background */
+    --paper-2: 30 7% 10%;         /* muted sections */
+    --ink: 36 15% 95%;            /* primary text */
+    --ink-2: 32 8% 70%;           /* secondary text */
+    --ink-3: 30 6% 48%;           /* tertiary / captions */
+    --hairline: 30 7% 17%;        /* borders */
 
-    --sage: 83 83% 64%;
-    --sage-dark: 83 65% 48%;
-    --sage-light: 83 83% 78%;
-    --sage-50: 83 30% 10%;
-    --sage-100: 83 30% 16%;
+    /* Sage, lifted for a dark ground rather than swapped for a different hue. The
+       accent stays in the 148° family it occupies in light mode, so the brand reads the
+       same whichever theme the OS is in. ~9:1 against --paper, both directions. */
+    --sage: 148 45% 58%;
+    --sage-dark: 148 40% 46%;
+    --sage-light: 148 45% 72%;
+    --sage-50: 148 25% 12%;
+    --sage-100: 148 22% 18%;
 
     --terracotta: 18 100% 61%;
     --terracotta-light: 18 38% 20%;
     --gold: 43 100% 64%;
 
     --success: 150 40% 54%;
-    --success-foreground: 12 10% 5%;
+    --success-foreground: var(--paper);
     --info: 206 100% 68%;
-    --info-foreground: 12 10% 5%;
+    --info-foreground: var(--paper);
     --warning: 43 100% 64%;
 
     /* Stays dark — a scrim dims the app in both themes. */
@@ -127,38 +132,38 @@
 
     --background: var(--paper);
     --foreground: var(--ink);
-    --card: 200 8% 10%;
+    --card: 30 7% 9%;
     --card-foreground: var(--ink);
-    --popover: 200 8% 10%;
+    --popover: 30 7% 9%;
     --popover-foreground: var(--ink);
-    --primary: 83 83% 64%;
-    --primary-foreground: 12 10% 5%;
-    --secondary: 200 8% 14%;
+    --primary: var(--sage);
+    --primary-foreground: var(--paper);
+    --secondary: 30 7% 14%;
     --secondary-foreground: var(--ink);
-    --muted: 200 8% 15%;
+    --muted: 30 7% 15%;
     --muted-foreground: var(--ink-3);
-    --accent: 200 8% 14%;
+    --accent: 30 7% 14%;
     --accent-foreground: var(--ink);
     --destructive: 6 64% 54%;
-    --destructive-foreground: 30 14% 95%;
+    --destructive-foreground: var(--ink);
     --border: var(--hairline);
     --input: var(--hairline);
-    --ring: 83 83% 64%;
+    --ring: var(--sage);
 
-    --sidebar-background: 200 8% 10%;
+    --sidebar-background: 30 7% 9%;
     --sidebar-foreground: var(--ink);
-    --sidebar-primary: 83 83% 64%;
-    --sidebar-primary-foreground: 12 10% 5%;
-    --sidebar-accent: 200 8% 14%;
+    --sidebar-primary: var(--sage);
+    --sidebar-primary-foreground: var(--paper);
+    --sidebar-accent: 30 7% 14%;
     --sidebar-accent-foreground: var(--ink);
     --sidebar-border: var(--hairline);
-    --sidebar-ring: 83 83% 64%;
+    --sidebar-ring: var(--sage);
 
-    --chart-1: 83 83% 64%;
+    --chart-1: var(--sage);
     --chart-2: 18 100% 61%;
     --chart-3: 43 100% 64%;
     --chart-4: 206 100% 68%;
-    --chart-5: 138 8% 68%;
+    --chart-5: var(--ink-2);
 
     --shadow-xs: 0 1px 2px 0 hsl(0 0% 0% / 0.24);
     --shadow-sm: 0 1px 2px 0 hsl(0 0% 0% / 0.26), 0 8px 20px -10px hsl(0 0% 0% / 0.5);
@@ -245,7 +250,7 @@
   .dark .glass {
     background-color: hsl(var(--paper) / 0.78);
   }
-  .dark .primary-glow { box-shadow: 0 0 24px hsl(83 83% 64% / 0.35); }
+  .dark .primary-glow { box-shadow: 0 0 24px hsl(var(--sage) / 0.35); }
 
   /* Animations */
   .animate-in { animation: fadeIn 0.2s ease-in; }

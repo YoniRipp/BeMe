@@ -577,7 +577,7 @@ function EntryActions({
         type="button"
         variant="ghost"
         size="icon"
-        className="h-8 w-8 text-destructive hover:text-destructive"
+        className="h-8 w-8 text-destructive hover:text-destructive/80"
         onClick={onDelete}
         aria-label={`Delete ${label}`}
       >

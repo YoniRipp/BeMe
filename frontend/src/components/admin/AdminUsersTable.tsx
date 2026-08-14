@@ -215,7 +215,7 @@ export function AdminUsersTable() {
                         <Button
                           variant="ghost"
                           size="icon"
-                          className="h-8 w-8 text-destructive hover:text-destructive"
+                          className="h-8 w-8 text-destructive hover:text-destructive/80"
                           onClick={() => setDeleteUser(u)}
                           aria-label="Delete user"
                         >

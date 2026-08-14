@@ -163,14 +163,14 @@ export function DataExportModal({ open, onOpenChange }: DataExportModalProps) {
           {/* Import Section */}
           <div>
             <h3 className="text-lg font-semibold mb-4">Import Data</h3>
-            <div className="p-4 border rounded-lg bg-yellow-50 dark:bg-yellow-900/20 border-yellow-200 dark:border-yellow-800">
+            <div className="p-4 border rounded-lg bg-warning/10 border-warning/30">
               <div className="flex items-start gap-3 mb-3">
-                <AlertCircle className="w-5 h-5 text-yellow-600 dark:text-yellow-400 mt-0.5" />
+                <AlertCircle className="w-5 h-5 text-warning mt-0.5" />
                 <div>
-                  <p className="font-medium text-yellow-800 dark:text-yellow-200">
+                  <p className="font-medium text-warning">
                     Warning: Importing will replace all existing data
                   </p>
-                  <p className="text-sm text-yellow-700 dark:text-yellow-300 mt-1">
+                  <p className="text-sm text-warning mt-1">
                     Make sure to export your current data before importing.
                   </p>
                 </div>

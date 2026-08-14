@@ -245,7 +245,7 @@ export function AdminLogs() {
           return (
             <button
               type="button"
-              className="flex items-center gap-1 text-xs text-blue-600 hover:text-blue-800 dark:text-blue-400"
+              className="flex items-center gap-1 text-xs text-info hover:text-info/80"
               onClick={(e) => {
                 e.stopPropagation();
                 setExpandedRowId(isExpanded ? null : r.id);
@@ -452,7 +452,7 @@ export function AdminLogs() {
                           ))}
                         </TableRow>
                         {isExpanded && (
-                          <TableRow key={`${row.id}-expanded`} className="bg-muted/20 hover:bg-muted/20">
+                          <TableRow key={`${row.id}-expanded`} className="bg-muted/20 hover:bg-muted/30">
                             <TableCell colSpan={5} className="py-3 px-4">
                               <PayloadDetails payload={event.payload} />
                             </TableCell>

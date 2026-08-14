@@ -22,7 +22,7 @@ interface CalorieTrendChartProps {
   days?: number;
 }
 
-const COLORS = ['#8b5cf6', '#3b82f6', '#f59e0b', '#ef4444'];
+const COLORS = ['hsl(var(--chart-1))', 'hsl(var(--chart-4))', 'hsl(var(--chart-3))', 'hsl(var(--destructive))'];
 
 export function CalorieTrendChart({ foodEntries, days = 30 }: CalorieTrendChartProps) {
   const [chartType, setChartType] = useState<'line' | 'pie'>('line');
@@ -95,7 +95,7 @@ export function CalorieTrendChart({ foodEntries, days = 30 }: CalorieTrendChartP
                 cy="50%"
                 outerRadius={100}
                 innerRadius={50}
-                fill="#8884d8"
+                fill="hsl(var(--chart-1))"
                 dataKey="value"
               >
                 {pieData.map((entry, index) => (
@@ -111,7 +111,7 @@ export function CalorieTrendChart({ foodEntries, days = 30 }: CalorieTrendChartP
               <XAxis dataKey="date" />
               <YAxis />
               <Tooltip />
-              <Line type="monotone" dataKey="calories" stroke="#8b5cf6" strokeWidth={2} />
+              <Line type="monotone" dataKey="calories" stroke="hsl(var(--chart-1))" strokeWidth={2} />
             </LineChart>
           )}
         </ResponsiveContainer>

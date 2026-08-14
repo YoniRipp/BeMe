@@ -4,7 +4,17 @@ import { isWithinInterval, format, startOfWeek, endOfWeek, subWeeks } from 'date
 import { getTrendPeriodBounds, WEEK_SUNDAY } from '@/lib/dateRanges';
 
 /** Shared palette for pie/bar charts (insights and elsewhere). */
-export const CHART_COLORS = ['#10b981', '#3b82f6', '#8b5cf6', '#f59e0b', '#ef4444'];
+/**
+ * Series colors for charts. These resolve through the `--chart-*` tokens, so a chart
+ * follows the theme instead of staying on a fixed hex that only reads on one ground.
+ */
+export const CHART_COLORS = [
+  'hsl(var(--chart-1))',
+  'hsl(var(--chart-2))',
+  'hsl(var(--chart-3))',
+  'hsl(var(--chart-4))',
+  'hsl(var(--chart-5))',
+];
 
 export interface TrendData {
   current: number;

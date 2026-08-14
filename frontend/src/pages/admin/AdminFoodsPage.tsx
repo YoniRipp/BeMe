@@ -156,12 +156,12 @@ export default function AdminFoodsPage() {
               <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-2 flex-wrap">
                   <span className="font-medium truncate">{food.name}</span>
-                  <Badge className="text-xs bg-purple-100 text-purple-700 border-purple-200 hover:bg-purple-100 gap-1">
+                  <Badge className="text-xs bg-primary/10 text-primary border-primary/30 hover:bg-primary/20 gap-1">
                     <Sparkles className="w-3 h-3" />
                     Gemini AI
                   </Badge>
                   {food.isLiquid && <Badge variant="outline" className="text-xs">liquid</Badge>}
-                  <Badge variant={food.verified ? 'default' : 'secondary'} className={food.verified ? 'bg-green-100 text-green-700 border-green-200 hover:bg-green-100' : ''}>
+                  <Badge variant={food.verified ? 'default' : 'secondary'} className={food.verified ? 'bg-success/10 text-success border-success/30 hover:bg-success/10' : ''}>
                     {food.verified ? `✓ Verified${food.verifiedAt ? ` ${new Date(food.verifiedAt).toLocaleDateString()}` : ''}` : '⚠ Needs review'}
                   </Badge>
                 </div>
@@ -194,7 +194,7 @@ export default function AdminFoodsPage() {
                 <Button
                   size="sm"
                   variant="outline"
-                  className="text-destructive hover:text-destructive"
+                  className="text-destructive hover:text-destructive/80"
                   onClick={() => setDeletingId(food.id)}
                 >
                   <Trash2 className="h-4 w-4" />

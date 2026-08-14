@@ -23,7 +23,7 @@ interface WorkoutFrequencyChartProps {
   weeks?: number;
 }
 
-const COLORS = ['#3b82f6', '#8b5cf6', '#10b981', '#f59e0b', '#ef4444'];
+const COLORS = ['hsl(var(--chart-4))', 'hsl(var(--chart-1))', 'hsl(var(--chart-1))', 'hsl(var(--chart-3))', 'hsl(var(--destructive))'];
 
 export function WorkoutFrequencyChart({ workouts, weeks = 12 }: WorkoutFrequencyChartProps) {
   const [chartType, setChartType] = useState<'bar' | 'pie'>('bar');
@@ -93,7 +93,7 @@ export function WorkoutFrequencyChart({ workouts, weeks = 12 }: WorkoutFrequency
                 cy="50%"
                 outerRadius={100}
                 innerRadius={50}
-                fill="#8884d8"
+                fill="hsl(var(--chart-1))"
                 dataKey="value"
               >
                 {pieData.map((entry, index) => (
@@ -109,7 +109,7 @@ export function WorkoutFrequencyChart({ workouts, weeks = 12 }: WorkoutFrequency
               <XAxis dataKey="week" />
               <YAxis />
               <Tooltip />
-              <Bar dataKey="count" fill="#3b82f6" />
+              <Bar dataKey="count" fill="hsl(var(--chart-4))" />
             </BarChart>
           )}
         </ResponsiveContainer>
