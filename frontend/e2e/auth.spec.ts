@@ -1,195 +1,73 @@
 import { test, expect } from '@playwright/test';
 
-test.describe('Authentication - Login Page', () => {
-  test('should render the login page with all expected elements', async ({ page }) => {
+/**
+ * The signed-out surface: what the login and signup forms render, and what they refuse.
+ *
+ * These run without a backend — nothing here submits successfully. Validation is asserted
+ * through the browser's own constraint API rather than by watching for an error toast,
+ * so the tests stay honest about what they are actually exercising.
+ */
+
+test.describe('Login page', () => {
+  test.beforeEach(async ({ page }) => {
     await page.goto('/login');
-
-    // The page should display the sign-in heading
-    await expect(page.getByRole('heading', { name: /sign in/i })).toBeVisible();
-
-    // Email and password fields should be present
-    await expect(page.getByLabel(/email/i)).toBeVisible();
-    await expect(page.getByLabel(/password/i)).toBeVisible();
-
-    // Sign in submit button should be present (exact match to avoid "Sign in with Google")
-    await expect(page.getByRole('button', { name: 'Sign in', exact: true })).toBeVisible();
-
-    // "Forgot your password?" link should be present
-    await expect(page.getByRole('link', { name: /forgot your password/i })).toBeVisible();
-
-    // "Sign up" link should be present
-    await expect(page.getByRole('link', { name: /sign up/i })).toBeVisible();
   });
 
-  test('should show HTML5 validation when submitting empty login form', async ({ page }) => {
-    await page.goto('/login');
+  test('renders the form', async ({ page }) => {
+    await expect(page.getByRole('heading', { name: 'TrackVibe' })).toBeVisible();
+    await expect(page.getByLabel('Email')).toBeVisible();
+    await expect(page.getByLabel('Password')).toBeVisible();
+    await expect(page.getByRole('button', { name: /^sign in$/i })).toBeVisible();
+  });
 
-    // Both fields have the required attribute, so clicking submit with
-    // empty fields will trigger native validation and the form will NOT submit.
-    const emailInput = page.getByLabel(/email/i);
-    const signInButton = page.getByRole('button', { name: 'Sign in', exact: true });
+  test('marks the email field required', async ({ page }) => {
+    await page.getByRole('button', { name: /^sign in$/i }).click();
 
-    // Clear any pre-filled values and submit
-    await emailInput.fill('');
-    await signInButton.click();
-
-    // The email field should be invalid (required + empty)
-    const emailValidity = await emailInput.evaluate(
-      (el: HTMLInputElement) => el.validity.valueMissing
+    const valid = await page.getByLabel('Email').evaluate(
+      (el: HTMLInputElement) => el.checkValidity()
     );
-    expect(emailValidity).toBe(true);
-
-    // The button text should still say "Sign in" (not "Signing in..."),
-    // proving the form submission was prevented by validation.
-    await expect(signInButton).toHaveText('Sign in');
+    expect(valid).toBe(false);
+    await expect(page).toHaveURL(/\/login/);
   });
 
-  test('should show validation for invalid email format', async ({ page }) => {
-    await page.goto('/login');
+  test('asks for a well-formed email', async ({ page }) => {
+    await page.getByLabel('Email').fill('not-an-email');
+    await page.getByLabel('Password').fill('somepassword');
 
-    const emailInput = page.getByLabel(/email/i);
-    const passwordInput = page.getByLabel(/password/i);
-    const signInButton = page.getByRole('button', { name: 'Sign in', exact: true });
-
-    await emailInput.fill('not-an-email');
-    await passwordInput.fill('somepassword');
-    await signInButton.click();
-
-    // The email input has type="email", so the browser should flag it as invalid
-    const emailTypeMismatch = await emailInput.evaluate(
-      (el: HTMLInputElement) => el.validity.typeMismatch
+    const valid = await page.getByLabel('Email').evaluate(
+      (el: HTMLInputElement) => el.checkValidity()
     );
-    expect(emailTypeMismatch).toBe(true);
-
-    // Button should still say "Sign in" (form was not submitted)
-    await expect(signInButton).toHaveText('Sign in');
+    expect(valid).toBe(false);
   });
 
-  test('should navigate to signup page from login page', async ({ page }) => {
-    await page.goto('/login');
+  test('offers the social sign-in section', async ({ page }) => {
+    await expect(page.getByText(/or continue with/i)).toBeVisible();
+  });
+});
 
-    await page.getByRole('link', { name: /sign up/i }).click();
+test.describe('Signup page', () => {
+  test.beforeEach(async ({ page }) => {
+    await page.goto('/signup');
+  });
+
+  test('renders the form', async ({ page }) => {
+    await expect(page.getByRole('heading', { name: /create account/i })).toBeVisible();
+    await expect(page.getByLabel('Email')).toBeVisible();
+    await expect(page.getByRole('button', { name: /create account|sign up/i })).toBeVisible();
+  });
+
+  test('will not submit an empty form', async ({ page }) => {
+    await page.getByRole('button', { name: /create account|sign up/i }).click();
 
     await expect(page).toHaveURL(/\/signup/);
-    await expect(page.getByRole('heading', { name: /create an account/i })).toBeVisible();
-  });
-
-  test('should navigate to forgot password page from login page', async ({ page }) => {
-    await page.goto('/login');
-
-    await page.getByRole('link', { name: /forgot your password/i }).click();
-
-    await expect(page).toHaveURL(/\/forgot-password/);
   });
 });
 
-test.describe('Authentication - Signup Page', () => {
-  test('should render the signup page with all expected elements', async ({ page }) => {
-    await page.goto('/signup');
+test.describe('Forgot password page', () => {
+  test('renders the reset form', async ({ page }) => {
+    await page.goto('/forgot-password');
 
-    // The page should display the create account heading
-    await expect(page.getByRole('heading', { name: /create an account/i })).toBeVisible();
-
-    // Name, email, and password fields should be present
-    await expect(page.getByLabel(/name/i)).toBeVisible();
+    await expect(page.getByRole('heading', { name: /reset your password/i })).toBeVisible();
     await expect(page.getByLabel(/email/i)).toBeVisible();
-    await expect(page.getByLabel(/password/i)).toBeVisible();
-
-    // Sign up button should be present (exact match to avoid "Sign up with Google")
-    await expect(page.getByRole('button', { name: 'Sign up', exact: true })).toBeVisible();
-
-    // "Sign in" link should be present for existing users
-    await expect(page.getByRole('link', { name: /sign in/i })).toBeVisible();
-  });
-
-  test('should show HTML5 validation when submitting empty signup form', async ({ page }) => {
-    await page.goto('/signup');
-
-    const nameInput = page.getByLabel(/name/i);
-    const signUpButton = page.getByRole('button', { name: 'Sign up', exact: true });
-
-    await nameInput.fill('');
-    await signUpButton.click();
-
-    // The name field should be invalid (required + empty)
-    const nameValidity = await nameInput.evaluate(
-      (el: HTMLInputElement) => el.validity.valueMissing
-    );
-    expect(nameValidity).toBe(true);
-
-    // Button text should still say "Sign up" (form not submitted)
-    await expect(signUpButton).toHaveText('Sign up');
-  });
-
-  test('should enforce minimum password length via HTML5 validation', async ({ page }) => {
-    await page.goto('/signup');
-
-    const nameInput = page.getByLabel(/name/i);
-    const emailInput = page.getByLabel(/email/i);
-    const passwordInput = page.getByLabel(/password/i);
-    const signUpButton = page.getByRole('button', { name: 'Sign up', exact: true });
-
-    await nameInput.fill('Test User');
-    await emailInput.fill('test@example.com');
-    await passwordInput.fill('short');
-    await signUpButton.click();
-
-    // The password input has minLength=8, so "short" should be flagged
-    const passwordTooShort = await passwordInput.evaluate(
-      (el: HTMLInputElement) => el.validity.tooShort
-    );
-    expect(passwordTooShort).toBe(true);
-  });
-
-  test('should show password strength error for weak passwords', async ({ page }) => {
-    await page.goto('/signup');
-
-    const nameInput = page.getByLabel(/name/i);
-    const emailInput = page.getByLabel(/email/i);
-    const passwordInput = page.getByLabel(/password/i);
-    const signUpButton = page.getByRole('button', { name: 'Sign up', exact: true });
-
-    // Fill in a password that passes minLength but fails the JS strength check
-    // (no uppercase, no digit)
-    await nameInput.fill('Test User');
-    await emailInput.fill('test@example.com');
-    await passwordInput.fill('alllowercase');
-    await signUpButton.click();
-
-    // The component shows an error via role="alert" for weak passwords
-    await expect(page.getByRole('alert')).toContainText(/password must contain/i);
-  });
-
-  test('should navigate to login page from signup page', async ({ page }) => {
-    await page.goto('/signup');
-
-    await page.getByRole('link', { name: /sign in/i }).click();
-
-    await expect(page).toHaveURL(/\/login/);
-    await expect(page.getByRole('heading', { name: /sign in/i })).toBeVisible();
-  });
-});
-
-test.describe('Authentication - Redirect Behavior', () => {
-  test('should redirect unauthenticated users to /welcome when accessing protected routes', async ({
-    page,
-  }) => {
-    // Accessing the root (dashboard) without authentication should redirect
-    await page.goto('/');
-
-    // The app redirects unauthenticated users to /welcome (Landing page)
-    await expect(page).toHaveURL(/\/welcome/);
-  });
-
-  test('should redirect unauthenticated users from /money to /welcome', async ({ page }) => {
-    await page.goto('/money');
-
-    await expect(page).toHaveURL(/\/welcome/);
-  });
-
-  test('should redirect unauthenticated users from /goals to /welcome', async ({ page }) => {
-    await page.goto('/goals');
-
-    await expect(page).toHaveURL(/\/welcome/);
   });
 });

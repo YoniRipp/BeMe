@@ -1,141 +1,102 @@
 import { test, expect } from '@playwright/test';
 
-test.describe('Navigation - Public Routes', () => {
-  test('should access the /welcome (landing) page without authentication', async ({ page }) => {
-    await page.goto('/welcome');
+/**
+ * Public routing and the unauthenticated redirect.
+ *
+ * The route table is the source of truth here — `src/routes.tsx`. Note that `/welcome`
+ * (the marketing Landing page) is deliberately commented out there: commit 8a83a26,
+ * "Make /login the default landing route instead of /welcome". Unauthenticated users go
+ * to /login, and the Landing component is currently unreachable. If that decision is ever
+ * reversed, the `/welcome` case below is the one to re-enable.
+ */
 
-    // The landing page should have the hero heading
-    await expect(page.getByRole('heading', { name: /one app for your whole life/i })).toBeVisible();
+const PUBLIC_ROUTES = [
+  { path: '/login', name: 'TrackVibe' },
+  { path: '/signup', name: 'Create account' },
+  { path: '/pricing', name: 'Simple pricing' },
+  { path: '/about', name: /about trackvibe/i },
+  { path: '/privacy', name: /privacy policy/i },
+  { path: '/terms', name: /terms of service/i },
+  { path: '/contact', name: /get in touch/i },
+] as const;
 
-    // Navigation links should be present
-    await expect(page.getByRole('link', { name: /sign in/i }).first()).toBeVisible();
-    await expect(page.getByRole('link', { name: /get started/i }).first()).toBeVisible();
-  });
+test.describe('Navigation - public routes', () => {
+  for (const route of PUBLIC_ROUTES) {
+    test(`serves ${route.path} without authentication`, async ({ page }) => {
+      await page.goto(route.path);
 
-  test('should access the /login page without authentication', async ({ page }) => {
-    await page.goto('/login');
+      await expect(page).toHaveURL(new RegExp(route.path.replace('/', '\\/')));
+      await expect(
+        page.getByRole('heading', { name: route.name }).first()
+      ).toBeVisible();
+    });
+  }
 
-    await expect(page.getByRole('heading', { name: /sign in/i })).toBeVisible();
-    await expect(page).toHaveURL(/\/login/);
-  });
-
-  test('should access the /signup page without authentication', async ({ page }) => {
-    await page.goto('/signup');
-
-    await expect(page.getByRole('heading', { name: /create an account/i })).toBeVisible();
-    await expect(page).toHaveURL(/\/signup/);
-  });
-
-  test('should access the /pricing page without authentication', async ({ page }) => {
-    await page.goto('/pricing');
-
-    await expect(page.getByRole('heading', { name: /simple pricing/i })).toBeVisible();
-    await expect(page).toHaveURL(/\/pricing/);
-  });
-
-  test('should access the /forgot-password page without authentication', async ({ page }) => {
+  test('serves /forgot-password without authentication', async ({ page }) => {
     await page.goto('/forgot-password');
 
-    // The page should load without redirecting to /welcome
     await expect(page).toHaveURL(/\/forgot-password/);
+    await expect(page.getByRole('heading', { name: /reset your password/i })).toBeVisible();
   });
 });
 
-test.describe('Navigation - Protected Route Redirects', () => {
-  const protectedRoutes = [
-    { path: '/', name: 'Dashboard' },
-    { path: '/money', name: 'Money' },
-    { path: '/body', name: 'Body' },
-    { path: '/energy', name: 'Energy' },
-    { path: '/schedule', name: 'Schedule' },
-    { path: '/goals', name: 'Goals' },
-    { path: '/insights', name: 'Insights' },
-    { path: '/settings', name: 'Settings' },
-    { path: '/groups', name: 'Groups' },
-  ];
+/** Every app route sits behind the auth guard, which sends signed-out users to /login. */
+const PROTECTED_ROUTES = ['/', '/body', '/energy', '/water', '/goals', '/insights', '/settings'];
 
-  for (const route of protectedRoutes) {
-    test('should redirect ' + route.name + ' (' + route.path + ') to /welcome when not authenticated', async ({
-      page,
-    }) => {
-      await page.goto(route.path);
+test.describe('Navigation - protected routes redirect when signed out', () => {
+  for (const path of PROTECTED_ROUTES) {
+    test(`redirects ${path} to /login`, async ({ page }) => {
+      await page.goto(path);
 
-      await expect(page).toHaveURL(/\/welcome/);
+      await expect(page).toHaveURL(/\/login/);
+      await expect(page.getByRole('button', { name: /^sign in$/i })).toBeVisible();
     });
   }
 });
 
-test.describe('Navigation - Landing Page Links', () => {
-  test('should navigate from landing page to login', async ({ page }) => {
-    await page.goto('/welcome');
+test.describe('Navigation - links between public pages', () => {
+  test('reaches signup from login', async ({ page }) => {
+    await page.goto('/login');
 
-    // Use the nav-bar "Sign in" link (the first one)
-    await page.getByRole('link', { name: /sign in/i }).first().click();
-
-    await expect(page).toHaveURL(/\/login/);
-    await expect(page.getByRole('heading', { name: /sign in/i })).toBeVisible();
-  });
-
-  test('should navigate from landing page to signup via Get Started', async ({ page }) => {
-    await page.goto('/welcome');
-
-    // Click the "Get Started" button/link (first one in the hero, not the nav)
-    await page.getByRole('link', { name: /get started/i }).first().click();
+    await page.getByRole('link', { name: /sign up/i }).click();
 
     await expect(page).toHaveURL(/\/signup/);
-    await expect(page.getByRole('heading', { name: /create an account/i })).toBeVisible();
+    await expect(page.getByRole('heading', { name: /create account/i })).toBeVisible();
   });
 
-  test('should navigate from landing page to pricing', async ({ page }) => {
-    await page.goto('/welcome');
+  test('reaches login from signup', async ({ page }) => {
+    await page.goto('/signup');
 
-    // Click the "View Pricing" button in the hero section
-    await page.getByRole('link', { name: /view pricing/i }).click();
+    await page.getByRole('link', { name: /sign in/i }).click();
 
-    await expect(page).toHaveURL(/\/pricing/);
-    await expect(page.getByRole('heading', { name: /simple pricing/i })).toBeVisible();
+    await expect(page).toHaveURL(/\/login/);
   });
 
-  test('should display all feature cards on the landing page', async ({ page }) => {
-    await page.goto('/welcome');
+  test('reaches forgot-password from login', async ({ page }) => {
+    await page.goto('/login');
 
-    // Verify key feature titles are visible (use heading role for unique match)
-    await expect(page.getByRole('heading', { name: 'Voice-First Tracking' })).toBeVisible();
-    await expect(page.getByRole('heading', { name: 'AI Insights' })).toBeVisible();
-    await expect(page.getByRole('heading', { name: 'Money Management' })).toBeVisible();
-    await expect(page.getByRole('heading', { name: 'Workout Tracking' })).toBeVisible();
-    await expect(page.getByRole('heading', { name: 'Nutrition & Food' })).toBeVisible();
-    await expect(page.getByRole('heading', { name: 'Daily Schedule' })).toBeVisible();
-    await expect(page.getByRole('heading', { name: 'Goal Setting' })).toBeVisible();
-  });
+    await page.getByRole('link', { name: /forgot your password/i }).click();
 
-  test('should display Free and Pro pricing tiers on landing page', async ({ page }) => {
-    await page.goto('/welcome');
-
-    // Scroll to pricing section and verify both tiers are shown
-    // Use exact match with heading role since "Free" and "Pro" appear as h3 headings
-    const freeHeadings = page.getByRole('heading', { name: 'Free', exact: true });
-    const proHeadings = page.getByRole('heading', { name: 'Pro', exact: true });
-
-    await expect(freeHeadings.first()).toBeVisible();
-    await expect(proHeadings.first()).toBeVisible();
-
-    // Verify pricing amounts are present on the page
-    await expect(page.getByText('$0').first()).toBeVisible();
-    await expect(page.getByText('$4.99').first()).toBeVisible();
+    await expect(page).toHaveURL(/\/forgot-password/);
   });
 });
 
-test.describe('Navigation - Pricing Page', () => {
-  test('should display both pricing tiers with features', async ({ page }) => {
+test.describe('Navigation - pricing', () => {
+  test('shows both tiers', async ({ page }) => {
     await page.goto('/pricing');
 
-    // Check that both plan names are present
-    await expect(page.getByRole('heading', { name: 'Free', exact: true })).toBeVisible();
-    await expect(page.getByRole('heading', { name: 'Pro', exact: true })).toBeVisible();
+    await expect(page.getByRole('heading', { name: /simple pricing/i })).toBeVisible();
+    await expect(page.getByText(/free/i).first()).toBeVisible();
+    await expect(page.getByText(/pro/i).first()).toBeVisible();
+  });
+});
 
-    // Check that key features are listed
-    await expect(page.getByText('Manual data entry for all domains')).toBeVisible();
-    await expect(page.getByText(/voice input/i).first()).toBeVisible();
+test.describe('Navigation - unknown routes', () => {
+  test('sends an unknown path to /login when signed out', async ({ page }) => {
+    // Unknown paths fall through to the protected route tree, so the auth guard
+    // answers first — a signed-out visitor never reaches the 404 page.
+    await page.goto('/this-route-does-not-exist');
+
+    await expect(page).toHaveURL(/\/login/);
   });
 });

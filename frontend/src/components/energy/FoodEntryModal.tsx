@@ -725,8 +725,11 @@ export function FoodEntryModal({ open, onOpenChange, onSave, entry, defaultMealT
               )}
             </div>
 
-            <div className="grid grid-cols-3 gap-4">
-              <div>
+            {/* minmax(0,1fr) rather than a bare 1fr: an <input> has an intrinsic minimum
+                width of roughly 20 characters, and `1fr` is `minmax(auto,1fr)`, so three
+                of them refuse to shrink and overflow the modal on a narrow phone. */}
+            <div className="grid grid-cols-[repeat(3,minmax(0,1fr))] gap-3">
+              <div className="min-w-0">
                 <Label htmlFor="protein">Protein (g)</Label>
                 <Input
                   id="protein"
@@ -743,7 +746,7 @@ export function FoodEntryModal({ open, onOpenChange, onSave, entry, defaultMealT
                   </p>
                 )}
               </div>
-              <div>
+              <div className="min-w-0">
                 <Label htmlFor="carbs">Carbs (g)</Label>
                 <Input
                   id="carbs"
@@ -760,7 +763,7 @@ export function FoodEntryModal({ open, onOpenChange, onSave, entry, defaultMealT
                   </p>
                 )}
               </div>
-              <div>
+              <div className="min-w-0">
                 <Label htmlFor="fats">Fats (g)</Label>
                 <Input
                   id="fats"
