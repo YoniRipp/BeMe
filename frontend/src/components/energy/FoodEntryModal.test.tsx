@@ -6,6 +6,12 @@ import userEvent from '@testing-library/user-event';
 import type { FoodEntry } from '../../types/energy';
 import { FoodEntryModal } from './FoodEntryModal';
 
+// The modal reads logged entries to build its "Log again" suggestions, the same way
+// WorkoutModal reads useWorkouts. Stubbed so these tests stay free of a QueryClient.
+vi.mock('@/hooks/useEnergy', () => ({
+  useEnergy: () => ({ foodEntries: [] }),
+}));
+
 vi.mock('@/features/energy/api', () => ({
   searchFoods: vi.fn().mockResolvedValue([]),
 }));

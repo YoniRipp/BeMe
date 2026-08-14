@@ -16,12 +16,25 @@ import { FitnessInsightsSection } from '@/components/insights/FitnessInsightsSec
 import { HealthInsightsSection } from '@/components/insights/HealthInsightsSection';
 import { AiInsightsSection } from '@/components/insights/AiInsightsSection';
 import { Page, PageHeader } from '@/components/ui/page';
+import { Card } from '@/components/ui/card';
+import { ContentWithLoading } from '@/components/shared/ContentWithLoading';
+import { EmptyState } from '@/components/shared/EmptyState';
+import { Skeleton } from '@/components/shared/Skeleton';
+import { TrendingUp } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 
 export function Insights() {
+  const navigate = useNavigate();
   const { hasAiAccess } = useSubscription();
-  const { workouts } = useWorkouts();
-  const { foodEntries, checkIns } = useEnergy();
-  const { weightEntries } = useWeight();
+  const { workouts, workoutsLoading } = useWorkouts();
+  const { foodEntries, checkIns, energyLoading } = useEnergy();
+  const { weightEntries, weightLoading } = useWeight();
+
+  const loading = workoutsLoading || energyLoading || weightLoading;
+  // Charts over empty arrays render axes full of zeros, which reads as "you did nothing"
+  // rather than "there is nothing here yet".
+  const hasAnyData =
+    workouts.length > 0 || foodEntries.length > 0 || checkIns.length > 0 || weightEntries.length > 0;
 
   const fitnessInsights = useMemo(() => getFitnessInsights(workouts), [workouts]);
   const healthInsights = useMemo(() => getHealthInsights(foodEntries, checkIns), [foodEntries, checkIns]);
@@ -68,13 +81,44 @@ export function Insights() {
       ) : (
         <UpgradePrompt feature="AI Insights" description="You've used all your free AI calls this month. Exciting updates coming soon!" quotaExhausted />
       )}
-      <FitnessInsightsSection
-        workoutFrequency={workoutFrequency}
-        workoutTrendData={workoutTrendData}
-        workoutTypePieData={workoutTypePieData}
-        fitnessInsights={fitnessInsights}
-      />
-      <HealthInsightsSection calorieTrend={calorieTrend} weightProgress={weightProgress} healthInsights={healthInsights} />
+
+      <ContentWithLoading
+        loading={loading}
+        skeleton={
+          <div className="space-y-6">
+            {[0, 1].map((i) => (
+              <Card key={i} className="p-5 space-y-4">
+                <Skeleton variant="text" width="40%" height="1.25rem" />
+                <Skeleton height="14rem" className="rounded-xl" />
+              </Card>
+            ))}
+          </div>
+        }
+      >
+        {hasAnyData ? (
+          <div className="space-y-6">
+            <FitnessInsightsSection
+              workoutFrequency={workoutFrequency}
+              workoutTrendData={workoutTrendData}
+              workoutTypePieData={workoutTypePieData}
+              fitnessInsights={fitnessInsights}
+            />
+            <HealthInsightsSection
+              calorieTrend={calorieTrend}
+              weightProgress={weightProgress}
+              healthInsights={healthInsights}
+            />
+          </div>
+        ) : (
+          <EmptyState
+            icon={TrendingUp}
+            title="No patterns yet"
+            description="Log a few workouts and meals and your trends will show up here."
+            actionLabel="Log something"
+            onAction={() => navigate('/')}
+          />
+        )}
+      </ContentWithLoading>
     </Page>
   );
 }

@@ -5,6 +5,9 @@ import { FoodEntry } from '@/types/energy';
 import { foodEntryFormSchema, type FoodEntryFormValues } from '@/schemas/foodEntry';
 import { useDebounce } from '@/hooks/useDebounce';
 import { searchFoods, lookupOrCreateFood, type FoodSearchResult } from '@/features/energy/api';
+import { useEnergy } from '@/hooks/useEnergy';
+import { useRecentFoods, type RecentFood } from '@/hooks/useRecentFoods';
+import { RecentFoodsStrip } from './RecentFoodsStrip';
 import { lookupBarcode } from '@/features/energy/barcodeLookup';
 import { BarcodeScanner } from '@/components/energy/BarcodeScanner';
 import {
@@ -141,6 +144,31 @@ export function FoodEntryModal({ open, onOpenChange, onSave, entry, defaultMealT
     defaultValues,
     mode: 'onChange',
   });
+
+  // Suggestions come from entries already in the cache — no extra request, and the scan
+  // is bounded inside the hook. Editing an entry excludes itself, since "log again" makes
+  // no sense for the row you are currently editing.
+  const { foodEntries } = useEnergy();
+  const recentFoods = useRecentFoods(foodEntries, selectedMealType, entry?.name);
+
+  const handleSelectRecent = useCallback(
+    (food: RecentFood) => {
+      setValue('name', food.name, { shouldValidate: true });
+      setValue('calories', String(food.calories), { shouldValidate: true });
+      setValue('protein', String(food.protein), { shouldValidate: true });
+      setValue('carbs', String(food.carbs), { shouldValidate: true });
+      setValue('fats', String(food.fats), { shouldValidate: true });
+      // The macros are already the totals for the logged portion, so scaling must not
+      // run over them again — clear the per-100g basis the search path sets up.
+      setPer100g(null);
+      setIsCustomPortion(false);
+      setSearchQuery('');
+      setSearchResults([]);
+      setDropdownOpen(false);
+      void trigger();
+    },
+    [setValue, trigger]
+  );
 
   useEffect(() => {
     if (!open) return;
@@ -416,6 +444,10 @@ export function FoodEntryModal({ open, onOpenChange, onSave, entry, defaultMealT
                 </button>
               ))}
             </div>
+
+            {/* Above search on purpose: re-logging a usual meal should not start with
+                typing its name again. */}
+            <RecentFoodsStrip foods={recentFoods} onSelect={handleSelectRecent} />
 
             <div ref={searchContainerRef} className="relative">
               <Label htmlFor="food-search">Search food (optional)</Label>

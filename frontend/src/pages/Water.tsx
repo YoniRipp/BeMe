@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { Droplets, Minus, Plus } from 'lucide-react';
 import { toast } from '@/components/shared/ToastProvider';
 import { ContentWithLoading } from '@/components/shared/ContentWithLoading';
+import { haptic } from '@/lib/haptics';
 import { useWater } from '@/hooks/useWater';
 import { useProfile } from '@/hooks/useProfile';
 import { Page, PageHeader } from '@/components/ui/page';
@@ -23,6 +24,7 @@ export function Water() {
   const setTarget = async (next: number) => {
     const clamped = Math.max(0, next);
     if (clamped === glasses) return;
+    haptic('light');
     try {
       await setGlasses(clamped);
     } catch {

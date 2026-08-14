@@ -44,6 +44,8 @@ import { ImageLightbox } from '@/components/shared/ImageLightbox';
 import { SetRow, EditableSetValueInput } from './SetRow';
 import { ExercisePickerSheet } from './ExercisePickerSheet';
 import { STARTER_TEMPLATES, type StarterTemplate } from '@/lib/workoutTemplates';
+import { useRestTimer, DEFAULT_REST_SECONDS, type RestTimer as RestTimerState } from '@/hooks/useRestTimer';
+import { haptic } from '@/lib/haptics';
 import { LIMITS } from '@/lib/constants';
 
 export type WorkoutTemplate = Omit<Workout, 'id' | 'date'>;
@@ -90,22 +92,17 @@ function summarizeSets(ex: Exercise, unit: string): string {
   return rows.map((r) => (r.weight != null ? `${r.weight}${unit}×${r.reps}` : `${r.reps}`)).join(', ');
 }
 
-/** Lightweight rest timer for the editor — client-side only, not persisted. */
-function RestTimer() {
-  const [remaining, setRemaining] = useState<number | null>(null);
+function fmtRest(s: number) {
+  return `${Math.floor(s / 60)}:${String(s % 60).padStart(2, '0')}`;
+}
 
-  useEffect(() => {
-    if (remaining === null) return;
-    if (remaining <= 0) {
-      toast.success('Rest complete');
-      setRemaining(null);
-      return;
-    }
-    const id = setTimeout(() => setRemaining((r) => (r === null ? null : r - 1)), 1000);
-    return () => clearTimeout(id);
-  }, [remaining]);
-
-  const fmt = (s: number) => `${Math.floor(s / 60)}:${String(s % 60).padStart(2, '0')}`;
+/**
+ * Rest countdown. Presentational — the timer state lives in `useRestTimer` above it, so
+ * ticking a set can start it without the user reaching for a preset.
+ */
+function RestTimer({ timer }: { timer: RestTimerState }) {
+  const { remaining, start, stop } = timer;
+  const fmt = fmtRest;
 
   return (
     <div className="flex items-center gap-2">
@@ -118,7 +115,7 @@ function RestTimer() {
           <button
             key={s}
             type="button"
-            onClick={() => setRemaining(s)}
+            onClick={() => start(s)}
             className="inline-flex min-h-11 items-center rounded-full border border-border bg-card px-3.5 text-eyebrow font-bold tabular-nums text-muted-foreground transition-colors hover:border-primary hover:text-primary"
           >
             {fmt(s)}
@@ -127,7 +124,7 @@ function RestTimer() {
       ) : (
         <button
           type="button"
-          onClick={() => setRemaining(null)}
+          onClick={stop}
           className="inline-flex min-h-11 items-center gap-1.5 rounded-full bg-primary/10 px-4 text-sm font-extrabold tabular-nums text-primary"
           aria-label={`Rest timer: ${fmt(remaining)} remaining, tap to stop`}
         >
@@ -337,6 +334,7 @@ function WorkoutDetailView({
   const [picker, setPicker] = useState<{ index?: number } | null>(null);
   /** Index of the exercise whose note field is expanded. */
   const [noteFor, setNoteFor] = useState<number | null>(null);
+  const restTimer = useRestTimer();
 
   // Re-seed only when a different workout is opened, so background refetches (including our
   // own optimistic save echo) never clobber edits in progress.
@@ -399,11 +397,23 @@ function WorkoutDetailView({
   };
 
   const toggleComplete = (exIdx: number, setIdx: number) => {
+    let markedDone = false;
     updateExercise(exIdx, (ex) => {
       const completedPerSet = [...(ex.completedPerSet ?? [])];
       completedPerSet[setIdx] = !completedPerSet[setIdx];
+      markedDone = completedPerSet[setIdx];
       return { ...ex, completedPerSet };
     });
+
+    if (markedDone) {
+      haptic('light');
+      // Finishing a set is the moment rest begins, so the countdown starts itself —
+      // reaching for a preset chip mid-set is the step Hevy and Strong removed.
+      restTimer.start(DEFAULT_REST_SECONDS);
+    } else {
+      // Un-ticking is a correction, not the end of a set; the rest is no longer running.
+      restTimer.stop();
+    }
   };
 
   const addSet = (exIdx: number) => {
@@ -517,7 +527,7 @@ function WorkoutDetailView({
         )}
 
         <div className="flex items-center gap-2 rounded-xl border border-border bg-muted/40 px-3 py-2">
-          <RestTimer />
+          <RestTimer timer={restTimer} />
         </div>
 
         <div className="flex items-center justify-between gap-3">
@@ -712,6 +722,9 @@ export function WorkoutModal({ open, onOpenChange, onSave, workout }: WorkoutMod
   const [editorPicker, setEditorPicker] = useState<number | null>(null);
   // Existing workouts open in a read-only view first; new workouts open straight into the editor.
   const [mode, setMode] = useState<'view' | 'edit'>(workout ? 'view' : 'edit');
+  // The editor has no set-completion ticks, so its timer is manual and separate from the
+  // logger's — starting one there should not affect a rest already running in the logger.
+  const editorRestTimer = useRestTimer();
 
   // Most recent prior performance of each exercise (by name), for the "Last time" hint.
   const previousByName = useMemo(() => {
@@ -1173,7 +1186,7 @@ export function WorkoutModal({ open, onOpenChange, onSave, workout }: WorkoutMod
                     </Button>
                   </div>
                   <div className="mb-3 flex items-center gap-2 rounded-xl border border-border bg-muted/40 px-3 py-2">
-                    <RestTimer />
+                    <RestTimer timer={editorRestTimer} />
                   </div>
                   <div className="space-y-3">
                     {fields.map((field, idx) => {
