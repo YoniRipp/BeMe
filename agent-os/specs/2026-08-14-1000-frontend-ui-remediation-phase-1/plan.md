@@ -75,7 +75,12 @@ Status: implemented.
 - [x] `npm run build` — clean, PWA manifest regenerated
 - [x] No stale references to the six deleted tokens anywhere in `src/`
 - [x] Zero backend files touched
-- [ ] `npx playwright test` — not run here; no browser/server in this container
+- [x] `npx playwright test` — run against the branch (chromium): 8 passed, 35 failed.
+      Every failure is pre-existing, not a regression — the suite targets `/money`,
+      `/schedule` and `/groups`, routes this app does not have, expects `/welcome`
+      redirects where the app sends users to `/login`, and looks for landing copy
+      that does not exist on `main` either. No CI workflow runs Playwright, which is
+      how it drifted. Rewriting it is its own piece of work.
 - [ ] Manual dark-mode pass on a phone viewport (scrims, toast placement, Water tap latency)
 
 ## Follow-ups (not in scope here)

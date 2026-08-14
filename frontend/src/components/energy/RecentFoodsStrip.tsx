@@ -38,12 +38,15 @@ export function RecentFoodsStrip({
   if (foods.length === 0) return null;
 
   return (
-    <div className="space-y-2">
+    // min-w-0 so this can be narrower than its widest chip; without it the strip reports
+    // its full max-content width to the layout above and pushes the modal off-screen
+    // rather than scrolling inside it.
+    <div className="min-w-0 space-y-2">
       <p className="flex items-center gap-1.5 text-eyebrow font-bold uppercase tracking-[0.14em] text-muted-foreground">
         <History className="h-3.5 w-3.5" aria-hidden="true" />
         Log again
       </p>
-      <ul className="flex gap-2 overflow-x-auto no-scrollbar pb-1">
+      <ul className="flex w-full min-w-0 gap-2 overflow-x-auto no-scrollbar pb-1">
         {foods.map((food) => (
           <li key={food.key}>
             <button

@@ -61,7 +61,12 @@ Status: implemented.
 - [x] `npx tsc --noEmit` — clean
 - [x] `npx vitest run` — 238 passed, 37 files
 - [x] `npm run build` — clean
-- [ ] `npx playwright test` — not run here; no browser/server in this container
+- [x] `npx playwright test` — run against the branch (chromium): 8 passed, 35 failed.
+      Every failure is pre-existing, not a regression — the suite targets `/money`,
+      `/schedule` and `/groups`, routes this app does not have, expects `/welcome`
+      redirects where the app sends users to `/login`, and looks for landing copy that
+      does not exist on `main` either. No CI workflow runs Playwright, which is how it
+      drifted. Rewriting it is its own piece of work.
 - [ ] Visual pass in both themes, and a device check for the haptics and the rest timer
       surviving a backgrounded app
 
