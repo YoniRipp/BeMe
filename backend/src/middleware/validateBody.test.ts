@@ -33,7 +33,7 @@ describe('validateBody', () => {
     expect(res.body.received).toEqual({ name: 'Alice', age: 30 });
   });
 
-  it('returns 400 with error message when invalid', async () => {
+  it('returns 400 with error envelope when invalid', async () => {
     const app = createApp();
 
     const res = await request(app)
@@ -42,9 +42,10 @@ describe('validateBody', () => {
       .expect(400);
 
     expect(res.body.error).toBeDefined();
-    expect(res.body.error).toContain('name');
-    expect(res.body.details).toBeDefined();
-    expect(typeof res.body.details).toBe('object');
+    expect(res.body.error.code).toBe('VALIDATION_ERROR');
+    expect(res.body.error.message).toContain('name');
+    expect(res.body.error.details).toBeDefined();
+    expect(typeof res.body.error.details).toBe('object');
   });
 
   it('returns 400 for missing required field', async () => {
@@ -55,8 +56,9 @@ describe('validateBody', () => {
       .send({ age: 25 })
       .expect(400);
 
-    expect(res.body.error).toBeDefined();
-    expect(res.body.details).toBeDefined();
+    expect(res.body.error.code).toBe('VALIDATION_ERROR');
+    expect(res.body.error.message).toBeDefined();
+    expect(res.body.error.details).toBeDefined();
   });
 
   it('returns 400 for invalid type (e.g. string instead of number)', async () => {
@@ -67,8 +69,9 @@ describe('validateBody', () => {
       .send({ name: 'Bob', age: 'not-a-number' })
       .expect(400);
 
-    expect(res.body.error).toBeDefined();
-    expect(res.body.details).toBeDefined();
+    expect(res.body.error.code).toBe('VALIDATION_ERROR');
+    expect(res.body.error.message).toBeDefined();
+    expect(res.body.error.details).toBeDefined();
   });
 
   it('includes path in error when nested', async () => {
@@ -86,7 +89,8 @@ describe('validateBody', () => {
       .send({ user: { email: 'invalid' } })
       .expect(400);
 
-    expect(res.body.error).toBeDefined();
-    expect(res.body.details).toBeDefined();
+    expect(res.body.error.code).toBe('VALIDATION_ERROR');
+    expect(res.body.error.message).toBeDefined();
+    expect(res.body.error.details).toBeDefined();
   });
 });

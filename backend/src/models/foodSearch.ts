@@ -400,8 +400,9 @@ export async function getNutritionForFoodName(pool: Pool, foodName: string, amou
       allValues
     );
   } catch {
-    // Fallback without pg_trgm / common_name — use only guaranteed columns
-    const fbNm = wordSplitWordBound('lower(name)', words, 3);
+    // Fallback without pg_trgm / common_name — use only guaranteed columns.
+    // Params are [wantPrep, ...words], so word placeholders start at $2.
+    const fbNm = wordSplitWordBound('lower(name)', words, 2);
 
     result = await pool.query(
       `SELECT id, name, calories, protein, carbs, fat, is_liquid, preparation

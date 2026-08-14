@@ -24,6 +24,7 @@ export const queryKeys = {
   profile: ['profile'] as const,
   weightEntries: ['weightEntries'] as const,
   waterToday: (date: string) => ['waterToday', date] as const,
+  waterTodayAll: ['waterToday'] as const, // prefix for invalidating every date
   waterHistory: ['waterHistory'] as const,
   cycleEntries: ['cycleEntries'] as const,
   streaks: ['streaks'] as const,

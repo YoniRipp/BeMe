@@ -20,6 +20,7 @@ import { VoiceRecorderBar } from '@/components/chat/VoiceRecorderBar';
 import { toast } from '@/components/shared/ToastProvider';
 import { useVoiceDictation } from '@/hooks/useVoiceDictation';
 import { chatApi, type ChatMessage, type ChatResponse } from '@/core/api/chat';
+import { queryKeys } from '@/lib/queryClient';
 import { cn } from '@/lib/utils';
 
 interface AiChatPanelProps {
@@ -53,17 +54,26 @@ export function AiChatPanel({ open, onOpenChange }: AiChatPanelProps) {
       if (data.actions?.length > 0) {
         const intents = new Set(data.actions.filter((a: { success: boolean }) => a.success).map((a: { intent: string }) => a.intent));
         if (intents.has('add_workout') || intents.has('edit_workout') || intents.has('delete_workout')) {
-          void queryClient.invalidateQueries({ queryKey: ['workouts'] });
+          void queryClient.invalidateQueries({ queryKey: queryKeys.workouts });
         }
         if (intents.has('add_food') || intents.has('edit_food_entry') || intents.has('delete_food_entry')) {
-          void queryClient.invalidateQueries({ queryKey: ['food-entries'] });
+          void queryClient.invalidateQueries({ queryKey: queryKeys.foodEntries });
         }
         if (intents.has('log_sleep') || intents.has('edit_check_in') || intents.has('delete_check_in')) {
-          void queryClient.invalidateQueries({ queryKey: ['daily-check-ins'] });
-          void queryClient.invalidateQueries({ queryKey: ['check-ins'] });
+          void queryClient.invalidateQueries({ queryKey: queryKeys.checkIns });
         }
         if (intents.has('add_goal') || intents.has('edit_goal') || intents.has('delete_goal')) {
-          void queryClient.invalidateQueries({ queryKey: ['goals'] });
+          void queryClient.invalidateQueries({ queryKey: queryKeys.goals });
+        }
+        if (intents.has('log_weight') || intents.has('edit_weight') || intents.has('delete_weight')) {
+          void queryClient.invalidateQueries({ queryKey: queryKeys.weightEntries });
+        }
+        if (intents.has('add_water') || intents.has('remove_water')) {
+          void queryClient.invalidateQueries({ queryKey: queryKeys.waterTodayAll });
+          void queryClient.invalidateQueries({ queryKey: queryKeys.waterHistory });
+        }
+        if (intents.has('log_cycle') || intents.has('edit_cycle') || intents.has('delete_cycle')) {
+          void queryClient.invalidateQueries({ queryKey: queryKeys.cycleEntries });
         }
         // Refresh insights since data changed
         void queryClient.invalidateQueries({ queryKey: ['ai-insights'] });

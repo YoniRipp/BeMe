@@ -6,6 +6,7 @@ import { asyncHandler } from '../middleware/errorHandler.js';
 import { getEffectiveUserId } from '../middleware/auth.js';
 import * as waterModel from '../models/water.js';
 import { sendJson } from '../utils/response.js';
+import { parseOptionalPagination } from '../utils/pagination.js';
 
 export const getToday = asyncHandler(async (req: Request, res: Response) => {
   const userId = getEffectiveUserId(req);
@@ -17,7 +18,7 @@ export const getToday = asyncHandler(async (req: Request, res: Response) => {
 export const list = asyncHandler(async (req: Request, res: Response) => {
   const userId = getEffectiveUserId(req);
   const { startDate, endDate } = req.query as { startDate?: string; endDate?: string };
-  const entries = await waterModel.findByUserId(userId, startDate, endDate);
+  const entries = await waterModel.findByUserId(userId, startDate, endDate, parseOptionalPagination(req.query));
   sendJson(res, entries);
 });
 

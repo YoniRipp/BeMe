@@ -7,11 +7,12 @@ import { getEffectiveUserId } from '../middleware/auth.js';
 import * as weightModel from '../models/weight.js';
 import { sendJson, sendCreated, sendNoContent } from '../utils/response.js';
 import { NotFoundError, ValidationError } from '../errors.js';
+import { parseOptionalPagination } from '../utils/pagination.js';
 
 export const list = asyncHandler(async (req: Request, res: Response) => {
   const userId = getEffectiveUserId(req);
   const { startDate, endDate } = req.query as { startDate?: string; endDate?: string };
-  const entries = await weightModel.findByUserId(userId, startDate, endDate);
+  const entries = await weightModel.findByUserId(userId, startDate, endDate, parseOptionalPagination(req.query));
   sendJson(res, entries);
 });
 

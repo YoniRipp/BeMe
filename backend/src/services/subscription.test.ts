@@ -139,18 +139,20 @@ describe('subscription service', () => {
       );
     });
 
-    it('sets past_due on subscription_payment_failed', async () => {
+    it('sets past_due on subscription_payment_failed, storing the subscription id (not the invoice id)', async () => {
       mockQuery.mockResolvedValue({ rows: [] });
 
+      // Payment webhooks carry a subscription-invoice: data.id is the invoice id
       await handleWebhookEvent({
         meta: {
           event_name: 'subscription_payment_failed',
         },
         data: {
-          id: 'sub_456',
-          type: 'subscriptions',
+          id: 'inv_001',
+          type: 'subscription-invoices',
           attributes: {
             customer_id: 789,
+            subscription_id: 'sub_456',
           },
         },
       });
@@ -159,9 +161,13 @@ describe('subscription service', () => {
         expect.stringContaining('UPDATE users'),
         expect.arrayContaining(['past_due', 'sub_456']),
       );
+      expect(mockQuery).not.toHaveBeenCalledWith(
+        expect.stringContaining('UPDATE users'),
+        expect.arrayContaining(['inv_001']),
+      );
     });
 
-    it('sets pro on subscription_payment_success', async () => {
+    it('sets pro on subscription_payment_success, storing the subscription id (not the invoice id)', async () => {
       mockQuery.mockResolvedValue({ rows: [] });
 
       await handleWebhookEvent({
@@ -169,10 +175,11 @@ describe('subscription service', () => {
           event_name: 'subscription_payment_success',
         },
         data: {
-          id: 'sub_456',
-          type: 'subscriptions',
+          id: 'inv_001',
+          type: 'subscription-invoices',
           attributes: {
             customer_id: 789,
+            subscription_id: 'sub_456',
             renews_at: '2026-05-01T00:00:00Z',
           },
         },
@@ -181,6 +188,10 @@ describe('subscription service', () => {
       expect(mockQuery).toHaveBeenCalledWith(
         expect.stringContaining('UPDATE users'),
         expect.arrayContaining(['pro', 'sub_456']),
+      );
+      expect(mockQuery).not.toHaveBeenCalledWith(
+        expect.stringContaining('UPDATE users'),
+        expect.arrayContaining(['inv_001']),
       );
     });
 

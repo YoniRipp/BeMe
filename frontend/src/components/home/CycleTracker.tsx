@@ -5,6 +5,7 @@ import { useCycle } from '@/hooks/useCycle';
 import { useProfile } from '@/hooks/useProfile';
 import { Heart } from 'lucide-react';
 import { toast } from '@/components/shared/ToastProvider';
+import { toLocalDateString } from '@/lib/dateRanges';
 
 export function CycleTracker() {
   const { currentCycleDay, addCycleEntry } = useCycle();
@@ -19,7 +20,7 @@ export function CycleTracker() {
   const handleLogPeriod = async () => {
     setLogging(true);
     try {
-      const today = new Date().toISOString().split('T')[0];
+      const today = toLocalDateString(new Date());
       await addCycleEntry({ date: today, periodStart: true, flow: 'medium' });
       toast.success('Period start logged');
     } catch {

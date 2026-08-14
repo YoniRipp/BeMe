@@ -172,7 +172,11 @@ type ClientResolveResult =
   | { kind: 'not_found' };
 
 async function resolveClientId(trainerId: string, action: VoiceAction): Promise<ClientResolveResult> {
-  if (action.clientId) return { kind: 'found', clientId: action.clientId as string };
+  if (action.clientId) {
+    // Model-supplied clientId is untrusted — only accept the caller's own active clients
+    const owns = await trainerClientModel.isClientOfTrainer(trainerId, action.clientId as string);
+    return owns ? { kind: 'found', clientId: action.clientId as string } : { kind: 'not_found' };
+  }
 
   const clients = await trainerClientModel.findClientsByTrainerId(trainerId);
 
@@ -220,7 +224,7 @@ async function resolveClientOrError(
     return { error: { intent, success: false, message: `Multiple clients match "${action.clientName}": ${list}. Please say the full name or say "number X".` } };
   }
   if (resolved.kind === 'not_found') {
-    return { error: { intent, success: false, message: `Client "${action.clientName ?? action.clientTraineeNumber}" not found` } };
+    return { error: { intent, success: false, message: `Client "${action.clientName ?? action.clientTraineeNumber ?? action.clientId}" not found` } };
   }
   return { clientId: resolved.clientId };
 }

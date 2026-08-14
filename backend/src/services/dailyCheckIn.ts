@@ -29,13 +29,19 @@ export async function create(userId: string, body: CreateCheckInBody): Promise<D
 
 export async function update(userId: string, id: string, body: UpdateCheckInBody): Promise<DailyCheckIn> {
   if (!id) throw new ValidationError('id is required');
+  // A date change moves the check-in between days — capture the old day so
+  // consumers (stats aggregation) can recompute both.
+  const previous = body.date !== undefined ? await dailyCheckInModel.findById(id, userId) : null;
   const updates: UpdateCheckInInput = {};
   if (body.date !== undefined) updates.date = body.date;
   if (body.sleepHours !== undefined) updates.sleepHours = body.sleepHours;
 
   const updated = await dailyCheckInModel.update(id, userId, updates);
   if (!updated) throw new NotFoundError('Daily check-in not found');
-  await publishEvent('energy.CheckInUpdated', updated as unknown as Record<string, unknown>, userId);
+  await publishEvent('energy.CheckInUpdated', {
+    ...(updated as unknown as Record<string, unknown>),
+    ...(previous && previous.date !== updated.date ? { previousDate: previous.date } : {}),
+  }, userId);
   return updated;
 }
 
@@ -43,5 +49,5 @@ export async function remove(userId: string, id: string): Promise<void> {
   if (!id) throw new ValidationError('id is required');
   const deleted = await dailyCheckInModel.deleteById(id, userId);
   if (!deleted) throw new NotFoundError('Daily check-in not found');
-  await publishEvent('energy.CheckInDeleted', { id }, userId);
+  await publishEvent('energy.CheckInDeleted', { id, date: deleted.date }, userId);
 }

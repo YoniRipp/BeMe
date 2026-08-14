@@ -10,6 +10,7 @@ import {
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { toLocalDateString } from '@/lib/dateRanges';
 
 interface DailyCheckInModalProps {
   open: boolean;
@@ -20,19 +21,19 @@ interface DailyCheckInModalProps {
 
 export function DailyCheckInModal({ open, onOpenChange, onSave, checkIn }: DailyCheckInModalProps) {
   const [formData, setFormData] = useState({
-    date: new Date().toISOString().split('T')[0],
+    date: toLocalDateString(new Date()),
     sleepHours: '',
   });
 
   useEffect(() => {
     if (checkIn) {
       setFormData({
-        date: new Date(checkIn.date).toISOString().split('T')[0],
+        date: toLocalDateString(new Date(checkIn.date)),
         sleepHours: checkIn.sleepHours?.toString() || '',
       });
     } else {
       setFormData({
-        date: new Date().toISOString().split('T')[0],
+        date: toLocalDateString(new Date()),
         sleepHours: '',
       });
     }

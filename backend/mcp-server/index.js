@@ -29,7 +29,9 @@ const authHeaders = TRACKVIBE_MCP_TOKEN ? { Authorization: `Bearer ${TRACKVIBE_M
 async function handleResponse(res) {
   if (!res.ok && res.status !== 204) {
     const err = await res.json().catch(() => ({}));
-    throw new Error(err.error || res.statusText || `Request failed: ${res.status}`);
+    // API errors arrive as { error: { code, message } }; older middleware used { error: string }
+    const message = typeof err.error === 'string' ? err.error : err.error?.message;
+    throw new Error(message || res.statusText || `Request failed: ${res.status}`);
   }
   if (res.status === 204) return null;
   return res.json();

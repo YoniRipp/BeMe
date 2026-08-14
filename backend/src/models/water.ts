@@ -3,7 +3,7 @@
  */
 import pg from 'pg';
 import { getPool } from '../db/pool.js';
-import type { WaterEntry, UpsertWaterEntryInput } from '../types/domain.js';
+import type { WaterEntry, UpsertWaterEntryInput, PaginationParams } from '../types/domain.js';
 
 const RETURNING = 'id, date, glasses, ml_total';
 
@@ -22,7 +22,7 @@ export async function findByUserAndDate(userId: string, date: string, client?: p
   return result.rows.length > 0 ? rowToEntry(result.rows[0]) : null;
 }
 
-export async function findByUserId(userId: string, startDate?: string, endDate?: string, client?: pg.Pool | pg.PoolClient): Promise<WaterEntry[]> {
+export async function findByUserId(userId: string, startDate?: string, endDate?: string, pagination?: PaginationParams, client?: pg.Pool | pg.PoolClient): Promise<WaterEntry[]> {
   const db = client ?? getPool();
   let sql = 'SELECT ' + RETURNING + ' FROM water_entries WHERE user_id = $1';
   const params: unknown[] = [userId];
@@ -40,6 +40,10 @@ export async function findByUserId(userId: string, startDate?: string, endDate?:
   }
 
   sql += ' ORDER BY date DESC';
+  if (pagination) {
+    sql += ` LIMIT $${idx} OFFSET $${idx + 1}`;
+    params.push(pagination.limit, pagination.offset);
+  }
   const result = await db.query(sql, params);
   return result.rows.map(rowToEntry);
 }

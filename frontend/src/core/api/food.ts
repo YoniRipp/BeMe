@@ -1,5 +1,4 @@
-import { request } from './client';
-import type { PaginatedResponse } from '@/types/api';
+import { request, requestAllPages } from './client';
 
 export interface ApiFoodEntry {
   id: string;
@@ -18,7 +17,7 @@ export interface ApiFoodEntry {
 }
 
 export const foodEntriesApi = {
-  list: () => request<PaginatedResponse<ApiFoodEntry>>('/api/food-entries'),
+  list: () => requestAllPages<ApiFoodEntry>('/api/food-entries'),
   add: (e: {
     date?: string;
     name: string;
@@ -68,7 +67,7 @@ export interface ApiDailyCheckIn {
 }
 
 export const dailyCheckInsApi = {
-  list: () => request<PaginatedResponse<ApiDailyCheckIn>>('/api/daily-check-ins'),
+  list: () => requestAllPages<ApiDailyCheckIn>('/api/daily-check-ins'),
   add: (c: { date?: string; sleepHours?: number }) =>
     request<ApiDailyCheckIn>('/api/daily-check-ins', { method: 'POST', body: c }),
   update: (id: string, updates: Partial<Omit<ApiDailyCheckIn, 'id'>>) =>

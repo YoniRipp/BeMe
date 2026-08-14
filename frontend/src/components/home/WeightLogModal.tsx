@@ -6,6 +6,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useWeight } from '@/hooks/useWeight';
 import { toast } from '@/components/shared/ToastProvider';
+import { toLocalDateString } from '@/lib/dateRanges';
 
 interface WeightLogModalProps {
   open: boolean;
@@ -40,7 +41,7 @@ export function WeightLogModal({ open, onOpenChange }: WeightLogModalProps) {
     }
     setSaving(true);
     try {
-      const today = new Date().toISOString().split('T')[0];
+      const today = toLocalDateString(new Date());
       await addWeight({ date: today, weight: w, notes: notes || undefined });
       toast.success('Weight saved');
       onOpenChange(false);

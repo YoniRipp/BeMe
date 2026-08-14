@@ -6,6 +6,7 @@
  */
 import { Request, Response } from 'express';
 import { asyncHandler } from '../middleware/errorHandler.js';
+import { getEffectiveUserId } from '../middleware/auth.js';
 import { sendJson, sendError } from '../utils/response.js';
 import { getOrGenerateInsights, hasNewActivitySinceLastInsight, refreshAllPeriods } from '../services/insights.js';
 import { getStatsSince } from '../models/userDailyStats.js';
@@ -21,7 +22,7 @@ export const getInsights = asyncHandler(async (req: Request, res: Response) => {
     return sendError(res, 503, 'AI insights not configured (missing GEMINI_API_KEY)');
   }
   const days = parseDays(req.query.days);
-  const { main } = await getOrGenerateInsights(req.user!.id, days);
+  const { main } = await getOrGenerateInsights(getEffectiveUserId(req), days);
   return sendJson(res, main);
 });
 
@@ -30,7 +31,7 @@ export const refreshInsightsController = asyncHandler(async (req: Request, res: 
     return sendError(res, 503, 'AI insights not configured (missing GEMINI_API_KEY)');
   }
   const days = parseDays(req.query.days);
-  const userId = req.user!.id;
+  const userId = getEffectiveUserId(req);
 
   // Smart refresh: skip regeneration if nothing has changed
   const changed = await hasNewActivitySinceLastInsight(userId);
@@ -50,7 +51,7 @@ export const getStats = asyncHandler(async (req: Request, res: Response) => {
   const days = parseDays(req.query.days);
   const since = new Date();
   since.setDate(since.getDate() - days);
-  const stats = await getStatsSince(req.user!.id, since.toISOString().slice(0, 10));
+  const stats = await getStatsSince(getEffectiveUserId(req), since.toISOString().slice(0, 10));
   return sendJson(res, { days, stats });
 });
 
@@ -58,14 +59,14 @@ export const getTodayRecommendations = asyncHandler(async (req: Request, res: Re
   if (!config.geminiApiKey) {
     return sendError(res, 503, 'AI insights not configured (missing GEMINI_API_KEY)');
   }
-  const { today } = await getOrGenerateInsights(req.user!.id);
+  const { today } = await getOrGenerateInsights(getEffectiveUserId(req));
   return sendJson(res, today);
 });
 
 /** GET /api/insights/freshness — lightweight check: does the user have new activity since last insight? */
 export const getFreshness = asyncHandler(async (req: Request, res: Response) => {
   const pool = getPool();
-  const userId = req.user!.id;
+  const userId = getEffectiveUserId(req);
 
   const [activityResult, insightResult] = await Promise.all([
     pool.query(

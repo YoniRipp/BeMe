@@ -4,7 +4,7 @@
 import pg from 'pg';
 import { getPool } from '../db/pool.js';
 import { buildUpdateQuery, type UpdateBuilder } from '../db/queryBuilder.js';
-import type { WeightEntry, CreateWeightEntryInput, UpdateWeightEntryInput } from '../types/domain.js';
+import type { WeightEntry, CreateWeightEntryInput, UpdateWeightEntryInput, PaginationParams } from '../types/domain.js';
 
 const RETURNING = 'id, date, weight, notes';
 
@@ -25,7 +25,7 @@ const UPDATE_SPEC: UpdateBuilder<UpdateWeightEntryInput> = {
   },
 };
 
-export async function findByUserId(userId: string, startDate?: string, endDate?: string, client?: pg.Pool | pg.PoolClient): Promise<WeightEntry[]> {
+export async function findByUserId(userId: string, startDate?: string, endDate?: string, pagination?: PaginationParams, client?: pg.Pool | pg.PoolClient): Promise<WeightEntry[]> {
   const db = client ?? getPool();
   let sql = 'SELECT ' + RETURNING + ' FROM weight_entries WHERE user_id = $1';
   const params: unknown[] = [userId];
@@ -43,6 +43,10 @@ export async function findByUserId(userId: string, startDate?: string, endDate?:
   }
 
   sql += ' ORDER BY date DESC';
+  if (pagination) {
+    sql += ` LIMIT $${idx} OFFSET $${idx + 1}`;
+    params.push(pagination.limit, pagination.offset);
+  }
   const result = await db.query(sql, params);
   return result.rows.map(rowToEntry);
 }

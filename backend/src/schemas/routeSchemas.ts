@@ -175,6 +175,11 @@ export const upsertWaterEntrySchema = z.object({
   mlTotal: z.number().int().min(0).max(20000).optional(),
 });
 
+// add-glass / remove-glass: date optional, controller defaults to today
+export const waterGlassSchema = z.object({
+  date: dateString.optional(),
+});
+
 // ─── Cycle entry schemas ──────────────────────────────────────
 const flowEnum = z.enum(['light', 'medium', 'heavy']);
 

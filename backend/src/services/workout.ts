@@ -41,6 +41,9 @@ export async function create(userId: string, body: CreateWorkoutBody): Promise<W
 
 export async function update(userId: string, id: string, body: UpdateWorkoutBody): Promise<Workout> {
   if (!id) throw new ValidationError('id is required');
+  // A date change moves the workout between days — capture the old day so
+  // consumers (stats aggregation) can recompute both.
+  const previous = body.date !== undefined ? await workoutModel.findOne(userId, { workoutId: id }) : null;
   const updates: UpdateWorkoutInput = {};
   if (body.date !== undefined) updates.date = body.date;
   if (body.title !== undefined) updates.title = body.title;
@@ -52,7 +55,10 @@ export async function update(userId: string, id: string, body: UpdateWorkoutBody
 
   const updated = await workoutModel.update(id, userId, updates);
   if (!updated) throw new NotFoundError('Workout not found');
-  await publishEvent('body.WorkoutUpdated', updated as unknown as Record<string, unknown>, userId);
+  await publishEvent('body.WorkoutUpdated', {
+    ...(updated as unknown as Record<string, unknown>),
+    ...(previous && previous.date !== updated.date ? { previousDate: previous.date } : {}),
+  }, userId);
   upsertEmbedding(userId, 'workout', updated.id, buildEmbeddingText('workout', updated as unknown as Record<string, unknown>));
   return updated;
 }
@@ -61,7 +67,7 @@ export async function remove(userId: string, id: string): Promise<void> {
   if (!id) throw new ValidationError('id is required');
   const deleted = await workoutModel.deleteById(id, userId);
   if (!deleted) throw new NotFoundError('Workout not found');
-  await publishEvent('body.WorkoutDeleted', { id }, userId);
+  await publishEvent('body.WorkoutDeleted', { id, date: deleted.date }, userId);
   deleteEmbedding(id, 'workout');
 }
 
@@ -74,10 +80,10 @@ export async function removeAll(
   userId: string,
   range?: { from?: string; to?: string },
 ): Promise<number> {
-  const ids = await workoutModel.deleteAllByUser(userId, range);
-  for (const id of ids) {
-    await publishEvent('body.WorkoutDeleted', { id }, userId);
+  const deleted = await workoutModel.deleteAllByUser(userId, range);
+  for (const { id, date } of deleted) {
+    await publishEvent('body.WorkoutDeleted', { id, date }, userId);
     deleteEmbedding(id, 'workout');
   }
-  return ids.length;
+  return deleted.length;
 }

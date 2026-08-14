@@ -64,8 +64,18 @@ export async function update(id: string, userId: string, updates: UpdateCheckInI
   return (result.rowCount ?? 0) > 0 ? rowToCheckIn(result.rows[0]) : null;
 }
 
-export async function deleteById(id: string, userId: string, client?: pg.Pool | pg.PoolClient): Promise<boolean> {
+/** Find one check-in by id. Targeted query. */
+export async function findById(id: string, userId: string, client?: pg.Pool | pg.PoolClient): Promise<DailyCheckIn | null> {
   const db = client ?? getPool('energy');
-  const result = await db.query('DELETE FROM daily_check_ins WHERE id = $1 AND user_id = $2 RETURNING id', [id, userId]);
-  return (result.rowCount ?? 0) > 0;
+  const result = await db.query(`SELECT ${RETURNING} FROM daily_check_ins WHERE id = $1 AND user_id = $2 LIMIT 1`, [id, userId]);
+  return result.rows.length > 0 ? rowToCheckIn(result.rows[0]) : null;
+}
+
+/** Returns the deleted row's date (for event payloads), or null if nothing matched. */
+export async function deleteById(id: string, userId: string, client?: pg.Pool | pg.PoolClient): Promise<{ date: string } | null> {
+  const db = client ?? getPool('energy');
+  const result = await db.query('DELETE FROM daily_check_ins WHERE id = $1 AND user_id = $2 RETURNING date', [id, userId]);
+  const row = result.rows[0];
+  if (!row) return null;
+  return { date: row.date instanceof Date ? row.date.toISOString().split('T')[0] : String(row.date) };
 }

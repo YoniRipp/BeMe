@@ -7,6 +7,7 @@ import { Request, Response, NextFunction } from 'express';
 import { config } from '../config/index.js';
 import { getPool } from '../db/pool.js';
 import { kvGet } from '../lib/keyValueStore.js';
+import { sendError } from '../utils/response.js';
 
 const TOKEN_BLOCKLIST_PREFIX = 'blocked:';
 
@@ -14,7 +15,7 @@ export async function requireAuth(req: Request, res: Response, next: NextFunctio
   const authHeader = req.headers.authorization;
   const token = authHeader?.startsWith('Bearer ') ? authHeader.slice(7) : req.cookies?.token;
   if (!token) {
-    return res.status(401).json({ error: 'Missing or invalid Authorization header' });
+    return sendError(res, 401, 'Missing or invalid Authorization header', { code: 'UNAUTHORIZED' });
   }
 
   // MCP server: accept shared secret and impersonate a user (for Cursor MCP integration)
@@ -32,7 +33,7 @@ export async function requireAuth(req: Request, res: Response, next: NextFunctio
     const tokenHash = crypto.createHash('sha256').update(token).digest('hex');
     const blocked = await kvGet(TOKEN_BLOCKLIST_PREFIX + tokenHash);
     if (blocked) {
-      return res.status(401).json({ error: 'Token has been revoked' });
+      return sendError(res, 401, 'Token has been revoked', { code: 'UNAUTHORIZED' });
     }
 
     req.user = {
@@ -42,23 +43,23 @@ export async function requireAuth(req: Request, res: Response, next: NextFunctio
     };
     next();
   } catch (e) {
-    return res.status(401).json({ error: 'Invalid or expired token' });
+    return sendError(res, 401, 'Invalid or expired token', { code: 'UNAUTHORIZED' });
   }
 }
 
 export function requireAdmin(req: Request, res: Response, next: NextFunction) {
   if (!req.user) {
-    return res.status(401).json({ error: 'Authentication required' });
+    return sendError(res, 401, 'Authentication required', { code: 'UNAUTHORIZED' });
   }
   if (req.user.role !== 'admin') {
-    return res.status(403).json({ error: 'Admin access required' });
+    return sendError(res, 403, 'Admin access required', { code: 'FORBIDDEN' });
   }
   next();
 }
 
 export async function requireTrainer(req: Request, res: Response, next: NextFunction) {
   if (!req.user) {
-    return res.status(401).json({ error: 'Authentication required' });
+    return sendError(res, 401, 'Authentication required', { code: 'UNAUTHORIZED' });
   }
   if (req.user.role === 'trainer' || req.user.role === 'admin') {
     return next();
@@ -74,7 +75,7 @@ export async function requireTrainer(req: Request, res: Response, next: NextFunc
     if (subscriptionStatus === 'trainer' || subscriptionStatus === 'trainer_pro') {
       return next();
     }
-    return res.status(403).json({ error: 'Trainer access required' });
+    return sendError(res, 403, 'Trainer access required', { code: 'FORBIDDEN' });
   } catch (e) {
     next(e);
   }
@@ -83,18 +84,18 @@ export async function requireTrainer(req: Request, res: Response, next: NextFunc
 export async function resolveTrainerClientUserId(req: Request, res: Response, next: NextFunction) {
   const clientId = req.params.clientId;
   if (!clientId) {
-    return res.status(400).json({ error: 'Client ID required' });
+    return sendError(res, 400, 'Client ID required', { code: 'VALIDATION_ERROR' });
   }
   const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
   if (!uuidRegex.test(clientId)) {
-    return res.status(400).json({ error: 'Invalid client ID format' });
+    return sendError(res, 400, 'Invalid client ID format', { code: 'VALIDATION_ERROR' });
   }
   try {
     // Dynamic import to avoid circular dependency
     const { isClientOfTrainer } = await import('../models/trainerClient.js');
     const isClient = await isClientOfTrainer(req.user!.id, clientId);
     if (!isClient && req.user!.role !== 'admin') {
-      return res.status(403).json({ error: 'Not your client' });
+      return sendError(res, 403, 'Not your client', { code: 'FORBIDDEN' });
     }
     req.effectiveUserId = clientId;
     next();
@@ -124,13 +125,13 @@ export async function resolveEffectiveUserId(req: Request, res: Response, next: 
   // Validate UUID format to prevent invalid DB queries
   const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
   if (typeof adminUserId !== 'string' || !uuidRegex.test(adminUserId)) {
-    return res.status(400).json({ error: 'Invalid userId format' });
+    return sendError(res, 400, 'Invalid userId format', { code: 'VALIDATION_ERROR' });
   }
   try {
     const pool = getPool();
     const result = await pool.query('SELECT id FROM users WHERE id = $1', [adminUserId]);
     if (result.rows.length === 0) {
-      return res.status(404).json({ error: 'User not found' });
+      return sendError(res, 404, 'User not found', { code: 'NOT_FOUND' });
     }
     req.effectiveUserId = result.rows[0].id;
     next();

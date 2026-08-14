@@ -114,8 +114,11 @@ export async function update(id: string, userId: string, updates: UpdateFoodEntr
   return (result.rowCount ?? 0) > 0 ? rowToEntry(result.rows[0]) : null;
 }
 
-export async function deleteById(id: string, userId: string, client?: pg.Pool | pg.PoolClient): Promise<boolean> {
+/** Returns the deleted row's date (for event payloads), or null if nothing matched. */
+export async function deleteById(id: string, userId: string, client?: pg.Pool | pg.PoolClient): Promise<{ date: string } | null> {
   const db = client ?? getPool('energy');
-  const result = await db.query('DELETE FROM food_entries WHERE id = $1 AND user_id = $2 RETURNING id', [id, userId]);
-  return (result.rowCount ?? 0) > 0;
+  const result = await db.query('DELETE FROM food_entries WHERE id = $1 AND user_id = $2 RETURNING date', [id, userId]);
+  const row = result.rows[0];
+  if (!row) return null;
+  return { date: row.date instanceof Date ? row.date.toISOString().split('T')[0] : String(row.date) };
 }
