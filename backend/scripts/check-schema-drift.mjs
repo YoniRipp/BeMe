@@ -10,10 +10,8 @@
  *   MIGRATED_DATABASE_URL=... INIT_DATABASE_URL=... node scripts/check-schema-drift.mjs
  *
  * Both databases must already be built: run `npm run migrate:up` against the first and
- * `initSchema()` against the second (see scripts/run-init-schema.ts).
- *
- * Not wired into CI yet: the `migrations` job is the natural home (it already runs
- * Postgres), but the gate can only be green once both halves of the drift are on main.
+ * `initSchema()` against the second (see scripts/run-init-schema.ts). The `migrations` CI
+ * job does exactly that and then runs this.
  */
 import pg from 'pg';
 
