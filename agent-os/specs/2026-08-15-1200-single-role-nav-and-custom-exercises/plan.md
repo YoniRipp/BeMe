@@ -100,8 +100,10 @@ token values):
 - [x] `frontend: npx tsc --noEmit` — clean
 - [x] `frontend: npx vitest run` — 244 passed, 36 files (4 nav tests, 5 picker tests)
 - [x] `frontend: npm run build` — clean
-- [ ] Migrations run against a live database — the container has no Postgres, so both are
-      unexecuted. They are idempotent (`IF EXISTS` / `IF NOT EXISTS` throughout).
+- [x] Migrations run against a live database — CI's `migrations` job applied both against
+      Postgres 15 (`Migrations complete!`) and its `initschema` pass confirms `db/schema.ts`
+      and the migration history still agree, which is the risk in touching both
+- [x] CI green on PR #270 — all 11 checks
 - [ ] Visual pass in both themes on a device
 
 ## Deliberately not done
