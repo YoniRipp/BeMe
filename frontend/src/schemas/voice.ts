@@ -168,69 +168,6 @@ const updateProfileSchema = z.object({
   sex: z.string().optional(),
 });
 
-// --- Trainer operations ---
-const addClientWorkoutSchema = z.object({
-  intent: z.literal('add_client_workout'),
-  clientName: z.string().optional(),
-  clientId: z.string().optional(),
-  date: z.string().optional(),
-  title: z.string().default('Workout'),
-  type: z.string().default('cardio'),
-  durationMinutes: z.number().default(30),
-  exercises: z.array(voiceExerciseSchema).optional().default([]),
-});
-const editClientWorkoutSchema = z.object({
-  intent: z.literal('edit_client_workout'),
-  clientName: z.string().optional(),
-  clientId: z.string().optional(),
-  workoutTitle: z.string().optional(),
-  workoutId: z.string().optional(),
-  title: z.string().optional(),
-  type: z.string().optional(),
-  durationMinutes: z.number().optional(),
-  exercises: z.array(voiceExerciseSchema).optional(),
-});
-const deleteClientWorkoutSchema = z.object({
-  intent: z.literal('delete_client_workout'),
-  clientName: z.string().optional(),
-  clientId: z.string().optional(),
-  workoutTitle: z.string().optional(),
-  workoutId: z.string().optional(),
-});
-const addClientFoodSchema = z.object({
-  intent: z.literal('add_client_food'),
-  clientName: z.string().optional(),
-  clientId: z.string().optional(),
-  food: z.string().optional(),
-  amount: z.number().optional(),
-  unit: z.string().optional(),
-  date: z.string().optional(),
-  name: z.string().optional(),
-  calories: z.number().optional(),
-  protein: z.number().optional(),
-  carbs: z.number().optional(),
-  fats: z.number().optional(),
-});
-const editClientFoodSchema = z.object({
-  intent: z.literal('edit_client_food'),
-  clientName: z.string().optional(),
-  clientId: z.string().optional(),
-  foodName: z.string().optional(),
-  entryId: z.string().optional(),
-  name: z.string().optional(),
-  calories: z.number().optional(),
-  protein: z.number().optional(),
-  carbs: z.number().optional(),
-  fats: z.number().optional(),
-});
-const deleteClientFoodSchema = z.object({
-  intent: z.literal('delete_client_food'),
-  clientName: z.string().optional(),
-  clientId: z.string().optional(),
-  foodName: z.string().optional(),
-  entryId: z.string().optional(),
-});
-
 const unknownSchema = z.object({ intent: z.literal('unknown'), message: z.string().optional() });
 
 export const voiceActionSchema = z.discriminatedUnion('intent', [
@@ -255,12 +192,6 @@ export const voiceActionSchema = z.discriminatedUnion('intent', [
   editCycleSchema,
   deleteCycleSchema,
   updateProfileSchema,
-  addClientWorkoutSchema,
-  editClientWorkoutSchema,
-  deleteClientWorkoutSchema,
-  addClientFoodSchema,
-  editClientFoodSchema,
-  deleteClientFoodSchema,
   unknownSchema,
 ]);
 

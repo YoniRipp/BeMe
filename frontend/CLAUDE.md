@@ -14,12 +14,12 @@ Ships as a web app, a PWA (`src/sw.ts`), and a Capacitor native shell.
 ## Architecture
 - `src/routes.tsx` — route table; `src/App.tsx` and `src/Providers.tsx` wrap the tree
 - `src/pages/` — page components. App pages: `Home`, `Body` (workouts), `Energy`
-  (food/journal), `Water`, `Goals`, `Insights`, `Settings`, `Trainer`,
-  `TrainerClientView`, `Admin` (+ `pages/admin/`). Auth: `Login`, `Signup`,
+  (food/journal), `Water`, `Goals`, `Insights`, `Settings` (the Profile tab),
+  `Admin` (+ `pages/admin/`). Auth: `Login`, `Signup`,
   `ForgotPassword`, `AuthCallback`. Marketing: `Landing`, `Pricing`, `About`,
   `Contact`, `Privacy`, `Terms`, `NotFound`.
 - `src/components/` — UI organized by domain: `layout/`, `home/`, `body/`, `energy/`,
-  `goals/`, `insights/`, `chat/`, `voice/`, `trainer/`, `admin/`, `onboarding/`,
+  `goals/`, `insights/`, `chat/`, `voice/`, `admin/`, `onboarding/`,
   `subscription/`, `marketing/`, `settings/`, `pwa/`, `shared/`, `ui/`, `auth/`
 - `src/components/ui/` is **the** design system — shadcn primitives (`dialog`, `sheet`,
   `input`, `select`, …) plus the app's own (`card`, `page`, `progress-ring`, `quick-tile`,
@@ -27,13 +27,13 @@ Ships as a web app, a PWA (`src/sw.ts`), and a Capacitor native shell.
   composite helpers (`EmptyState`, `ContentWithLoading`, `ImagePlaceholder`), not for a
   second set of primitives.
 - `src/hooks/` — React Query data hooks (`useWorkouts`, `useGoals`, `useEnergy`,
-  `useWater`, `useWeight`, `useCycle`, `useStreaks`, `useTrainer`, `useSubscription`, …)
+  `useWater`, `useWeight`, `useCycle`, `useStreaks`, `useExercises`, `useSubscription`, …)
   plus device hooks (`useSpeechRecognition`, `useNativeSpeech`, `useIsMobile`, …)
 - `src/context/` — `AppContext`, `AuthContext`, `NotificationContext`
 - `src/features/` — feature-scoped logic: `auth/`, `body/`, `energy/`, `goals/`,
   `settings/`
 - `src/core/api/` — typed API clients per domain (`workouts`, `food`, `goals`, `chat`,
-  `aiInsights`, `trainer`, `admin`, `subscription`, `push`, `health`, `users`, `auth`)
+  `aiInsights`, `exercises`, `admin`, `subscription`, `push`, `health`, `users`, `auth`)
 - `src/lib/` — utilities: date ranges, storage, offline sync queue, analytics, feature
   flags, push subscription, voice helpers, theme palette
 - `src/schemas/` — Zod schemas shared by forms and API payloads
@@ -46,7 +46,8 @@ Ships as a web app, a PWA (`src/sw.ts`), and a Capacitor native shell.
 - Routing: React Router with lazy-loaded pages
 - State: React Query for server state, React Context for shared client state
 - Navigation: tab set defined in `components/layout/Base44Layout.tsx`, rendered by
-  `components/layout/BottomNavigation.tsx` (role-dependent, with a center mic button)
+  `components/layout/BottomNavigation.tsx` — Home, Workouts, Food, Profile, the same for
+  every user, with a center mic button
 - Missing images render `components/shared/ImagePlaceholder.tsx` — there are no
   placeholder image assets
 - Tests: Vitest + React Testing Library for unit tests, Playwright for E2E

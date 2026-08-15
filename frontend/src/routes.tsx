@@ -50,8 +50,6 @@ const TermsOfService = lazy(() =>
 const Contact = lazy(() =>
   import('./pages/Contact').then((m) => ({ default: m.Contact }))
 );
-const Trainer = lazy(() => import('./pages/Trainer'));
-const TrainerClientView = lazy(() => import('./pages/TrainerClientView'));
 const NotFound = lazy(() =>
   import('./pages/NotFound').then((m) => ({ default: m.NotFound }))
 );
@@ -82,15 +80,6 @@ function AdminRouteGuard({ children }: { children: React.ReactNode }) {
   const { user } = useAuth();
   const isAdmin = user?.role === 'admin';
   if (!isAdmin) {
-    return <Navigate to="/" replace />;
-  }
-  return <>{children}</>;
-}
-
-function TrainerRouteGuard({ children }: { children: React.ReactNode }) {
-  const { user } = useAuth();
-  const isTrainer = user?.role === 'trainer' || user?.role === 'admin';
-  if (!isTrainer) {
     return <Navigate to="/" replace />;
   }
   return <>{children}</>;
@@ -159,26 +148,6 @@ function ProtectedAppRoutes() {
             <Suspense fallback={<LoadingSpinner text="Loading settings..." />}>
               <Settings />
             </Suspense>
-          }
-        />
-        <Route
-          path="trainer"
-          element={
-            <TrainerRouteGuard>
-              <Suspense fallback={<LoadingSpinner text="Loading trainer..." />}>
-                <Trainer />
-              </Suspense>
-            </TrainerRouteGuard>
-          }
-        />
-        <Route
-          path="trainer/client/:clientId"
-          element={
-            <TrainerRouteGuard>
-              <Suspense fallback={<LoadingSpinner text="Loading client..." />}>
-                <TrainerClientView />
-              </Suspense>
-            </TrainerRouteGuard>
           }
         />
         <Route

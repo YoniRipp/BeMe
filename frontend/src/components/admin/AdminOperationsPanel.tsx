@@ -9,7 +9,7 @@ const operations: Array<{
   description: string;
   icon: LucideIcon;
 }> = [
-  { to: '/admin/users', label: 'Accounts', description: 'Create, edit, and remove users or trainers.', icon: Users },
+  { to: '/admin/users', label: 'Accounts', description: 'Create, edit, and remove users.', icon: Users },
   { to: '/admin/user-data', label: 'User Data', description: 'Inspect workouts, food, check-ins, and goals.', icon: ClipboardList },
   { to: '/admin/activity', label: 'Activity', description: 'Audit product events and recent usage.', icon: Activity },
   { to: '/admin/foods', label: 'Food Review', description: 'Verify AI foods and nutrition records.', icon: UtensilsCrossed },

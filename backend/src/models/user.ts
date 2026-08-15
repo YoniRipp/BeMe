@@ -8,7 +8,7 @@ export interface UserRow {
   id: string;
   email: string;
   name: string;
-  role: 'admin' | 'user' | 'trainer';
+  role: 'admin' | 'user';
   created_at: string;
   password_hash: string | null;
   auth_provider: string | null;
@@ -29,7 +29,7 @@ export interface User {
   id: string;
   email: string;
   name: string;
-  role: 'admin' | 'user' | 'trainer';
+  role: 'admin' | 'user';
   createdAt?: string;
   subscriptionStatus: string;
   subscriptionPlan: string | null;
@@ -58,7 +58,7 @@ export function rowToUser(row: UserRow): User {
 
 /** Compute remaining AI calls synchronously from row data (no DB query needed). */
 function getAiCallsRemainingSync(status: string, used: number | null, resetMonth: string | null): number {
-  if (['pro', 'trainer', 'trainer_pro'].includes(status)) return -1;
+  if (status === 'pro') return -1;
   const FREE_TIER_LIMIT = 10;
   const d = new Date();
   const currentMonth = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
@@ -204,12 +204,12 @@ export async function updatePassword(
   );
 }
 
-export interface TrainerSubscriptionGrant {
+export interface SubscriptionGrant {
   plan?: string | null;
   currentPeriodEnd?: Date | string | null;
 }
 
-export async function getSubscriptionGrant(userId: string): Promise<TrainerSubscriptionGrant> {
+export async function getSubscriptionGrant(userId: string): Promise<SubscriptionGrant> {
   const db = getPool();
   const result = await db.query(
     `SELECT subscription_plan, subscription_current_period_end
@@ -223,35 +223,7 @@ export async function getSubscriptionGrant(userId: string): Promise<TrainerSubsc
   };
 }
 
-/** Grant pro subscription from trainer link without overriding self-paid pro users. */
-export async function grantTrainerSubscription(userId: string, grant: TrainerSubscriptionGrant = {}): Promise<void> {
-  const db = getPool();
-  await db.query(
-    `UPDATE users
-     SET subscription_status = 'pro',
-         subscription_source = 'trainer',
-         subscription_plan = $2,
-         subscription_current_period_end = $3
-     WHERE id = $1
-       AND (
-         subscription_status IS NULL
-         OR subscription_status = 'free'
-         OR subscription_source = 'trainer'
-       )`,
-    [userId, grant.plan ?? null, grant.currentPeriodEnd ?? null],
-  );
-}
-
-/** Revoke trainer-granted pro (only affects users whose pro came from a trainer). */
-export async function revokeTrainerSubscription(userId: string): Promise<void> {
-  const db = getPool();
-  await db.query(
-    `UPDATE users
-     SET subscription_status = 'free',
-         subscription_source = 'self',
-         subscription_plan = NULL,
-         subscription_current_period_end = NULL
-     WHERE id = $1 AND subscription_source = 'trainer'`,
-    [userId],
-  );
-}
+/**
+ * Historical `subscription_source = 'trainer'` grants are left alone. The role that created
+ * them is gone, but the Pro they bought those users is theirs to keep.
+ */

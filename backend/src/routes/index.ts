@@ -19,7 +19,6 @@ import uploadsRouter from './uploads.js';
 import exercisesRouter from './exercises.js';
 import subscriptionRouter from './subscription.js';
 import pushRouter from './push.js';
-import trainerRouter from './trainer.js';
 import profileRouter from './profile.js';
 import weightRouter from './weight.js';
 import waterRouter from './water.js';
@@ -34,7 +33,6 @@ router.use(authRouter);
 router.use(adminRouter);
 router.use(subscriptionRouter);
 router.use(pushRouter);
-router.use(trainerRouter);
 router.use(usersRouter);
 if (!config.bodyServiceUrl) router.use(workoutRouter);
 if (!config.energyServiceUrl) {

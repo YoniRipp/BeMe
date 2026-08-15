@@ -6,7 +6,7 @@ Logging food is the part of fitness tracking people quit. Every competing app ma
 
 ## Target Users
 
-People tracking fitness day to day: calories and macros, workouts, sleep, weight, water, cycle. Plus trainers, who work across a roster of clients from the same app.
+People tracking fitness day to day: calories and macros, workouts, sleep, weight, water, cycle. One kind of user, tracking their own training — the trainer/client role was retired in August 2026.
 
 Mobile-first in the literal sense — the app is used one-handed, standing up, mid-meal.
 

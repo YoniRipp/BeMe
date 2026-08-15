@@ -27,10 +27,6 @@ vi.mock('../models/profile.js', () => ({
   upsert: vi.fn(),
 }));
 
-vi.mock('../models/trainerClient.js', () => ({
-  findByTrainerId: vi.fn(),
-}));
-
 vi.mock('../lib/voiceContext.js', () => ({
   voiceContext: { run: <T>(fn: () => T) => fn(), getStore: vi.fn() },
 }));

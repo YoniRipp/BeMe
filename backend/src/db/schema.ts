@@ -25,7 +25,7 @@ export async function initSchema() {
         email text NOT NULL UNIQUE,
         password_hash text,
         name text NOT NULL,
-        role text NOT NULL CHECK (role IN ('admin', 'user', 'trainer')) DEFAULT 'user',
+        role text NOT NULL CHECK (role IN ('admin', 'user')) DEFAULT 'user',
         auth_provider text NOT NULL DEFAULT 'email',
         provider_id text,
         reset_token_hash text,
@@ -186,6 +186,10 @@ export async function initSchema() {
       );
     `);
 
+    // Legacy. The trainer role was retired in migration 1776300000000 and no code reads
+    // these two tables any more; they are still created so existing databases and this
+    // bootstrap path stay in step. Safe to drop once the owner confirms the rosters and
+    // invitations in them are no longer wanted.
     await client.query(`
       CREATE TABLE IF NOT EXISTS trainer_clients (
         id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -328,6 +332,7 @@ export async function initSchema() {
         instructions text[],
         image_url_2 text,
         created_by uuid REFERENCES users(id),
+        is_custom boolean NOT NULL DEFAULT false,
         created_at timestamptz DEFAULT now(),
         updated_at timestamptz DEFAULT now()
       );
@@ -344,7 +349,8 @@ export async function initSchema() {
         ADD COLUMN IF NOT EXISTS primary_muscles text[],
         ADD COLUMN IF NOT EXISTS secondary_muscles text[],
         ADD COLUMN IF NOT EXISTS instructions text[],
-        ADD COLUMN IF NOT EXISTS image_url_2 text;
+        ADD COLUMN IF NOT EXISTS image_url_2 text,
+        ADD COLUMN IF NOT EXISTS is_custom boolean NOT NULL DEFAULT false;
     `);
 
     // AI chat messages

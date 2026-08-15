@@ -27,7 +27,7 @@ import { Card } from '@/components/ui/card';
 import { cn } from '@/lib/utils';
 
 const PAGE_SIZE = 25;
-type RoleFilter = 'all' | 'admin' | 'trainer' | 'user';
+type RoleFilter = 'all' | 'admin' | 'user';
 type SortKey = 'name' | 'email' | 'createdAt';
 type SortDir = 'asc' | 'desc';
 
@@ -125,7 +125,6 @@ export function AdminUsersTable() {
           <SelectContent>
             <SelectItem value="all">All roles</SelectItem>
             <SelectItem value="admin">Admin</SelectItem>
-            <SelectItem value="trainer">Trainer</SelectItem>
             <SelectItem value="user">User</SelectItem>
           </SelectContent>
         </Select>
@@ -187,7 +186,7 @@ export function AdminUsersTable() {
                       <td className="p-3 font-medium">{u.name}</td>
                       <td className="p-3 text-muted-foreground">{u.email}</td>
                       <td className="p-3">
-                        <Badge variant={u.role === 'admin' ? 'default' : u.role === 'trainer' ? 'outline' : 'secondary'} className="capitalize">{u.role}</Badge>
+                        <Badge variant={u.role === 'admin' ? 'default' : 'secondary'} className="capitalize">{u.role}</Badge>
                       </td>
                       <td className="p-3 text-muted-foreground">
                         {u.createdAt ? new Date(u.createdAt).toLocaleDateString() : '—'}
@@ -340,7 +339,7 @@ function CreateUserDialog({
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [name, setName] = useState('');
-  const [role, setRole] = useState<'user' | 'trainer' | 'admin'>('user');
+  const [role, setRole] = useState<'user' | 'admin'>('user');
   const [submitting, setSubmitting] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -394,8 +393,7 @@ function CreateUserDialog({
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="user">User</SelectItem>
-                <SelectItem value="trainer">Trainer</SelectItem>
-                <SelectItem value="admin">Admin</SelectItem>
+                    <SelectItem value="admin">Admin</SelectItem>
               </SelectContent>
             </Select>
           </div>
@@ -473,8 +471,7 @@ function EditUserDialog({
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="user">User</SelectItem>
-                <SelectItem value="trainer">Trainer</SelectItem>
-                <SelectItem value="admin">Admin</SelectItem>
+                    <SelectItem value="admin">Admin</SelectItem>
               </SelectContent>
             </Select>
           </div>

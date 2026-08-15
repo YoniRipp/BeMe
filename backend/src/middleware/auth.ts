@@ -57,56 +57,12 @@ export function requireAdmin(req: Request, res: Response, next: NextFunction) {
   next();
 }
 
-export async function requireTrainer(req: Request, res: Response, next: NextFunction) {
-  if (!req.user) {
-    return sendError(res, 401, 'Authentication required', { code: 'UNAUTHORIZED' });
-  }
-  if (req.user.role === 'trainer' || req.user.role === 'admin') {
-    return next();
-  }
-
-  try {
-    const pool = getPool();
-    const result = await pool.query(
-      `SELECT subscription_status FROM users WHERE id = $1 LIMIT 1`,
-      [req.user.id],
-    );
-    const subscriptionStatus = result.rows[0]?.subscription_status;
-    if (subscriptionStatus === 'trainer' || subscriptionStatus === 'trainer_pro') {
-      return next();
-    }
-    return sendError(res, 403, 'Trainer access required', { code: 'FORBIDDEN' });
-  } catch (e) {
-    next(e);
-  }
-}
-
-export async function resolveTrainerClientUserId(req: Request, res: Response, next: NextFunction) {
-  const clientId = req.params.clientId;
-  if (!clientId) {
-    return sendError(res, 400, 'Client ID required', { code: 'VALIDATION_ERROR' });
-  }
-  const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
-  if (!uuidRegex.test(clientId)) {
-    return sendError(res, 400, 'Invalid client ID format', { code: 'VALIDATION_ERROR' });
-  }
-  try {
-    // Dynamic import to avoid circular dependency
-    const { isClientOfTrainer } = await import('../models/trainerClient.js');
-    const isClient = await isClientOfTrainer(req.user!.id, clientId);
-    if (!isClient && req.user!.role !== 'admin') {
-      return sendError(res, 403, 'Not your client', { code: 'FORBIDDEN' });
-    }
-    req.effectiveUserId = clientId;
-    next();
-  } catch (e) {
-    next(e);
-  }
-}
-
 /**
  * Synchronous version for backwards compatibility. Prefer getEffectiveUserIdAsync in controllers
  * when admin userId override may be used, so the target user can be validated.
+ *
+ * `req.effectiveUserId` is still set by the admin `?userId=` override — it outlived the
+ * trainer role that once also wrote to it.
  */
 export function getEffectiveUserId(req: Request): string {
   return req.effectiveUserId != null ? req.effectiveUserId : req.user!.id;

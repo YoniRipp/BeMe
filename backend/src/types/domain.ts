@@ -176,35 +176,6 @@ export interface ApiErrorResponse {
   };
 }
 
-// ─── Trainer ───────────────────────────────────────────────
-export type TrainerClientStatus = 'pending' | 'active' | 'removed';
-export type TrainerInvitationStatus = 'pending' | 'accepted' | 'expired' | 'revoked';
-
-export interface TrainerClient {
-  id: string;
-  trainerId: string;
-  clientId: string;
-  clientName: string;
-  clientEmail: string;
-  status: TrainerClientStatus;
-  createdAt: string;
-  traineeNumber?: number;
-  subscriptionStatus?: string | null;
-  subscriptionSource?: string | null;
-  subscriptionPlan?: string | null;
-  subscriptionCurrentPeriodEnd?: string | null;
-}
-
-export interface TrainerInvitation {
-  id: string;
-  trainerId: string;
-  email?: string;
-  inviteCode?: string;
-  status: TrainerInvitationStatus;
-  expiresAt: string;
-  createdAt: string;
-}
-
 // ─── User Profile ────────────────────────────────────────────
 export interface UserProfile {
   id: string;

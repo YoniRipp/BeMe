@@ -1,27 +1,19 @@
 /**
- * Public exercise catalog routes — returns exercises for display and autocomplete.
+ * Exercise catalog routes — browse and autocomplete, plus user-contributed movements.
+ *
+ * The catalog is shared: a POST here adds the exercise for every user, not just the author.
  */
 import { Router } from 'express';
-import { requireAuth } from '../middleware/auth.js';
-import { asyncHandler } from '../middleware/errorHandler.js';
-import { sendJson } from '../utils/response.js';
-import { parseQuery } from '../utils/validation.js';
-import { exerciseListQuerySchema } from '../schemas/routeSchemas.js';
-import * as exerciseModel from '../models/exercise.js';
+import { withUser } from './helpers.js';
+import { idempotencyMiddleware } from '../middleware/idempotency.js';
+import { validateBody } from '../middleware/validateBody.js';
+import { createCustomExerciseSchema } from '../schemas/routeSchemas.js';
+import * as exerciseController from '../controllers/exercise.js';
 
 const router = Router();
 
-router.get('/api/exercises', requireAuth, asyncHandler(async (req, res) => {
-  const filters = parseQuery(exerciseListQuerySchema, req.query);
-  sendJson(res, await exerciseModel.list(filters));
-}));
-
-router.get('/api/exercises/:id', requireAuth, asyncHandler(async (req, res) => {
-  const exercise = await exerciseModel.findById(req.params.id);
-  if (!exercise) {
-    return res.status(404).json({ error: 'Exercise not found' });
-  }
-  sendJson(res, exercise);
-}));
+router.get('/api/exercises', withUser, exerciseController.list);
+router.post('/api/exercises', withUser, idempotencyMiddleware, validateBody(createCustomExerciseSchema), exerciseController.add);
+router.get('/api/exercises/:id', withUser, exerciseController.get);
 
 export default router;

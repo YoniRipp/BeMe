@@ -222,6 +222,21 @@ export const createExerciseSchema = z.object({
   videoUrl: z.string().max(2000).optional().nullable(),
 });
 
+/**
+ * User-submitted catalog additions from the workout picker. Narrower than the admin
+ * schema above: the facets are closed vocabularies because the picker filters on them, so
+ * a free-text muscle group would create a row no filter can ever reach. No image or video
+ * URL either — those are admin-curated.
+ */
+export const CATALOG_MUSCLE_GROUPS = ['chest', 'back', 'legs', 'shoulders', 'arms', 'core', 'full_body'] as const;
+export const CATALOG_EQUIPMENT = ['barbell', 'dumbbell', 'cable', 'machine', 'bodyweight', 'kettlebell', 'bands', 'other'] as const;
+
+export const createCustomExerciseSchema = z.object({
+  name: z.string().min(2).max(80).transform((s) => s.trim().replace(/\s+/g, ' ')),
+  muscleGroup: z.enum(CATALOG_MUSCLE_GROUPS).optional(),
+  equipment: z.enum(CATALOG_EQUIPMENT).optional(),
+}).strict();
+
 export const updateExerciseSchema = z.object({
   name: z.string().min(1).max(200).transform((s) => s.trim()).optional(),
   muscleGroup: z.string().max(100).optional().nullable(),
@@ -250,4 +265,5 @@ export type CreateFoodEntriesBatchBody = z.infer<typeof createFoodEntriesBatchSc
 export type DuplicateDayBody = z.infer<typeof duplicateDaySchema>;
 export type ExerciseListQuery = z.infer<typeof exerciseListQuerySchema>;
 export type CreateExerciseBody = z.infer<typeof createExerciseSchema>;
+export type CreateCustomExerciseBody = z.infer<typeof createCustomExerciseSchema>;
 export type UpdateExerciseBody = z.infer<typeof updateExerciseSchema>;

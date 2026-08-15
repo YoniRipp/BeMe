@@ -410,11 +410,6 @@ const handleUpdateProfile: Handler = async (action, ctx) => {
   return { success: true, message: 'Profile updated' };
 };
 
-// --- Trainer handlers (server-side only, frontend returns not-available) ---
-const handleTrainerAction: Handler = async (action) => {
-  return { success: false, message: `Trainer action "${action.intent}" is handled server-side` };
-};
-
 const HANDLERS: Partial<Record<VoiceAction['intent'], Handler>> = {
   add_workout: handleAddWorkout,
   edit_workout: handleEditWorkout,
@@ -437,12 +432,6 @@ const HANDLERS: Partial<Record<VoiceAction['intent'], Handler>> = {
   edit_cycle: handleEditCycle,
   delete_cycle: handleDeleteCycle,
   update_profile: handleUpdateProfile,
-  add_client_workout: handleTrainerAction,
-  edit_client_workout: handleTrainerAction,
-  delete_client_workout: handleTrainerAction,
-  add_client_food: handleTrainerAction,
-  edit_client_food: handleTrainerAction,
-  delete_client_food: handleTrainerAction,
 };
 
 /**

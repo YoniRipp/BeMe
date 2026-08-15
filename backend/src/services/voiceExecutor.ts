@@ -10,7 +10,6 @@ import * as weightModel from '../models/weight.js';
 import * as waterModel from '../models/water.js';
 import * as cycleModel from '../models/cycle.js';
 import * as profileModel from '../models/profile.js';
-import * as trainerClientModel from '../models/trainerClient.js';
 import { isDbConfigured } from '../db/index.js';
 import { getPool } from '../db/pool.js';
 import { voiceContext } from '../lib/voiceContext.js';
@@ -164,69 +163,6 @@ async function resolveCycleEntry(userId: string, action: VoiceAction, today: str
   if (action.entryId) return cycleModel.findById(action.entryId as string, userId);
   if (action.date) return cycleModel.findByDate(userId, parseDate(action.date, today));
   return cycleModel.findLatest(userId);
-}
-
-type ClientResolveResult =
-  | { kind: 'found'; clientId: string }
-  | { kind: 'ambiguous'; matches: Array<{ name: string; traineeNumber: number }> }
-  | { kind: 'not_found' };
-
-async function resolveClientId(trainerId: string, action: VoiceAction): Promise<ClientResolveResult> {
-  if (action.clientId) {
-    // Model-supplied clientId is untrusted — only accept the caller's own active clients
-    const owns = await trainerClientModel.isClientOfTrainer(trainerId, action.clientId as string);
-    return owns ? { kind: 'found', clientId: action.clientId as string } : { kind: 'not_found' };
-  }
-
-  const clients = await trainerClientModel.findClientsByTrainerId(trainerId);
-
-  // Resolve by trainee roster number (e.g. "Guy number 4")
-  if (action.clientTraineeNumber != null) {
-    const n = Number(action.clientTraineeNumber);
-    const match = clients.find((c) => c.traineeNumber === n);
-    return match ? { kind: 'found', clientId: match.clientId } : { kind: 'not_found' };
-  }
-
-  if (action.clientName) {
-    const lower = String(action.clientName).toLowerCase().trim();
-
-    // Exact full-name match first (case-insensitive)
-    const exact = clients.find((c) => c.clientName.toLowerCase() === lower);
-    if (exact) return { kind: 'found', clientId: exact.clientId };
-
-    // Partial match — may collide
-    const partial = clients.filter((c) => c.clientName.toLowerCase().includes(lower));
-    if (partial.length === 1) return { kind: 'found', clientId: partial[0].clientId };
-    if (partial.length > 1) {
-      return {
-        kind: 'ambiguous',
-        matches: partial.map((c) => ({ name: c.clientName, traineeNumber: c.traineeNumber ?? 0 })),
-      };
-    }
-  }
-
-  return { kind: 'not_found' };
-}
-
-/**
- * Resolve a trainer's client for an action, returning either the clientId or a
- * ready-to-return failure result (ambiguous / not found). Removes the identical
- * resolve+guard boilerplate that was repeated across every trainer action.
- */
-async function resolveClientOrError(
-  trainerId: string,
-  action: VoiceAction,
-  intent: string,
-): Promise<{ clientId: string } | { error: ExecuteResult }> {
-  const resolved = await resolveClientId(trainerId, action);
-  if (resolved.kind === 'ambiguous') {
-    const list = resolved.matches.map((m) => `${m.name} (#${m.traineeNumber})`).join(', ');
-    return { error: { intent, success: false, message: `Multiple clients match "${action.clientName}": ${list}. Please say the full name or say "number X".` } };
-  }
-  if (resolved.kind === 'not_found') {
-    return { error: { intent, success: false, message: `Client "${action.clientName ?? action.clientTraineeNumber ?? action.clientId}" not found` } };
-  }
-  return { clientId: resolved.clientId };
 }
 
 // ─── add_food message + entry mapping (shared by single + batch paths) ──────
@@ -490,79 +426,6 @@ async function executeOne(action: VoiceAction, userId: string, today: string): P
           sex: action.sex as string | undefined,
         });
         return { intent: 'update_profile', success: true, message: 'Updated profile' };
-      }
-
-      // ─── Trainer: client workouts ───────────────────────
-      case 'add_client_workout': {
-        const c = await resolveClientOrError(userId, action, 'add_client_workout');
-        if ('error' in c) return c.error;
-        await workoutService.create(c.clientId, {
-          date: parseDate(action.date, today),
-          title: (action.title as string) ?? 'Workout',
-          type: ((action.type as string) ?? 'cardio') as WorkoutType,
-          durationMinutes: Number(action.durationMinutes) || 30,
-          exercises: Array.isArray(action.exercises) ? action.exercises : [],
-          notes: action.notes as string,
-        });
-        return { intent: 'add_client_workout', success: true, message: `Logged workout for ${action.clientName ?? 'client'}: ${(action.title as string) ?? 'Workout'}` };
-      }
-
-      case 'edit_client_workout': {
-        const c = await resolveClientOrError(userId, action, 'edit_client_workout');
-        if ('error' in c) return c.error;
-        const w = await resolveWorkout(c.clientId, action);
-        if (!w) return { intent: 'edit_client_workout', success: false, message: 'Client workout not found' };
-        await workoutService.update(c.clientId, w.id as string, {
-          title: action.title as string,
-          type: action.type as WorkoutType | undefined,
-          durationMinutes: action.durationMinutes != null ? Number(action.durationMinutes) : undefined,
-          exercises: Array.isArray(action.exercises) ? action.exercises : undefined,
-        });
-        return { intent: 'edit_client_workout', success: true, message: `Updated ${action.clientName ?? 'client'}'s workout` };
-      }
-
-      case 'delete_client_workout': {
-        const c = await resolveClientOrError(userId, action, 'delete_client_workout');
-        if ('error' in c) return c.error;
-        const w = await resolveWorkout(c.clientId, action);
-        if (!w) return { intent: 'delete_client_workout', success: false, message: 'Client workout not found' };
-        await workoutService.remove(c.clientId, w.id as string);
-        return { intent: 'delete_client_workout', success: true, message: `Deleted ${action.clientName ?? 'client'}'s workout` };
-      }
-
-      // ─── Trainer: client food ───────────────────────────
-      case 'add_client_food': {
-        const c = await resolveClientOrError(userId, action, 'add_client_food');
-        if ('error' in c) return c.error;
-        await foodEntryService.create(c.clientId, {
-          date: parseDate(action.date, today),
-          ...actionToFoodEntry(action),
-        });
-        return { intent: 'add_client_food', success: true, message: `Logged food for ${action.clientName ?? 'client'}: ${(action.name as string) ?? 'food'}` };
-      }
-
-      case 'edit_client_food': {
-        const c = await resolveClientOrError(userId, action, 'edit_client_food');
-        if ('error' in c) return c.error;
-        const e = await resolveFoodEntry(c.clientId, action);
-        if (!e) return { intent: 'edit_client_food', success: false, message: 'Client food entry not found' };
-        await foodEntryService.update(c.clientId, e.id as string, {
-          name: action.name as string,
-          calories: action.calories != null ? Number(action.calories) : undefined,
-          protein: action.protein != null ? Number(action.protein) : undefined,
-          carbs: action.carbs != null ? Number(action.carbs) : undefined,
-          fats: action.fats != null ? Number(action.fats) : undefined,
-        });
-        return { intent: 'edit_client_food', success: true, message: `Updated ${action.clientName ?? 'client'}'s food entry` };
-      }
-
-      case 'delete_client_food': {
-        const c = await resolveClientOrError(userId, action, 'delete_client_food');
-        if ('error' in c) return c.error;
-        const e = await resolveFoodEntry(c.clientId, action);
-        if (!e) return { intent: 'delete_client_food', success: false, message: 'Client food entry not found' };
-        await foodEntryService.remove(c.clientId, e.id as string);
-        return { intent: 'delete_client_food', success: true, message: `Deleted ${action.clientName ?? 'client'}'s food entry` };
       }
 
       default:

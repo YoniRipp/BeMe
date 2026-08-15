@@ -12,7 +12,8 @@ import { escapeLike } from '../utils/escapeLike.js';
  * needs them (see `findById`).
  */
 const LIST_COLUMNS = `id, name, muscle_group, category, equipment, discipline, level,
-  mechanic, force, primary_muscles, secondary_muscles, image_url, image_url_2, video_url`;
+  mechanic, force, primary_muscles, secondary_muscles, image_url, image_url_2, video_url,
+  is_custom`;
 
 const DETAIL_COLUMNS = `${LIST_COLUMNS}, instructions`;
 
@@ -33,6 +34,8 @@ export interface CatalogExercise {
   imageUrl: string | null;
   imageUrl2?: string | null;
   videoUrl: string | null;
+  /** True for movements a user added from the picker rather than the seeded catalog. */
+  isCustom?: boolean;
   /** Only populated by `findById` — omitted from list responses to keep them small. */
   instructions?: string[] | null;
 }
@@ -85,6 +88,7 @@ function rowToExercise(row: Record<string, unknown>): CatalogExercise {
     imageUrl: (row.image_url as string) ?? null,
     imageUrl2: (row.image_url_2 as string) ?? null,
     videoUrl: (row.video_url as string) ?? null,
+    isCustom: Boolean(row.is_custom),
   };
   // Only present on detail/admin queries; keep it off list payloads entirely.
   if (row.instructions !== undefined) {
@@ -167,6 +171,51 @@ export async function upsert(input: CreateExerciseInput, client?: pg.Pool | pg.P
     [input.name.trim(), input.muscleGroup || null, input.category || null, input.imageUrl || null, input.videoUrl || null, input.createdBy],
   );
   return rowToAdminExercise(result.rows[0]);
+}
+
+export interface CreateCustomExerciseInput {
+  name: string;
+  muscleGroup?: string | null;
+  equipment?: string | null;
+  createdBy: string;
+}
+
+/** Case-insensitive name lookup, served by `idx_exercises_name` on `lower(name)`. */
+export async function findByName(name: string, client?: pg.Pool | pg.PoolClient): Promise<CatalogExercise | null> {
+  const db = client ?? getPool();
+  const result = await db.query(`SELECT ${DETAIL_COLUMNS} FROM exercises WHERE lower(name) = lower($1) LIMIT 1`, [name.trim()]);
+  return result.rows[0] ? rowToExercise(result.rows[0]) : null;
+}
+
+/**
+ * Add a user-contributed movement to the shared catalog.
+ *
+ * The row is global on purpose — someone who adds "Zercher Squat" adds it for everyone.
+ * A name already in the catalog is not an error: the caller gets the existing row back
+ * with `created: false`, so typing a movement that already exists still lands the user on
+ * a usable exercise instead of a failure. `equipment` is written to `category` too, which
+ * is the older equipment-valued column clients still read.
+ */
+export async function createCustom(
+  input: CreateCustomExerciseInput,
+  client?: pg.Pool | pg.PoolClient,
+): Promise<{ exercise: CatalogExercise; created: boolean }> {
+  const db = client ?? getPool();
+  const name = input.name.trim();
+  const result = await db.query(
+    `INSERT INTO exercises (name, muscle_group, category, equipment, created_by, is_custom)
+     VALUES ($1, $2, $3, $3, $4, true)
+     ON CONFLICT (name) DO NOTHING
+     RETURNING ${DETAIL_COLUMNS}`,
+    [name, input.muscleGroup || null, input.equipment || null, input.createdBy],
+  );
+  if (result.rows[0]) return { exercise: rowToExercise(result.rows[0]), created: true };
+
+  // No row back means an exact-name row already exists, so the lookup finds it. The throw
+  // is a guard, not an expected path — better than handing the caller a null exercise.
+  const existing = await findByName(name, db);
+  if (existing) return { exercise: existing, created: false };
+  throw new Error('Could not create exercise');
 }
 
 /** Empty strings clear optional fields (stored as NULL); name is required and never cleared. */

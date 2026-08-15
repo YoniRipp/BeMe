@@ -1,6 +1,6 @@
 /// <reference types="@testing-library/jest-dom" />
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { render, screen, waitFor } from '@testing-library/react';
+import { render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { MemoryRouter, Route, Routes } from 'react-router-dom';
 import { Base44Layout } from './Base44Layout';
@@ -39,7 +39,7 @@ function renderLayout() {
   );
 }
 
-describe('Base44Layout trainer navigation', () => {
+describe('Base44Layout navigation', () => {
   beforeEach(() => {
     mockUser.mockReturnValue({
       id: 'user-1',
@@ -50,35 +50,40 @@ describe('Base44Layout trainer navigation', () => {
     });
   });
 
-  it('shows Clients navigation for trainer roles', () => {
+  it('renders the four bottom tabs: Home, Workouts, Food, Profile', () => {
+    renderLayout();
+
+    const bar = screen.getByRole('navigation', { name: /main navigation/i });
+    const tabs = within(bar).getAllByRole('link').map((a) => a.textContent);
+    expect(tabs).toEqual(['Home', 'Workouts', 'Food', 'Profile']);
+  });
+
+  it('points the Profile tab at settings and the Food tab at the energy route', () => {
+    renderLayout();
+
+    const bar = screen.getByRole('navigation', { name: /main navigation/i });
+    expect(within(bar).getByRole('link', { name: 'Profile' })).toHaveAttribute('href', '/settings');
+    expect(within(bar).getByRole('link', { name: 'Food' })).toHaveAttribute('href', '/energy');
+  });
+
+  // Goals left the tab bar, not the app.
+  it('keeps Goals in the sidebar while leaving it out of the bottom bar', () => {
+    renderLayout();
+
+    const bar = screen.getByRole('navigation', { name: /main navigation/i });
+    expect(within(bar).queryByRole('link', { name: 'Goals' })).not.toBeInTheDocument();
+    expect(screen.getByRole('link', { name: 'Goals' })).toHaveAttribute('href', '/goals');
+  });
+
+  it('shows no Clients entry for anyone, admins included', () => {
     mockUser.mockReturnValue({
-      id: 'trainer-1',
-      name: 'Trainer',
-      email: 'trainer@example.com',
-      role: 'trainer',
+      id: 'admin-1',
+      name: 'Admin',
+      email: 'admin@example.com',
+      role: 'admin',
       subscriptionStatus: 'free',
     });
 
-    renderLayout();
-
-    expect(screen.getAllByText('Clients').length).toBeGreaterThan(0);
-  });
-
-  it('shows Clients navigation for trainer subscription accounts', () => {
-    mockUser.mockReturnValue({
-      id: 'trainer-sub-1',
-      name: 'Trainer Sub',
-      email: 'trainer-sub@example.com',
-      role: 'user',
-      subscriptionStatus: 'trainer_pro',
-    });
-
-    renderLayout();
-
-    expect(screen.getAllByText('Clients').length).toBeGreaterThan(0);
-  });
-
-  it('hides Clients navigation for regular users', () => {
     renderLayout();
 
     expect(screen.queryByText('Clients')).not.toBeInTheDocument();

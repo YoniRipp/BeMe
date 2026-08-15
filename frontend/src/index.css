@@ -27,7 +27,12 @@
     --paper-2: 34 32% 94%;        /* muted sections */
     --ink: 30 14% 14%;            /* primary text */
     --ink-2: 28 10% 32%;          /* secondary text */
-    --ink-3: 24 8% 52%;           /* tertiary / captions */
+    /* Tertiary / captions. This is `--muted-foreground`, which the app spends on small
+       text — 11px nav labels, card sublines, form hints — so it has to clear 4.5:1, not
+       the 3:1 large-text floor. At its previous 52% lightness it measured 3.70:1 on a
+       white card and 3.49:1 on the paper background: the single most-used text colour in
+       the app failed AA everywhere it appeared. 42% reads 5.31:1 and 5.01:1. */
+    --ink-3: 24 9% 42%;
     --hairline: 32 14% 86%;       /* borders (fully opaque) */
 
     /* Accents */
@@ -108,7 +113,7 @@
     --paper-2: 30 7% 10%;         /* muted sections */
     --ink: 36 15% 95%;            /* primary text */
     --ink-2: 32 8% 70%;           /* secondary text */
-    --ink-3: 30 6% 48%;           /* tertiary / captions */
+    --ink-3: 30 7% 62%;           /* tertiary / captions — 4.26:1 at 48%, 6.77:1 here */
     --hairline: 30 7% 17%;        /* borders */
 
     /* Sage, lifted for a dark ground rather than swapped for a different hue. The
@@ -120,16 +125,21 @@
     --sage-50: 148 25% 12%;
     --sage-100: 148 22% 18%;
 
-    --terracotta: 18 100% 61%;
-    --terracotta-light: 18 38% 20%;
-    --gold: 43 100% 64%;
+    /* The accents finish the job Phase 3 did for sage: same hue family as light mode, and
+       off the 100% saturation they were sitting at. At full chroma next to a 45%-saturated
+       sage they read as a different, louder palette — terracotta in particular drifted 4°
+       and gold 5° from their light-mode hues. Contrast on the dark ground stays well clear
+       of AA (terracotta 6.5:1, gold 10.1:1, info 7.3:1). */
+    --terracotta: 14 70% 62%;
+    --terracotta-light: 14 38% 20%;
+    --gold: 38 80% 62%;
     --gold-foreground: var(--paper);
 
     --success: 150 40% 54%;
     --success-foreground: var(--paper);
-    --info: 206 100% 68%;
+    --info: 212 75% 66%;
     --info-foreground: var(--paper);
-    --warning: 43 100% 64%;
+    --warning: var(--gold);
     --warning-foreground: var(--paper);
 
     /* Stays dark — a scrim dims the app in both themes. */
@@ -165,10 +175,13 @@
     --sidebar-border: var(--hairline);
     --sidebar-ring: var(--sage);
 
+    /* Point at the accent tokens rather than repeating their values — three of these were
+       literal copies that had to be edited in lockstep, which is exactly how the charts
+       drifted off the palette before. */
     --chart-1: var(--sage);
-    --chart-2: 18 100% 61%;
-    --chart-3: 43 100% 64%;
-    --chart-4: 206 100% 68%;
+    --chart-2: var(--terracotta);
+    --chart-3: var(--gold);
+    --chart-4: var(--info);
     --chart-5: var(--ink-2);
 
     --shadow-xs: 0 1px 2px 0 hsl(0 0% 0% / 0.24);

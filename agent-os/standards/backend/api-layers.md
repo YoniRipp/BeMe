@@ -22,4 +22,4 @@ export const add = asyncHandler(async (req: Request, res: Response) => {
 
 - Controllers never touch `getPool()` or write SQL.
 - Services never touch `req`/`res`.
-- Always `getEffectiveUserId(req)`, never `req.user.id` — admins and trainers act on behalf of other users, and `req.user.id` silently breaks that.
+- Always `getEffectiveUserId(req)`, never `req.user.id` — admins act on behalf of other users via `?userId=`, and `req.user.id` silently breaks that.

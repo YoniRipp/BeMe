@@ -4,7 +4,7 @@ export interface ApiUser {
   id: string;
   email: string;
   name: string;
-  role: 'admin' | 'user' | 'trainer';
+  role: 'admin' | 'user';
   createdAt?: string;
   subscriptionStatus?: string;
   subscriptionPlan?: string | null;

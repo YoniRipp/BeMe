@@ -96,7 +96,7 @@ export const VOICE_TOOLS = [
             amount: { type: 'number', description: 'Quantity (e.g. 3 for three eggs, 100 for 100g)' },
             unit: { type: 'string', description: 'Unit: g, kg, ml, L, cup, slice, serving, egg/eggs, apple/apples, piece/pieces, etc. Use egg/eggs for eggs so it shows "3 eggs".' },
             date: { type: 'string', description: 'YYYY-MM-DD, default today' },
-            mealType: { type: 'string', enum: ['breakfast', 'lunch', 'dinner', 'snack'], description: 'Meal section when the user mentions or the client context provides breakfast, lunch, dinner, or snack.' },
+            mealType: { type: 'string', enum: ['breakfast', 'lunch', 'dinner', 'snack'], description: 'Meal section when the user mentions breakfast, lunch, dinner, or snack.' },
             startTime: { type: 'string', description: 'Optional. Meal start time HH:MM 24h (e.g. 18:00). Use when user gives a time range for the meal.' },
             endTime: { type: 'string', description: 'Optional. Meal end time HH:MM 24h (e.g. 20:00). Use when user gives a time range for the meal.' },
           },
@@ -322,134 +322,6 @@ export const VOICE_TOOLS = [
             targetWeight: { type: 'number', description: 'Target weight in kg' },
             activityLevel: { type: 'string', enum: ['sedentary', 'light', 'moderate', 'active', 'very_active'], description: 'Activity level' },
             sex: { type: 'string', enum: ['male', 'female', 'other'], description: 'Sex' },
-          },
-        },
-      },
-
-      // ─── Trainer ──────────────────────────────────────────────
-      {
-        name: 'add_client_workout',
-        description: 'Trainer: log a workout for a named client. Use clientName for the client\'s name (first or full name). Use clientTraineeNumber for their roster number when the trainer says "Guy number 4" or "client 4". When multiple clients share the same first name, the system will ask for the full name or number — in that case, use both clientName (full name) and/or clientTraineeNumber.',
-        parameters: {
-          type: 'object',
-          properties: {
-            clientName: { type: 'string', description: 'Client first name or full name (e.g. "Guy" or "Guy Malka")' },
-            clientId: { type: 'string', description: 'Client user ID if known' },
-            clientTraineeNumber: { type: 'number', description: 'Client roster number for disambiguation (e.g. 4 if trainer says "Guy number 4" or "trainee 4")' },
-            date: { type: 'string', description: 'YYYY-MM-DD, default today' },
-            title: { type: 'string', description: 'Workout name' },
-            type: { type: 'string', enum: ['strength', 'cardio', 'flexibility', 'sports'] },
-            durationMinutes: { type: 'number', description: 'Optional; default 30' },
-            exercises: {
-              type: 'array',
-              description: 'List of exercises with name, sets, reps, weight (kg).',
-              items: {
-                type: 'object',
-                properties: {
-                  name: { type: 'string' },
-                  sets: { type: 'number' },
-                  reps: { type: 'number' },
-                  weight: { type: 'number', description: 'Weight in kg (optional)' },
-                },
-                required: ['name', 'sets', 'reps'],
-              },
-            },
-          },
-          required: ['title', 'type'],
-        },
-      },
-      {
-        name: 'edit_client_workout',
-        description: 'Trainer: edit a client\'s existing workout. Use clientTraineeNumber when trainer identifies client by roster number.',
-        parameters: {
-          type: 'object',
-          properties: {
-            clientName: { type: 'string', description: 'Client first name or full name' },
-            clientId: { type: 'string' },
-            clientTraineeNumber: { type: 'number', description: 'Client roster number for disambiguation' },
-            workoutTitle: { type: 'string' },
-            workoutId: { type: 'string' },
-            title: { type: 'string' },
-            type: { type: 'string', enum: ['strength', 'cardio', 'flexibility', 'sports'] },
-            durationMinutes: { type: 'number' },
-            exercises: {
-              type: 'array',
-              items: {
-                type: 'object',
-                properties: {
-                  name: { type: 'string' },
-                  sets: { type: 'number' },
-                  reps: { type: 'number' },
-                  weight: { type: 'number' },
-                },
-                required: ['name', 'sets', 'reps'],
-              },
-            },
-          },
-        },
-      },
-      {
-        name: 'delete_client_workout',
-        description: 'Trainer: remove a client\'s workout.',
-        parameters: {
-          type: 'object',
-          properties: {
-            clientName: { type: 'string', description: 'Client first name or full name' },
-            clientId: { type: 'string' },
-            clientTraineeNumber: { type: 'number', description: 'Client roster number for disambiguation' },
-            workoutTitle: { type: 'string' },
-            workoutId: { type: 'string' },
-          },
-        },
-      },
-      {
-        name: 'add_client_food',
-        description: 'Trainer: log food for a client. Use clientTraineeNumber when trainer identifies client by roster number.',
-        parameters: {
-          type: 'object',
-          properties: {
-            clientName: { type: 'string', description: 'Client first name or full name' },
-            clientId: { type: 'string', description: 'Client user ID if known' },
-            clientTraineeNumber: { type: 'number', description: 'Client roster number for disambiguation' },
-            food: { type: 'string', description: 'Food name in English' },
-            amount: { type: 'number' },
-            unit: { type: 'string' },
-            date: { type: 'string', description: 'YYYY-MM-DD, default today' },
-            mealType: { type: 'string', enum: ['breakfast', 'lunch', 'dinner', 'snack'] },
-          },
-          required: ['food'],
-        },
-      },
-      {
-        name: 'edit_client_food',
-        description: 'Trainer: edit a client\'s food entry.',
-        parameters: {
-          type: 'object',
-          properties: {
-            clientName: { type: 'string', description: 'Client first name or full name' },
-            clientId: { type: 'string' },
-            clientTraineeNumber: { type: 'number', description: 'Client roster number for disambiguation' },
-            foodName: { type: 'string' },
-            entryId: { type: 'string' },
-            name: { type: 'string' },
-            calories: { type: 'number' },
-            protein: { type: 'number' },
-            carbs: { type: 'number' },
-            fats: { type: 'number' },
-          },
-        },
-      },
-      {
-        name: 'delete_client_food',
-        description: 'Trainer: remove a client\'s food entry.',
-        parameters: {
-          type: 'object',
-          properties: {
-            clientName: { type: 'string', description: 'Client first name or full name' },
-            clientId: { type: 'string' },
-            clientTraineeNumber: { type: 'number', description: 'Client roster number for disambiguation' },
-            foodName: { type: 'string' },
-            entryId: { type: 'string' },
           },
         },
       },

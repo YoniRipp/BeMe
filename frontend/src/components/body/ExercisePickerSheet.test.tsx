@@ -13,9 +13,10 @@ const catalog: CatalogExercise[] = [
 
 const NOTHING: CatalogExercise[] = [];
 
-const { filterSpy, reloadSpy, hookState } = vi.hoisted(() => ({
+const { filterSpy, reloadSpy, createSpy, hookState } = vi.hoisted(() => ({
   filterSpy: vi.fn(),
   reloadSpy: vi.fn(),
+  createSpy: vi.fn(),
   hookState: {
     catalog: [] as unknown[],
     isLoading: false,
@@ -38,6 +39,8 @@ vi.mock('@/hooks/useExercises', async (importOriginal) => {
         isLoading: hookState.isLoading,
         error: hookState.error,
         reload: reloadSpy,
+        createExercise: createSpy,
+        isCreating: false,
         getExercise: () => undefined,
         getImageUrl: () => undefined,
         getVideoUrl: () => undefined,
@@ -64,6 +67,7 @@ describe('ExercisePickerSheet', () => {
   beforeEach(() => {
     filterSpy.mockClear();
     reloadSpy.mockClear();
+    createSpy.mockReset();
     hookState.catalog = catalog;
     hookState.isLoading = false;
     hookState.error = null;
@@ -185,5 +189,76 @@ describe('ExercisePickerSheet', () => {
 
     expect(screen.getByText('4 exercises')).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Select Bench Press' })).toBeInTheDocument();
+  });
+  describe('adding a custom exercise', () => {
+    const custom: CatalogExercise = {
+      id: '99',
+      name: 'Zercher Squat',
+      muscleGroup: 'legs',
+      equipment: 'barbell',
+      isCustom: true,
+    };
+
+    it('offers to add the searched name when nothing matches', async () => {
+      const user = userEvent.setup();
+      renderSheet();
+
+      await user.type(screen.getByLabelText('Search exercises'), 'Zercher Squat');
+
+      expect(screen.getByRole('button', { name: 'Add "Zercher Squat"' })).toBeInTheDocument();
+    });
+
+    it('creates the exercise and hands it straight back to the caller', async () => {
+      const user = userEvent.setup();
+      createSpy.mockResolvedValueOnce(custom);
+      const { onSelect } = renderSheet();
+
+      await user.type(screen.getByLabelText('Search exercises'), 'Zercher Squat');
+      await user.click(screen.getByRole('button', { name: 'Add "Zercher Squat"' }));
+
+      // The form opens pre-filled with what they typed.
+      expect(screen.getByLabelText('Name')).toHaveValue('Zercher Squat');
+
+      await user.click(screen.getByRole('button', { name: 'Legs' }));
+      await user.click(screen.getByRole('button', { name: 'Barbell' }));
+      await user.click(screen.getByRole('button', { name: 'Add exercise' }));
+
+      expect(createSpy).toHaveBeenCalledWith({ name: 'Zercher Squat', muscleGroup: 'legs', equipment: 'barbell' });
+      expect(onSelect).toHaveBeenCalledWith(custom);
+    });
+
+    it('tells the user it is shared with everyone', async () => {
+      const user = userEvent.setup();
+      renderSheet();
+
+      await user.click(screen.getByRole('button', { name: /can.t find it/i }));
+
+      expect(screen.getByText(/shared exercise library/i)).toBeInTheDocument();
+    });
+
+    it('keeps the form open and shows why when the create fails', async () => {
+      const user = userEvent.setup();
+      createSpy.mockRejectedValueOnce(new Error('Network is down'));
+      const { onSelect } = renderSheet();
+
+      await user.click(screen.getByRole('button', { name: /can.t find it/i }));
+      await user.type(screen.getByLabelText('Name'), 'Zercher Squat');
+      await user.click(screen.getByRole('button', { name: 'Add exercise' }));
+
+      expect(await screen.findByRole('alert')).toHaveTextContent('Network is down');
+      expect(screen.getByLabelText('Name')).toBeInTheDocument();
+      expect(onSelect).not.toHaveBeenCalled();
+    });
+
+    it('will not submit a name shorter than two characters', async () => {
+      const user = userEvent.setup();
+      renderSheet();
+
+      await user.click(screen.getByRole('button', { name: /can.t find it/i }));
+      await user.type(screen.getByLabelText('Name'), 'x');
+
+      expect(screen.getByRole('button', { name: 'Add exercise' })).toBeDisabled();
+      expect(createSpy).not.toHaveBeenCalled();
+    });
   });
 });

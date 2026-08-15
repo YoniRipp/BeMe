@@ -46,12 +46,6 @@ export function AdminCharts() {
     calls: d.calls,
   }));
 
-  const trainerGrowthData = data.trainerGrowth.map((d) => ({
-    date: formatDate(d.date),
-    trainers: d.newTrainers,
-    trainees: d.newTrainees,
-  }));
-
   return (
     <div className="grid grid-cols-1 xl:grid-cols-2 gap-4">
       <Card>
@@ -111,23 +105,6 @@ export function AdminCharts() {
         </CardContent>
       </Card>
 
-      <Card>
-        <CardHeader className="pb-2">
-          <CardTitle className="text-base">Trainer CRM Growth (30 days)</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <ResponsiveContainer width="100%" height={250}>
-            <BarChart data={trainerGrowthData}>
-              <CartesianGrid strokeDasharray="3 3" />
-              <XAxis dataKey="date" tick={{ fontSize: 12 }} />
-              <YAxis allowDecimals={false} tick={{ fontSize: 12 }} />
-              <Tooltip />
-              <Bar dataKey="trainers" name="New trainers" fill="hsl(var(--chart-4))" radius={[8, 8, 0, 0]} />
-              <Bar dataKey="trainees" name="New trainees" fill="hsl(var(--chart-2))" radius={[8, 8, 0, 0]} />
-            </BarChart>
-          </ResponsiveContainer>
-        </CardContent>
-      </Card>
     </div>
   );
 }
