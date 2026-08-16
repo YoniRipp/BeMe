@@ -1,6 +1,6 @@
 /**
  * AI quota management for free-tier users.
- * Pro/trainer/trainer_pro users have unlimited access.
+ * Pro users have unlimited access.
  * Free users get FREE_TIER_LIMIT calls per calendar month.
  */
 import { getPool } from '../db/pool.js';
@@ -8,7 +8,7 @@ import { config } from '../config/index.js';
 
 export const FREE_TIER_LIMIT = 10;
 
-const PRO_STATUSES = ['pro', 'trainer', 'trainer_pro'];
+const PRO_STATUSES = ['pro'];
 
 function currentMonth(): string {
   const d = new Date();

@@ -2,7 +2,7 @@
  * Middleware to gate endpoints behind a Pro subscription or free-tier quota.
  * Must be used after requireAuth (req.user must be set).
  *
- * - Pro/trainer/trainer_pro users: unlimited access.
+ * - Pro users: unlimited access.
  * - Free users: up to 10 AI calls per calendar month.
  * - When Lemon Squeezy is not configured, all users are allowed (dev convenience).
  */

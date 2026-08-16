@@ -70,12 +70,6 @@ const DELETE_WEIGHT_SPEC = { entryId: trimOrUndefined, date: passThrough };
 const EDIT_CYCLE_SPEC = { entryId: trimOrUndefined, date: passThrough, periodStart: passThrough, flow: trimOrUndefined, symptoms: trimOrUndefined, notes: passThrough };
 const DELETE_CYCLE_SPEC = { entryId: trimOrUndefined, date: passThrough };
 
-// Trainer edit/delete
-const EDIT_CLIENT_WORKOUT_SPEC = { clientName: trimOrUndefined, clientId: trimOrUndefined, clientTraineeNumber: num, workoutTitle: trimOrUndefined, workoutId: trimOrUndefined, title: trimOrUndefined, type: passThrough, durationMinutes: num, exercises: normExercises };
-const DELETE_CLIENT_WORKOUT_SPEC = { clientName: trimOrUndefined, clientId: trimOrUndefined, clientTraineeNumber: num, workoutTitle: trimOrUndefined, workoutId: trimOrUndefined };
-const EDIT_CLIENT_FOOD_SPEC = { clientName: trimOrUndefined, clientId: trimOrUndefined, clientTraineeNumber: num, foodName: trimOrUndefined, entryId: trimOrUndefined, name: trimOrUndefined, calories: num, protein: num, carbs: num, fats: num };
-const DELETE_CLIENT_FOOD_SPEC = { clientName: trimOrUndefined, clientId: trimOrUndefined, clientTraineeNumber: num, foodName: trimOrUndefined, entryId: trimOrUndefined };
-
 // --- Builders ----------------------------------------------
 
 export function buildAddWorkout(args: Record<string, unknown>, ctx: BuildContext) {
@@ -198,32 +192,6 @@ export function buildUpdateProfile(args: Record<string, unknown>) {
   });
 }
 
-// --- Trainer builders ---------------------------------------
-
-export function buildAddClientWorkout(args: Record<string, unknown>, ctx: BuildContext) {
-  return {
-    clientName: trimOrUndefined(args.clientName),
-    clientId: trimOrUndefined(args.clientId),
-    clientTraineeNumber: num(args.clientTraineeNumber),
-    ...buildAddWorkout(args, ctx),
-  };
-}
-
-export const buildEditClientWorkout = (args: Record<string, unknown>) => mapArgs(args, EDIT_CLIENT_WORKOUT_SPEC);
-export const buildDeleteClientWorkout = (args: Record<string, unknown>) => mapArgs(args, DELETE_CLIENT_WORKOUT_SPEC);
-
-export async function buildAddClientFood(args: Record<string, unknown>, ctx: BuildContext) {
-  return {
-    clientName: trimOrUndefined(args.clientName),
-    clientId: trimOrUndefined(args.clientId),
-    clientTraineeNumber: num(args.clientTraineeNumber),
-    ...(await buildAddFood(args, ctx)),
-  };
-}
-
-export const buildEditClientFood = (args: Record<string, unknown>) => mapArgs(args, EDIT_CLIENT_FOOD_SPEC);
-export const buildDeleteClientFood = (args: Record<string, unknown>) => mapArgs(args, DELETE_CLIENT_FOOD_SPEC);
-
 // --- Handler registry --------------------------------------
 
 export type HandlerResult = { merge?: Record<string, unknown>; items?: unknown[] };
@@ -255,11 +223,4 @@ export const HANDLERS: Record<string, (args: Record<string, unknown>, ctx: Build
   delete_cycle: (args) => Promise.resolve({ merge: buildDeleteCycle(args) }),
   // Profile
   update_profile: (args) => Promise.resolve({ merge: buildUpdateProfile(args) }),
-  // Trainer
-  add_client_workout: (args, ctx) => Promise.resolve({ merge: buildAddClientWorkout(args, ctx) }),
-  edit_client_workout: (args) => Promise.resolve({ merge: buildEditClientWorkout(args) }),
-  delete_client_workout: (args) => Promise.resolve({ merge: buildDeleteClientWorkout(args) }),
-  add_client_food: (args, ctx) => buildAddClientFood(args, ctx).then((merge) => ({ merge })),
-  edit_client_food: (args) => Promise.resolve({ merge: buildEditClientFood(args) }),
-  delete_client_food: (args) => Promise.resolve({ merge: buildDeleteClientFood(args) }),
 };

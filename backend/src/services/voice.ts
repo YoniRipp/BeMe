@@ -31,13 +31,6 @@ Weight: When the user mentions their weight (e.g. "I weigh 72.5 kg", "72 kilos t
 Water: When the user mentions drinking water (e.g. "I drank 3 glasses of water", "had water"), call add_water. "Remove a glass" → remove_water.
 Cycle: When the user mentions period/menstruation (e.g. "My period started", "log period start"), call log_cycle. "Period ended" → edit_cycle.
 Profile: When the user wants to update profile info (e.g. "update my height to 175", "set target weight to 70"), call update_profile.
-Trainer: When a trainer wants to log data for a trainee, use the add_client_workout, edit_client_workout, delete_client_workout, add_client_food, edit_client_food, or delete_client_food functions.
-- clientName: use the client's first name or full name exactly as the trainer said (e.g. "Guy" or "Guy Malka").
-- clientTraineeNumber: use when trainer identifies client by number (e.g. "Guy number 4", "trainee 4", "client number 4" → clientTraineeNumber: 4). Always include clientName alongside clientTraineeNumber when both are given.
-- When trainer says "for Guy" or "Guy's workout", set clientName: "Guy".
-- When trainer says "for Guy Malka" (full name), set clientName: "Guy Malka" — full names resolve ambiguity automatically.
-- When trainer says "Guy, the one with ID 4" or "Guy number 4", set clientName: "Guy" and clientTraineeNumber: 4.
-- Workout edits: include the current workoutTitle to find the right workout to modify.
 Call all relevant functions; the user may combine multiple actions in one message.`;
 
 // ─── Fallback helpers ───────────────────────────────────────

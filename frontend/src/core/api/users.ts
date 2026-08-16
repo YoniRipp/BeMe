@@ -1,6 +1,6 @@
 import { request } from './client';
 
-export type UserRole = 'admin' | 'trainer' | 'user';
+export type UserRole = 'admin' | 'user';
 
 export interface ApiUserListItem {
   id: string;

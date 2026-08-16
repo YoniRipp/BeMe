@@ -7,8 +7,8 @@ import type { FoodEntry } from '@/types/energy';
  * Reads the signed-in user's own food log and renders the suggestions.
  *
  * Kept as its own component so the `useEnergy` call only happens where suggestions are
- * wanted. FoodEntryModal is also used by trainers logging on a client's behalf, where the
- * trainer's own history is the wrong data — there, the parent simply does not render this.
+ * wanted. Callers that log on someone else's behalf simply do not render this, since the
+ * caller's own history would be the wrong data.
  */
 export function RecentFoodsSection({
   mealType,

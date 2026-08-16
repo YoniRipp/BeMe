@@ -51,7 +51,7 @@ async function createUser(req: Request, res: Response) {
     if (!name || typeof name !== 'string' || !name.trim()) {
       return res.status(400).json({ error: 'name is required' });
     }
-    const r = role === 'admin' || role === 'trainer' ? role : 'user';
+    const r = role === 'admin' ? role : 'user';
     const password_hash = await bcrypt.hash(password, SALT_ROUNDS);
     const pool = getPool();
     const result = await pool.query(
@@ -83,8 +83,8 @@ async function updateUser(req: Request, res: Response) {
     let i = 1;
     if (name !== undefined) { updates.push(`name = $${i}`); values.push(typeof name === 'string' ? name.trim() : name); i++; }
     if (role !== undefined) {
-      if (role !== 'admin' && role !== 'trainer' && role !== 'user') {
-        return res.status(400).json({ error: 'role must be one of: admin, trainer, user' });
+      if (role !== 'admin' && role !== 'user') {
+        return res.status(400).json({ error: 'role must be one of: admin, user' });
       }
       updates.push(`role = $${i}`); values.push(role); i++;
     }

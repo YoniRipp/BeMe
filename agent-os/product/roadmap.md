@@ -8,7 +8,6 @@
 - **Goals** — calories/workouts/sleep against weekly, monthly, or yearly targets
 - **Additional tracking** — weight, water, menstrual cycle, user profile
 - **Identity** — email/password, social login, JWT sessions, admin role
-- **Trainer** — client roster, invitations, per-client analytics
 - **Platform** — PWA with offline mutation queue, Expo mobile app, TWA Android wrapper
 
 ## Phase 2: In flight

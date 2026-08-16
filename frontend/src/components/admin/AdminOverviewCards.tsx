@@ -1,4 +1,4 @@
-import { Activity, CreditCard, Mic, Repeat, ShieldCheck, UserCheck, Users, WalletCards } from 'lucide-react';
+import { Activity, CreditCard, Mic, Repeat, Users } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
 import { useAdminStats } from '@/hooks/useAdminStats';
 import type { BusinessOverview } from '@/core/api/admin';
@@ -12,24 +12,6 @@ const cards = [
     iconColor: 'text-info',
     getValue: (o: BusinessOverview) => o.totalUsers,
     getSub: (o: BusinessOverview) => `+${o.newUsersThisWeek} this week`,
-  },
-  {
-    key: 'trainees',
-    label: 'Trainees',
-    icon: UserCheck,
-    color: 'border-l-info',
-    iconColor: 'text-info',
-    getValue: (o: BusinessOverview) => o.totalTrainees,
-    getSub: (o: BusinessOverview) => `${o.activeTrainerClientLinks} active trainer links`,
-  },
-  {
-    key: 'trainers',
-    label: 'Trainers',
-    icon: ShieldCheck,
-    color: 'border-l-primary',
-    iconColor: 'text-primary',
-    getValue: (o: BusinessOverview) => o.totalTrainers,
-    getSub: (o: BusinessOverview) => `${o.activeTrainersWithClients} with clients`,
   },
   {
     key: 'subs',
@@ -48,15 +30,6 @@ const cards = [
     iconColor: 'text-success',
     getValue: (o: BusinessOverview) => o.monthlyProSubscribers,
     getSub: (o: BusinessOverview) => `${o.yearlyProSubscribers} yearly pro`,
-  },
-  {
-    key: 'trainer_granted',
-    label: 'Trainer Seats',
-    icon: WalletCards,
-    color: 'border-l-warning',
-    iconColor: 'text-warning',
-    getValue: (o: BusinessOverview) => o.trainerGrantedSubscribers,
-    getSub: (o: BusinessOverview) => `${o.pendingTrainerInvites} pending invites`,
   },
   {
     key: 'voice',

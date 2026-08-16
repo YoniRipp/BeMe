@@ -1,5 +1,32 @@
 import { Workout } from '@/types/workout';
 import { parseLocalDateString } from '@/lib/dateRanges';
+import type { ApiCatalogExercise } from '@/core/api/exercises';
+import type { CatalogExercise } from '@/hooks/useExercises';
+
+/**
+ * The catalog API nulls out absent columns; the domain type uses `undefined`, so a missing
+ * image is one thing to check rather than two.
+ */
+export function apiExerciseToCatalogExercise(a: ApiCatalogExercise): CatalogExercise {
+  return {
+    id: a.id,
+    name: a.name,
+    muscleGroup: a.muscleGroup ?? undefined,
+    category: a.category ?? undefined,
+    equipment: a.equipment ?? undefined,
+    discipline: a.discipline ?? undefined,
+    level: a.level ?? undefined,
+    mechanic: a.mechanic ?? undefined,
+    force: a.force ?? undefined,
+    primaryMuscles: a.primaryMuscles ?? undefined,
+    secondaryMuscles: a.secondaryMuscles ?? undefined,
+    imageUrl: a.imageUrl ?? undefined,
+    imageUrl2: a.imageUrl2 ?? undefined,
+    videoUrl: a.videoUrl ?? undefined,
+    isCustom: a.isCustom ?? false,
+    instructions: a.instructions ?? undefined,
+  };
+}
 
 type ApiExercise = {
   name: string;

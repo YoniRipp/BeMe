@@ -14,7 +14,6 @@ import {
   ShieldCheck,
   LogOut,
   User,
-  Users,
   BookOpen,
   Sparkles,
   Flame,
@@ -39,54 +38,45 @@ import { BottomNavigation } from './BottomNavigation';
 const ROUTE_TO_TITLE: Record<string, string> = {
   '/': 'Home',
   '/body': 'Workouts',
-  '/energy': 'Journal',
+  '/energy': 'Food',
   '/water': 'Water',
   '/goals': 'Goals',
   '/insights': 'Insights',
-  '/settings': 'Settings',
-  '/trainer': 'My Clients',
+  '/settings': 'Profile',
   '/admin': 'Admin',
 };
 
 const SIDEBAR_NAV_BASE = [
   { name: 'Home', path: '/', icon: Home },
   { name: 'Workouts', path: '/body', icon: Dumbbell },
-  { name: 'Journal', path: '/energy', icon: BookOpen },
+  { name: 'Food', path: '/energy', icon: BookOpen },
   { name: 'Goals', path: '/goals', icon: Target },
   { name: 'Insights', path: '/insights', icon: TrendingUp },
-  { name: 'Settings', path: '/settings', icon: Settings },
+  { name: 'Profile', path: '/settings', icon: User },
 ];
 
-const BOTTOM_NAV_BASE = [
+/**
+ * Four tabs, the same for everyone — there is only one kind of user now.
+ *
+ * Goals left the bar rather than the app: it is a set-and-forget screen people visit
+ * occasionally, so it kept a sidebar entry and a route while the bar went to the four
+ * things someone opens the app to do. Profile points at `/settings`, which already leads
+ * with the profile card.
+ */
+const BOTTOM_NAV = [
   { name: 'Home', path: '/', icon: Home },
-  { name: 'Body', path: '/body', icon: Dumbbell },
-  { name: 'Energy', path: '/energy', icon: Flame },
-  { name: 'Goals', path: '/goals', icon: Target },
+  { name: 'Workouts', path: '/body', icon: Dumbbell },
+  { name: 'Food', path: '/energy', icon: Flame },
+  { name: 'Profile', path: '/settings', icon: User },
 ];
 
-const BOTTOM_NAV_TRAINER = [
-  { name: 'Home', path: '/', icon: Home },
-  { name: 'Body', path: '/body', icon: Dumbbell },
-  { name: 'Clients', path: '/trainer', icon: Users },
-  { name: 'Goals', path: '/goals', icon: Target },
-];
-
-function getSidebarNav(isAdmin: boolean, isTrainer: boolean) {
+function getSidebarNav(isAdmin: boolean) {
   const nav = [...SIDEBAR_NAV_BASE];
-  if (isTrainer) nav.push({ name: 'Clients', path: '/trainer', icon: Users });
   if (isAdmin) nav.push({ name: 'Admin', path: '/admin', icon: ShieldCheck });
   return nav;
 }
 
-function hasTrainerAccess(user?: { role?: string; subscriptionStatus?: string }) {
-  return user?.role === 'trainer' ||
-    user?.role === 'admin' ||
-    user?.subscriptionStatus === 'trainer' ||
-    user?.subscriptionStatus === 'trainer_pro';
-}
-
 function getPageTitle(pathname: string): string {
-  if (pathname.startsWith('/trainer/client/')) return 'Client profile';
   return ROUTE_TO_TITLE[pathname] ?? (pathname.slice(1) || 'Dashboard');
 }
 
@@ -107,9 +97,7 @@ export function Base44Layout() {
     logout();
     navigate('/login', { replace: true });
   };
-  const trainerAccess = hasTrainerAccess(user);
-  const sidebarNav = useMemo(() => getSidebarNav(user?.role === 'admin', trainerAccess), [user?.role, trainerAccess]);
-  const bottomNavItems = trainerAccess ? BOTTOM_NAV_TRAINER : BOTTOM_NAV_BASE;
+  const sidebarNav = useMemo(() => getSidebarNav(user?.role === 'admin'), [user?.role]);
 
   const pageTitle = getPageTitle(pathname);
 
@@ -319,7 +307,7 @@ export function Base44Layout() {
 
       {/* Mobile bottom nav with center "+" */}
       <BottomNavigation
-        items={bottomNavItems}
+        items={BOTTOM_NAV}
         currentPath={pathname}
         onCenterPress={() => setVoicePanelOpen((prev) => !prev)}
       />

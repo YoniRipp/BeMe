@@ -1,8 +1,8 @@
 import { useCallback, useMemo } from 'react';
-import { useQuery } from '@tanstack/react-query';
-import { request } from '@/core/api/client';
-import { EXERCISE_CATALOG_LIMIT } from '@/lib/constants';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { exercisesApi, type CreateCustomExercise } from '@/core/api/exercises';
 import { queryKeys } from '@/lib/queryClient';
+import { apiExerciseToCatalogExercise } from '@/features/body/mappers';
 
 export interface CatalogExercise {
   id: string;
@@ -22,6 +22,8 @@ export interface CatalogExercise {
   /** Second photo (end position) — the catalog ships two per exercise. */
   imageUrl2?: string;
   videoUrl?: string;
+  /** True for movements a user added from the picker rather than the seeded catalog. */
+  isCustom?: boolean;
   /** Only returned by GET /api/exercises/:id, never in list responses. */
   instructions?: string[];
 }
@@ -116,11 +118,35 @@ export interface ExerciseFilters {
 const NO_EXERCISES: CatalogExercise[] = [];
 
 export function useExercises() {
+  const queryClient = useQueryClient();
   const { data, isLoading, error, refetch } = useQuery({
     queryKey: queryKeys.exercises,
-    queryFn: (): Promise<CatalogExercise[]> => request(`/api/exercises?limit=${EXERCISE_CATALOG_LIMIT}`),
+    queryFn: async (): Promise<CatalogExercise[]> => (await exercisesApi.list()).map(apiExerciseToCatalogExercise),
     staleTime: 10 * 60 * 1000,
   });
+
+  /**
+   * Adds a movement to the shared catalog. The created row is spliced into the cached
+   * list rather than triggering a refetch, so the picker doesn't blank out its ~900 rows
+   * to show one new one. A name that already existed comes back as that row, so the
+   * de-dupe below keeps the list from gaining a duplicate.
+   */
+  const { mutateAsync: createExerciseMutation, isPending: isCreating } = useMutation({
+    mutationFn: async (body: CreateCustomExercise) =>
+      apiExerciseToCatalogExercise(await exercisesApi.add(body)),
+    onSuccess: (created) => {
+      queryClient.setQueryData(queryKeys.exercises, (prev: CatalogExercise[] | undefined) => {
+        if (!prev) return [created];
+        const without = prev.filter((ex) => ex.id !== created.id);
+        return [...without, created].sort((a, b) => a.name.localeCompare(b.name));
+      });
+    },
+  });
+
+  const createExercise = useCallback(
+    (body: CreateCustomExercise): Promise<CatalogExercise> => createExerciseMutation(body),
+    [createExerciseMutation],
+  );
 
   const exercises = data ?? NO_EXERCISES;
 
@@ -204,6 +230,8 @@ export function useExercises() {
     getVideoUrl,
     searchExercises,
     filterExercises,
+    createExercise,
+    isCreating,
   };
 }
 

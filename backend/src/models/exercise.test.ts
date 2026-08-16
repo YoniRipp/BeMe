@@ -22,6 +22,7 @@ const row = {
   image_url: 'https://img.example/bench.jpg',
   image_url_2: 'https://img.example/bench-2.jpg',
   video_url: null,
+  is_custom: false,
   created_at: '2025-01-01T00:00:00.000Z',
   updated_at: '2025-01-02T00:00:00.000Z',
 };
@@ -41,6 +42,7 @@ const mappedRow = {
   imageUrl: 'https://img.example/bench.jpg',
   imageUrl2: 'https://img.example/bench-2.jpg',
   videoUrl: null,
+  isCustom: false,
 };
 
 describe('exercise model', () => {
@@ -163,6 +165,60 @@ describe('exercise model', () => {
       const [sql, params] = mockQuery.mock.calls[0];
       expect(sql).toContain('ON CONFLICT (name) DO UPDATE');
       expect(params).toEqual(['Bench Press', 'chest', null, null, null, 'admin-1']);
+    });
+  });
+
+  describe('findByName', () => {
+    it('matches case-insensitively', async () => {
+      mockQuery.mockResolvedValueOnce({ rows: [row] });
+
+      const result = await exerciseModel.findByName('  bench press ');
+
+      const [sql, params] = mockQuery.mock.calls[0];
+      expect(sql).toContain('lower(name) = lower($1)');
+      expect(params).toEqual(['bench press']);
+      expect(result?.name).toBe('Bench Press');
+    });
+
+    it('returns null when nothing matches', async () => {
+      mockQuery.mockResolvedValueOnce({ rows: [] });
+      expect(await exerciseModel.findByName('Nope')).toBeNull();
+    });
+  });
+
+  describe('createCustom', () => {
+    it('inserts a global row flagged custom, writing equipment to category too', async () => {
+      mockQuery.mockResolvedValueOnce({ rows: [{ ...row, is_custom: true }] });
+
+      const result = await exerciseModel.createCustom({
+        name: ' Zercher Squat ',
+        muscleGroup: 'legs',
+        equipment: 'barbell',
+        createdBy: 'user-1',
+      });
+
+      const [sql, params] = mockQuery.mock.calls[0];
+      expect(sql).toContain('VALUES ($1, $2, $3, $3, $4, true)');
+      expect(sql).toContain('ON CONFLICT (name) DO NOTHING');
+      expect(params).toEqual(['Zercher Squat', 'legs', 'barbell', 'user-1']);
+      expect(result.created).toBe(true);
+      expect(result.exercise.isCustom).toBe(true);
+    });
+
+    it('falls back to the existing row when the name is already taken', async () => {
+      mockQuery.mockResolvedValueOnce({ rows: [] });      // insert declined
+      mockQuery.mockResolvedValueOnce({ rows: [row] });   // findByName
+
+      const result = await exerciseModel.createCustom({ name: 'Bench Press', createdBy: 'user-1' });
+
+      expect(result).toEqual({ exercise: expect.objectContaining({ name: 'Bench Press' }), created: false });
+    });
+
+    it('throws rather than returning nothing when neither insert nor lookup lands a row', async () => {
+      mockQuery.mockResolvedValueOnce({ rows: [] });
+      mockQuery.mockResolvedValueOnce({ rows: [] });
+
+      await expect(exerciseModel.createCustom({ name: 'Ghost', createdBy: 'user-1' })).rejects.toThrow('Could not create exercise');
     });
   });
 

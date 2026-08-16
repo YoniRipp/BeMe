@@ -192,11 +192,10 @@ The voice prompt instructs Gemini to:
 - Parse workouts with sets/reps/weight and program names
 - Handle goals with periods (weekly/monthly/yearly)
 - Route food-only phrases directly to add_food
-- Support trainer operations for managing client data
 ```
 
 **Function declarations** (`voice/tools.js`):
-23 tools covering all domain operations:
+22 tools covering all domain operations:
 
 | Category | Tools |
 |----------|-------|
@@ -205,7 +204,6 @@ The voice prompt instructs Gemini to:
 | Sleep | `log_sleep` (hours, date), `edit_check_in`, `delete_check_in` |
 | Goals | `add_goal` (type, target, period), `edit_goal`, `delete_goal` |
 | Health | `log_weight`, `log_water`, `log_cycle`, `update_profile` |
-| Trainer | `trainer_add_food`, `trainer_add_workout`, `trainer_edit_food_entry`, `trainer_delete_food_entry`, `trainer_edit_workout`, `trainer_delete_workout` |
 
 **Processing flow** (`src/services/voice/geminiClient.ts`):
 1. `processGeminiResponse()` receives Gemini's response

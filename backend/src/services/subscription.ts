@@ -4,8 +4,6 @@
 import { config } from '../config/index.js';
 import { getPool } from '../db/pool.js';
 import { logger } from '../lib/logger.js';
-import * as trainerClientModel from '../models/trainerClient.js';
-import * as userModel from '../models/user.js';
 
 const LS_BASE_URL = 'https://api.lemonsqueezy.com';
 
@@ -153,34 +151,6 @@ function getPlanFromVariantId(variantId: unknown): 'monthly' | 'yearly' | null {
   return null;
 }
 
-async function cascadeTrainerSubscription(
-  lemonSqueezyCustomerId: string,
-  status: string,
-  periodEnd: Date | null,
-  plan: 'monthly' | 'yearly' | null,
-) {
-  const pool = getPool();
-  const { rows } = await pool.query(
-    'SELECT id, role FROM users WHERE lemon_squeezy_customer_id = $1',
-    [lemonSqueezyCustomerId],
-  );
-  if (rows.length === 0 || rows[0].role !== 'trainer') return;
-
-  const trainerId = rows[0].id as string;
-  const clientIds = await trainerClientModel.findActiveClientIds(trainerId);
-  const shouldRevoke = ['canceled', 'expired', 'free'].includes(status);
-  for (const clientId of clientIds) {
-    if (shouldRevoke) {
-      await userModel.revokeTrainerSubscription(clientId);
-    } else if (status === 'pro') {
-      await userModel.grantTrainerSubscription(clientId, { currentPeriodEnd: periodEnd, plan });
-    }
-  }
-  if (clientIds.length > 0) {
-    logger.info({ trainerId, clientCount: clientIds.length, status, plan }, 'Cascaded trainer subscription to clients');
-  }
-}
-
 export async function handleWebhookEvent(payload: LemonSqueezyWebhookPayload) {
   const eventName = payload.meta.event_name;
   const customData = payload.meta.custom_data;
@@ -208,7 +178,6 @@ export async function handleWebhookEvent(payload: LemonSqueezyWebhookPayload) {
         attrs.renews_at ? new Date(attrs.renews_at) : null,
         plan,
       );
-      await cascadeTrainerSubscription(customerId, 'pro', attrs.renews_at ? new Date(attrs.renews_at) : null, plan);
       logger.info({ userId, subscriptionId: payload.data.id }, 'Subscription created');
       break;
     }
@@ -227,7 +196,6 @@ export async function handleWebhookEvent(payload: LemonSqueezyWebhookPayload) {
         attrs.renews_at ? new Date(attrs.renews_at) : null,
         plan,
       );
-      await cascadeTrainerSubscription(customerId, mappedStatus, attrs.renews_at ? new Date(attrs.renews_at) : null, plan);
       logger.info({ customerId, status: mappedStatus }, 'Subscription updated');
       break;
     }
@@ -252,7 +220,6 @@ export async function handleWebhookEvent(payload: LemonSqueezyWebhookPayload) {
         attrs.renews_at ? new Date(attrs.renews_at) : null,
         plan,
       );
-      await cascadeTrainerSubscription(customerId, 'pro', attrs.renews_at ? new Date(attrs.renews_at) : null, plan);
       logger.info({ customerId }, 'Subscription payment succeeded');
       break;
     }

@@ -2,7 +2,7 @@
 
 Small, focused, reusable. No monolithic page components.
 
-Components are grouped by domain under `src/components/` (`body/`, `energy/`, `goals/`, `voice/`, `trainer/`, …), with `ui/` for shadcn primitives, `shared/` for cross-domain pieces, and `layout/` for shells.
+Components are grouped by domain under `src/components/` (`body/`, `energy/`, `goals/`, `voice/`, …), with `ui/` for shadcn primitives, `shared/` for cross-domain pieces, and `layout/` for shells.
 
 Canonical reusable pieces — extend these rather than re-inventing:
 

@@ -18,7 +18,7 @@ interface AuthContextType {
 
 export const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-function apiUserToUser(a: { id: string; email: string; name: string; role: 'admin' | 'user' | 'trainer'; createdAt?: string; subscriptionStatus?: string; subscriptionPlan?: string | null; subscriptionCurrentPeriodEnd?: string | null; aiCallsRemaining?: number }): User {
+function apiUserToUser(a: { id: string; email: string; name: string; role: 'admin' | 'user'; createdAt?: string; subscriptionStatus?: string; subscriptionPlan?: string | null; subscriptionCurrentPeriodEnd?: string | null; aiCallsRemaining?: number }): User {
   return {
     id: a.id,
     email: a.email,

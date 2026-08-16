@@ -1,5 +1,4 @@
 import { useState, useEffect, useCallback } from 'react';
-import { useLocation } from 'react-router-dom';
 import {
   Sheet,
   SheetContent,
@@ -23,8 +22,6 @@ interface VoiceAgentPanelProps {
 
 export function VoiceAgentPanel({ open, onOpenChange }: VoiceAgentPanelProps) {
   const queryClient = useQueryClient();
-  const { pathname } = useLocation();
-  const isTrainerPage = pathname.startsWith('/trainer');
   const { voiceContext } = useVoiceActions();
 
   const [error, setError] = useState<string | null>(null);
@@ -87,9 +84,6 @@ export function VoiceAgentPanel({ open, onOpenChange }: VoiceAgentPanelProps) {
       const failed: string[] = [];
 
       if (result.results) {
-        const hasTrainerAction = result.results.some((r) =>
-          r.intent?.startsWith('add_client_') || r.intent?.startsWith('edit_client_') || r.intent?.startsWith('delete_client_')
-        );
         for (const r of result.results) {
           if (r.success) succeeded.push(r.message ?? r.intent);
           else failed.push(r.message ?? 'Could not complete action. Please try again.');
@@ -98,10 +92,6 @@ export function VoiceAgentPanel({ open, onOpenChange }: VoiceAgentPanelProps) {
         await queryClient.invalidateQueries({ queryKey: queryKeys.foodEntries });
         await queryClient.invalidateQueries({ queryKey: queryKeys.checkIns });
         await queryClient.invalidateQueries({ queryKey: queryKeys.goals });
-        if (hasTrainerAction) {
-          await queryClient.invalidateQueries({ queryKey: queryKeys.trainerClients });
-          await queryClient.invalidateQueries({ predicate: (q) => q.queryKey[0] === 'trainerClientData' });
-        }
       } else {
         for (const action of result.actions) {
           if (action.intent === 'unknown') {
@@ -209,9 +199,7 @@ export function VoiceAgentPanel({ open, onOpenChange }: VoiceAgentPanelProps) {
                 </p>
                 {!displayTranscript && !isListening && !isProcessing && (
                   <p className="mt-1.5 text-sm leading-relaxed text-muted-foreground">
-                    {isTrainerPage
-                      ? 'Try "Add Guy\'s pull workout, bench press 4 sets of 8 at 80 kg"'
-                      : 'Try "I had oatmeal for breakfast" or "30 min run"'}
+                    Try "I had oatmeal for breakfast" or "30 min run"
                   </p>
                 )}
               </div>

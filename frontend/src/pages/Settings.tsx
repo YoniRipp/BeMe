@@ -14,7 +14,6 @@ import { NotificationsSection } from '@/components/settings/NotificationsSection
 import { DataManagementSection } from '@/components/settings/DataManagementSection';
 import { SubscriptionSection } from '@/components/settings/SubscriptionSection';
 import { storage } from '@/lib/storage';
-import { PendingInvitations } from '@/components/trainer/PendingInvitations';
 import { useApp } from '@/context/AppContext';
 import { Page, PageHeader } from '@/components/ui/page';
 import { Card } from '@/components/ui/card';
@@ -67,7 +66,6 @@ export function Settings() {
       <UnitsSection />
       <AppearanceSection />
       <NotificationsSection />
-      <PendingInvitations />
       <DataManagementSection
         onResetClick={() => setShowResetConfirm(true)}
         onClearClick={() => setShowClearConfirm(true)}

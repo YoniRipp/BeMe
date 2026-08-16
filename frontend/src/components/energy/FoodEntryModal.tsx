@@ -72,8 +72,8 @@ interface FoodEntryModalProps {
   entry?: FoodEntry;
   defaultMealType?: MealTypeOption;
   /**
-   * Show "Log again" suggestions built from the signed-in user's own history. Off for
-   * trainers logging on a client's behalf, where that history is the wrong data.
+   * Show "Log again" suggestions built from the signed-in user's own history. Off wherever
+   * the entry is being logged on someone else's behalf, where that history is wrong data.
    */
   showRecentFoods?: boolean;
 }

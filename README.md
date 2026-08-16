@@ -190,7 +190,7 @@ Backend executes each action:
 Response: { actions: [...], results: [...] }
 ```
 
-**Function declarations** include: `add_food`, `edit_food_entry`, `delete_food_entry`, `add_workout`, `edit_workout`, `delete_workout`, `log_sleep`, `add_goal`, `edit_goal`, `delete_goal`, `log_weight`, `log_water`, `log_cycle`, `update_profile`, and trainer variants for managing other users' data.
+**Function declarations** include: `add_food`, `edit_food_entry`, `delete_food_entry`, `add_workout`, `edit_workout`, `delete_workout`, `log_sleep`, `add_goal`, `edit_goal`, `delete_goal`, `log_weight`, `log_water`, `log_cycle`, and `update_profile`.
 
 **Safety settings:** All harm categories are set to `BLOCK_NONE` to prevent the model from refusing food-related queries that might be misclassified (e.g., "I ate a bloody steak" could trigger harm filters).
 
@@ -553,14 +553,13 @@ s3://<bucket>/users/<userId>/<context>/<randomId>.<ext>
 
 ### Voice Tools (23 Function Declarations)
 
-The voice system provides Gemini with 23 function declarations covering all CRUD operations:
+The voice system provides Gemini with 22 function declarations covering all CRUD operations:
 
 **Food:** `add_food`, `edit_food_entry`, `delete_food_entry`
 **Workouts:** `add_workout`, `edit_workout`, `delete_workout`
 **Sleep:** `log_sleep`, `edit_check_in`, `delete_check_in`
 **Goals:** `add_goal`, `edit_goal`, `delete_goal`
 **Health:** `log_weight`, `log_water`, `log_cycle`, `update_profile`
-**Trainer:** `trainer_add_food`, `trainer_add_workout` (manage other users)
 
 ### Agent Tools (Extended)
 
