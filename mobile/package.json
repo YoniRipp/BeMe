@@ -19,7 +19,7 @@
     "expo": "~54.0.33",
     "expo-constants": "^18.0.13",
     "expo-linear-gradient": "^55.0.8",
-    "expo-secure-store": "~15.0.8",
+    "expo-secure-store": "~57.0.1",
     "expo-status-bar": "~3.0.9",
     "react": "19.1.0",
     "react-hook-form": "^7.71.2",
