@@ -45,7 +45,7 @@
     "express-rate-limit": "^8.2.1",
     "google-auth-library": "^10.5.0",
     "helmet": "^8.1.0",
-    "http-proxy-middleware": "^3.0.5",
+    "http-proxy-middleware": "^4.2.0",
     "jsonwebtoken": "^9.0.3",
     "node-pg-migrate": "^8.0.4",
     "pg": "^8.13.0",
